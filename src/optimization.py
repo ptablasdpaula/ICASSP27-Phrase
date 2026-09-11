@@ -59,7 +59,7 @@ class FitResult:
     wall_seconds: float
 
 
-ProgressCallback = Callable[[FitSnapshot], None]
+ProgressCallback = Callable[[FitSnapshot, Tensor], None]
 
 
 def fit(
@@ -143,7 +143,7 @@ def fit(
         )
         trajectory.append(snapshot)
         if progress is not None:
-            progress(snapshot)
+            progress(snapshot, audio.detach())
 
         if patience >= config.stop_patience:
             stopped_by = "patience"

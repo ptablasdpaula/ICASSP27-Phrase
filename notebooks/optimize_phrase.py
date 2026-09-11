@@ -39,7 +39,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
         torch_version = _installed_version("torch")
         return all(
             (
-                _installed_version("icassp27-phrase") == "0.1.0",
+                _installed_version("icassp27-phrase") == "0.1.1",
                 _installed_version("flamo") == "0.2.18",
                 _installed_version("torchlpc") is not None,
                 _installed_version("philtorch") is not None,
@@ -146,12 +146,12 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
         "and PhilTorch dispatched through the compiled TorchLPC recurrence.",
         kind="success",
     )
-    _environment_notice
+    mo.output.replace(_environment_notice)
     return (environment_ready,)
 
 
 @app.cell
-def _(environment_ready, importlib):
+def _(environment_ready, importlib, mo):
     if environment_ready is not True:
         raise RuntimeError("The CPU environment has not been prepared.")
 
@@ -163,7 +163,7 @@ def _(environment_ready, importlib):
     PhraseSynth = _phrase.PhraseSynth
     fit = _phrase.fit
     load_target = _phrase.load_target
-    trajectory_figure = _visualization.trajectory_figure
+    spectrogram_figure = _visualization.spectrogram_figure
     wav_bytes = _visualization.wav_bytes
 
     _phrase.configure_reproducibility()
@@ -174,8 +174,8 @@ def _(environment_ready, importlib):
         fit,
         load_target,
         mo,
+        spectrogram_figure,
         torch,
-        trajectory_figure,
         wav_bytes,
     )
 
@@ -187,8 +187,9 @@ def _(mo):
 
     Select one of the paper's event counts, losses, and 150 frozen LHS
     targets. The target is rendered immediately. The fit starts only when
-    you press **Run optimisation**; no audio, spectrogram, or trajectory is
-    written to disk.
+    you press **Run optimisation**. The current candidate spectrogram is
+    refreshed at evaluation 1 and every 10 evaluations; nothing is written
+    to disk.
     """)
     return
 
@@ -236,6 +237,7 @@ def _(
     load_target,
     mo,
     number_of_events,
+    spectrogram_figure,
     target_number,
     torch,
     wav_bytes,
@@ -243,11 +245,11 @@ def _(
     selected_events = int(number_of_events.value)
     selected_target = int(target_number.value)
     synth = PhraseSynth().to(device)
-    target_metadata, target_phrase = load_target(
+    target_metadata, _target_phrase = load_target(
         selected_events, selected_target, device=device
     )
     with torch.no_grad():
-        target_audio = synth.render(target_phrase).detach()
+        target_audio = synth.render(_target_phrase).detach()
     event_rows = [
         {
             "Event": index + 1,
@@ -262,11 +264,18 @@ def _(
         [
             mo.md(f"## Target {selected_target}: `{target_metadata.target_id}`"),
             mo.audio(wav_bytes(target_audio, synth.sample_rate)),
+            mo.ui.plotly(
+                spectrogram_figure(
+                    target_audio,
+                    synth.sample_rate,
+                    title="Target magnitude spectrogram",
+                )
+            ),
             mo.ui.table(event_rows),
         ]
     )
     target_panel  # noqa: B018 - final expression is the rendered cell output
-    return synth, target_audio, target_metadata, target_phrase
+    return synth, target_audio, target_metadata
 
 
 @app.cell(hide_code=True)
@@ -279,8 +288,11 @@ def _(mo):
     mo.vstack(
         [
             mo.md(
-                "The progress display reports the current evaluation and the "
-                "number of evaluations since a meaningful loss improvement."
+                "The live panel shows the exact candidate audio already evaluated by the "
+                "optimizer, so the spectrogram update requires no extra synthesis. It "
+                "refreshes every 10 evaluations. After 100 evaluations without a 0.01% "
+                "improvement, the same fit restores its strict-best point, clears Adam's "
+                "moments, and reduces the learning rate by 0.3; it stops at patience 250."
             ),
             run_fit,
         ]
@@ -289,54 +301,90 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(fit, loss_type, mo, run_fit, synth, target_audio, target_metadata):
+def _(
+    fit,
+    loss_type,
+    mo,
+    run_fit,
+    spectrogram_figure,
+    synth,
+    target_audio,
+    target_metadata,
+    torch,
+):
     mo.stop(not run_fit.value)
-    with mo.status.spinner(
-        title="Running optimisation",
-        subtitle="Evaluation 0 · patience 0",
-        remove_on_exit=False,
-    ) as progress_indicator:
+    mo.output.replace(
+        mo.callout(
+            "Starting evaluation 1. The first live spectrogram will appear shortly.",
+            kind="info",
+        )
+    )
 
-        def show_progress(snapshot):
-            progress_indicator.update(
-                subtitle=(
-                    f"evaluation {snapshot.evaluation} · "
-                    f"patience {snapshot.patience} / 250 · "
-                    f"best loss {snapshot.best_loss:.5g} · "
-                    f"learning rate {snapshot.learning_rate:.3g}"
-                ),
+    def show_progress(snapshot, current_audio):
+        if snapshot.evaluation == 1 or snapshot.evaluation % 10 == 0:
+            _status = mo.md(
+                f"""
+                ## Optimising — evaluation {snapshot.evaluation}
+
+                - current loss: **{snapshot.raw_loss:.6g}**
+                - strict-best loss: **{snapshot.best_loss:.6g}**
+                - patience: **{snapshot.patience} / 250**
+                - learning rate: **{snapshot.learning_rate:.4g}**
+                - completed plateau rollbacks in the current search:
+                  **{snapshot.plateau_events}**
+
+                The image below is the current candidate, updated every 10 evaluations.
+                """
             )
+            _current_figure = spectrogram_figure(
+                current_audio,
+                synth.sample_rate,
+                title=f"Current candidate — evaluation {snapshot.evaluation}",
+            )
+            mo.output.replace(mo.vstack([_status, _current_figure]))
 
-        fit_result = fit(
-            target_audio,
-            cardinality=target_metadata.cardinality,
-            loss_name=loss_type.value,
-            synth=synth,
-            progress=show_progress,
+    fit_result = fit(
+        target_audio,
+        cardinality=target_metadata.cardinality,
+        loss_name=loss_type.value,
+        synth=synth,
+        progress=show_progress,
+    )
+    mo.output.replace(
+        mo.callout(
+            f"Optimisation stopped by {fit_result.stopped_by} after "
+            f"{fit_result.evaluations} evaluations. Rendering the strict-best candidate.",
+            kind="success",
         )
-        progress_indicator.update(
-            title="Optimisation complete",
-            subtitle=(
-                f"{fit_result.evaluations} evaluations · "
-                f"best loss {fit_result.best_loss:.5g}"
-            ),
-        )
-    return (fit_result,)
+    )
+    with torch.no_grad():
+        best_audio = synth.render(fit_result.best_phrase).detach()
+    _best_status = mo.md(
+        f"""
+        ## Strict-best candidate ready
+
+        **{fit_result.evaluations} evaluations · best loss {fit_result.best_loss:.6g} ·
+        stopped by {fit_result.stopped_by}.**
+        """
+    )
+    _best_figure = spectrogram_figure(
+        best_audio,
+        synth.sample_rate,
+        title="Strict-best candidate magnitude spectrogram",
+    )
+    mo.output.replace(mo.vstack([_best_status, _best_figure]))
+    return best_audio, fit_result
 
 
 @app.cell(hide_code=True)
 def _(
+    best_audio,
     fit_result,
     mo,
     synth,
     target_audio,
-    target_phrase,
-    torch,
-    trajectory_figure,
     wav_bytes,
 ):
-    with torch.no_grad():
-        best_audio = synth.render(fit_result.best_phrase).detach()
     summary = mo.md(
         f"""
         ## Strict-best result
@@ -350,6 +398,20 @@ def _(
         - wall time: **{fit_result.wall_seconds:.1f} s**
         """
     )
+    best_event_rows = [
+        {
+            "Event": index + 1,
+            "$f_0$ (Hz)": round(float(f0), 4),
+            "$t$ (s)": round(float(onset), 6),
+        }
+        for index, (f0, onset) in enumerate(
+            zip(
+                fit_result.best_phrase.f0_hz,
+                fit_result.best_phrase.onset_seconds,
+                strict=True,
+            )
+        )
+    ]
     players = mo.hstack(
         [
             mo.vstack([mo.md("**Target**"), mo.audio(wav_bytes(target_audio, synth.sample_rate))]),
@@ -362,8 +424,7 @@ def _(
         ],
         widths="equal",
     )
-    animation = mo.ui.plotly(trajectory_figure(fit_result, target_phrase))
-    mo.vstack([summary, players, mo.md("## Every evaluated iterate"), animation])
+    mo.vstack([summary, players, mo.md("## Recovered events"), mo.ui.table(best_event_rows)])
     return
 
 

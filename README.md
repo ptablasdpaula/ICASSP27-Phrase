@@ -95,12 +95,14 @@ pixi run app
 Choose `number_of_events` from 1, 2, 4, 6, or 8; choose `loss_type` from
 `L_1`, `L_2`, `MSS`, `SOT`, `TFW_2`, or `BiCuL`; and choose `target` from 1 to
 150. The app renders and plays the target before fitting. During the synchronous
-fit it reports the evaluation, patience, best loss, and learning rate. Once it
-finishes, it provides target/best audio players and a play/pause/scrubbable
-animation containing every evaluated pitch/onset iterate. All artefacts stay in
-memory. The notebook deliberately runs on CPU so it can be hosted without a
-GPU, while retaining the PhilTorch/TorchLPC DF2 path used by the paper.
-Larger fits will naturally be slower than the qualified CUDA campaign.
+fit it reports the evaluation, patience, best loss, and learning rate while
+refreshing the current candidate's spectrogram every ten evaluations. The
+target and strict-best candidate also have spectrograms and audio players. No
+large post-fit animation is constructed, so the result appears immediately
+after the final best-candidate render. All artefacts stay in memory. The
+notebook deliberately runs on CPU so it can be hosted without a GPU, while
+retaining the PhilTorch/TorchLPC DF2 path used by the paper. Larger fits will
+naturally be slower than the qualified CUDA campaign.
 
 ## Paper and confirmatory study
 

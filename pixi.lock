@@ -675,8 +675,8 @@ packages:
   timestamp: 1788405531557
 - pypi: ./
   name: icassp27-phrase
-  version: 0.1.0
-  sha256: e79b0c60484ad9f591b84805c61f4e7358167820866a39c0ea3fae81731da4c0
+  version: 0.1.1
+  sha256: 4ab1525f9e852c3b7702aff7a1acf3ff570aca2832e4d2d4725fde3a12f12855
   requires_dist:
   - flamo==0.2.18
   - numba>=0.61,<0.67
@@ -689,7 +689,7 @@ packages:
   - ruff>=0.12,<1 ; extra == 'test'
   - torchlpc @ git+https://github.com/DiffAPF/torchlpc.git@1bfde4a457f87b1dd0fc22a6548206be3a26647c ; extra == 'accelerated'
   - philtorch @ git+https://github.com/yoyolicoris/philtorch.git@710946142b6149b486a37f4a3be87ddbf9e2cda3 ; extra == 'accelerated'
-  requires_python: '>=3.12,<3.13'
+  requires_python: '>=3.12,<3.14'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/icu-78.3-py310h44b86e0_2.conda
   sha256: 9f07834f0c546ab14d885ce0366285f61f44e326c0edd1fc63b8294e113ae432
   md5: 72a381cbad04f24b1c2a43ef707f45b4
