@@ -274,7 +274,7 @@ def _(mo):
     run_fit = mo.ui.run_button(
         label="Run optimisation",
         tooltip="Fit this target from the registered equal-cell initialisation",
-        kind="primary",
+        kind="success",
     )
     mo.vstack(
         [
