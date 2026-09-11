@@ -1,0 +1,28 @@
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.02}
+\begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}
+\toprule
+Loss & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\
+\midrule
+& \multicolumn{5}{c}{$\Delta f_0$ (Cents)} \\
+\lossLone{} & 782 & 774 & 659 & 648 & 530 \\
+\lossLtwo{} & 1.01e3 & 840 & 811 & 625 & 560 \\
+\lossMSS{} & \textit{2.18} & \textit{272} & \textit{282} & \textit{278} & \textit{308} \\
+\lossSOT{} & 955 & 918 & 839 & 826 & 867 \\
+\lossTFW{} & \underline{0.0311} & \underline{7.62} & {\bfseries\boldmath $80.3$} & {\bfseries\boldmath $114$} & \underline{211} \\
+\lossBiCum{} & {\bfseries\boldmath $0.00548$} & {\bfseries\boldmath $0.0264$} & \underline{117} & \underline{130} & {\bfseries\boldmath $156$} \\
+\addlinespace[2pt]
+\midrule
+\addlinespace[1pt]
+& \multicolumn{5}{c}{$\Delta t$ (ms)} \\
+\lossLone{} & 10.2 & 185 & 239 & 201 & 171 \\
+\lossLtwo{} & 396 & 367 & 242 & 220 & 208 \\
+\lossMSS{} & \textit{3.58} & \textit{185} & 231 & \textit{114} & \textit{146} \\
+\lossSOT{} & 5.49 & 212 & \textit{159} & 199 & 182 \\
+\lossTFW{} & \underline{0.0448} & \underline{9.18} & \underline{85.7} & \underline{89.8} & \underline{136} \\
+\lossBiCum{} & {\bfseries\boldmath $0.000867$} & {\bfseries\boldmath $0.00229$} & {\bfseries\boldmath $59.9$} & {\bfseries\boldmath $77$} & {\bfseries\boldmath $109$} \\
+\bottomrule
+\end{tabularx}
+\endgroup

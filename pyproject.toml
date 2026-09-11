@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "icassp27-phrase"
+version = "0.1.0"
+description = "Differentiable plucked-string phrase recovery for ICASSP 2027"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "flamo==0.2.18",
+  "numba>=0.61,<0.67",
+  "numpy>=2,<3",
+  "scipy>=1.11,<1.17",
+  "torch==2.7.1",
+]
+
+[project.optional-dependencies]
+notebook = [
+  "marimo==0.23.11",
+  "plotly>=6.3,<7",
+]
+test = [
+  "pytest>=8,<10",
+  "ruff>=0.12,<1",
+]
+accelerated = [
+  "torchlpc @ git+https://github.com/DiffAPF/torchlpc.git@1bfde4a457f87b1dd0fc22a6548206be3a26647c",
+  "philtorch @ git+https://github.com/yoyolicoris/philtorch.git@710946142b6149b486a37f4a3be87ddbf9e2cda3",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/icassp27_phrase"]
+
+[tool.hatch.build]
+artifacts = [
+  "src/icassp27_phrase/data/targets.json",
+  "src/icassp27_phrase/py.typed",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
