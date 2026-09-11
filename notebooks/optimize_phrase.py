@@ -197,7 +197,7 @@ def _(mo):
 def _(LOSS_LABELS, mo):
     number_of_events = mo.ui.dropdown(
         options={str(value): value for value in (1, 2, 4, 6, 8)},
-        value=1,
+        value="1",
         label="Number of events",
     )
     loss_type = mo.ui.dropdown(
