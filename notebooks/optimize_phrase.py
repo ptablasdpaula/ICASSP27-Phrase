@@ -93,8 +93,8 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                     *_common,
                     "--no-build-isolation",
                     "--no-deps",
-                    "git+https://github.com/DiffAPF/torchlpc.git@"
-                    "1bfde4a457f87b1dd0fc22a6548206be3a26647c",
+                    "https://github.com/DiffAPF/torchlpc/archive/"
+                    "1bfde4a457f87b1dd0fc22a6548206be3a26647c.tar.gz",
                 ],
             ),
             (
@@ -103,8 +103,8 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                     *_common,
                     "--no-build-isolation",
                     "--no-deps",
-                    "git+https://github.com/yoyolicoris/philtorch.git@"
-                    "710946142b6149b486a37f4a3be87ddbf9e2cda3",
+                    "https://github.com/yoyolicoris/philtorch/archive/"
+                    "710946142b6149b486a37f4a3be87ddbf9e2cda3.tar.gz",
                 ],
             ),
             (
