@@ -15,7 +15,9 @@ checkpoints, W&B caches, or cluster-specific campaign output.
 Like an "Open in Colab" link, this opens the notebook from GitHub in Marimo's
 hosted workspace. Fork it, start the free CPU runtime, and press **Run
 optimisation**; no clone, local Python installation, GPU, or Slurm account is
-required. The notebook carries its pinned environment as inline metadata.
+required. On its first run, the notebook installs this GitHub repository and
+builds the pinned TorchLPC/PhilTorch CPU backend; the Molab workspace then
+caches that environment.
 
 ## Renderer architecture
 
@@ -111,7 +113,7 @@ pixi run paper
 
 The preregistered confirmatory study has 150 targets at each cardinality and 15
 paired BiCuL-versus-TFW2 primary tests. Its original ten-target prefix and the
-140 appended targets are frozen in `src/icassp27_phrase/data/targets.json`.
+140 appended targets are frozen in `src/data/targets.json`.
 The active cluster campaign remains in its immutable execution repository;
 milestone tables and final aggregate results can be copied into `paper/` when
 complete without committing any checkpoints or machine-specific paths here.

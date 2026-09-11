@@ -1,19 +1,8 @@
 # /// script
-# requires-python = ">=3.12,<3.13"
+# requires-python = ">=3.12,<3.14"
 # dependencies = [
-#     "icassp27-phrase[accelerated,notebook] @ git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@main",
+#     "marimo==0.23.11",
 # ]
-# [tool.uv.sources]
-# torch = { index = "pytorch-cpu" }
-#
-# [[tool.uv.index]]
-# name = "pytorch-cpu"
-# url = "https://download.pytorch.org/whl/cpu"
-# explicit = true
-#
-# [tool.uv.extra-build-dependencies]
-# torchlpc = [{ requirement = "torch", match-runtime = true }]
-# philtorch = [{ requirement = "torch", match-runtime = true }]
 # ///
 
 """Interactive reproduction of any single optimisation reported in the paper."""
@@ -26,19 +15,159 @@ app = marimo.App(width="full", app_title="ICASSP27 Phrase Optimisation")
 
 @app.cell
 def _():
+    import importlib
+    import os
+    import shutil
+    import subprocess
+    import sys
+    from importlib import metadata, util
+
     import marimo as mo
-    import torch
 
-    from icassp27_phrase import (
-        LOSS_LABELS,
-        PhraseSynth,
-        configure_reproducibility,
-        fit,
-        load_target,
+    return importlib, metadata, mo, os, shutil, subprocess, sys, util
+
+
+@app.cell(hide_code=True)
+def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
+    def _installed_version(distribution):
+        try:
+            return metadata.version(distribution)
+        except metadata.PackageNotFoundError:
+            return None
+
+    def _environment_is_ready():
+        torch_version = _installed_version("torch")
+        return all(
+            (
+                _installed_version("icassp27-phrase") == "0.1.0",
+                _installed_version("flamo") == "0.2.18",
+                _installed_version("torchlpc") is not None,
+                _installed_version("philtorch") is not None,
+                torch_version is not None,
+                torch_version.partition("+")[0] == "2.7.1",
+                util.find_spec("icassp27_phrase") is not None,
+            )
+        )
+
+    if not _environment_is_ready():
+        _uv = shutil.which("uv")
+        if _uv is None:
+            raise RuntimeError(
+                "This notebook needs uv to install its reproducibility environment. "
+                "Molab supplies uv automatically; locally, install uv or use `pixi run notebook`."
+            )
+
+        _common = [_uv, "pip", "install", "--python", sys.executable]
+        _install_environment = os.environ.copy()
+        _install_environment["CUDA_VISIBLE_DEVICES"] = ""
+        _install_environment["MAX_JOBS"] = "2"
+        _commands = (
+            (
+                "Installing the PyTorch 2.7.1 CPU wheels",
+                [
+                    *_common,
+                    "--index",
+                    "https://download.pytorch.org/whl/cpu",
+                    "torch==2.7.1+cpu",
+                    "torchaudio==2.7.1+cpu",
+                ],
+            ),
+            (
+                "Installing the paper and notebook dependencies",
+                [
+                    *_common,
+                    "flamo==0.2.18",
+                    "numba>=0.61,<0.67",
+                    "numpy>=2,<3",
+                    "plotly>=6.3,<7",
+                    "scipy>=1.11,<1.17",
+                    "ninja>=1.11,<2",
+                    "setuptools>=77",
+                    "setuptools-git-versioning==2.1.0",
+                    "wheel>=0.45,<1",
+                ],
+            ),
+            (
+                "Building the pinned TorchLPC CPU recurrence",
+                [
+                    *_common,
+                    "--no-build-isolation",
+                    "--no-deps",
+                    "git+https://github.com/DiffAPF/torchlpc.git@"
+                    "1bfde4a457f87b1dd0fc22a6548206be3a26647c",
+                ],
+            ),
+            (
+                "Building the pinned PhilTorch frontend",
+                [
+                    *_common,
+                    "--no-build-isolation",
+                    "--no-deps",
+                    "git+https://github.com/yoyolicoris/philtorch.git@"
+                    "710946142b6149b486a37f4a3be87ddbf9e2cda3",
+                ],
+            ),
+            (
+                "Installing ICASSP27-Phrase from GitHub",
+                [
+                    *_common,
+                    "--no-deps",
+                    "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@main",
+                ],
+            ),
+        )
+
+        with mo.status.spinner(
+            title="Preparing the exact CPU environment",
+            subtitle="This one-time setup can take several minutes.",
+        ) as _installer:
+            for _label, _command in _commands:
+                _installer.update(subtitle=_label)
+                _completed = subprocess.run(
+                    _command,
+                    check=False,
+                    env=_install_environment,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
+                if _completed.returncode != 0:
+                    _log_tail = "\n".join(_completed.stdout.splitlines()[-60:])
+                    raise RuntimeError(f"{_label} failed:\n{_log_tail}")
+
+        importlib.invalidate_caches()
+
+    if not _environment_is_ready():
+        raise RuntimeError("The CPU environment installer completed but did not qualify.")
+
+    environment_ready = True
+    _environment_notice = mo.callout(
+        "The pinned CPU environment is ready: PyTorch 2.7.1, FLAMO 0.2.18, "
+        "and PhilTorch dispatched through the compiled TorchLPC recurrence.",
+        kind="success",
     )
-    from icassp27_phrase.visualization import trajectory_figure, wav_bytes
+    _environment_notice
+    return (environment_ready,)
 
-    configure_reproducibility()
+
+@app.cell
+def _(environment_ready, importlib):
+    if environment_ready is not True:
+        raise RuntimeError("The CPU environment has not been prepared.")
+
+    torch = importlib.import_module("torch")
+    _phrase = importlib.import_module("icassp27_phrase")
+    _visualization = importlib.import_module("icassp27_phrase.visualization")
+
+    LOSS_LABELS = _phrase.LOSS_LABELS
+    PhraseSynth = _phrase.PhraseSynth
+    fit = _phrase.fit
+    load_target = _phrase.load_target
+    trajectory_figure = _visualization.trajectory_figure
+    wav_bytes = _visualization.wav_bytes
+
+    _phrase.configure_reproducibility()
+    _phrase.require_df2_backend(torch.device("cpu"))
     return (
         LOSS_LABELS,
         PhraseSynth,
