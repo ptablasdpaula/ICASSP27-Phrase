@@ -41,9 +41,9 @@ to recover by gradient descent. We study this geometry with a differentiable
 two-rail digital waveguide and propose \lossBiCum, a bidirectional
 cumulative-energy loss. \lossBiCum{} compares STFT power after cumulative sums in both directions of
 time and frequency, turning a local energy displacement into an extended
-difference. We compare six unweighted audio losses on 750 direct
+difference. We compare six unweighted audio losses on 3750 direct
 analysis-by-synthesis fits spanning five known event cardinalities. The present
-25-phrase-per-condition milestone is descriptive: it reports Hungarian-matched
+125-phrase-per-condition milestone is descriptive: it reports Hungarian-matched
 pitch and onset errors and log-spectral-distance distributions, but makes no
 inferential claim. The implementation includes signed manifests, fail-fast
 scientific invariants, and a preregistered powered confirmatory design.
@@ -178,7 +178,7 @@ frequency. The implementation extends Sebastian Schlecht's
 Master seed 2027 generates scrambled-Latin-hypercube targets at each
 $C\in\{1,2,4,6,8\}$. The confirmatory manifest preserves the original ten
 targets exactly and appends 140 targets under the same registered bounds and
-separation rules; the present milestone selects target indices 0--24. Pitches
+separation rules; the present milestone selects target indices 0--124. Pitches
 are log-mapped to 80--320 Hz. Sorted target
 onset latents guarantee the registered 50-ms separation:
 \begin{equation}
@@ -205,9 +205,9 @@ best is restored, learning rate is multiplied by 0.3 down to $10^{-5}$, and
 Adam moments are cleared. Optimization stops after 250 further evaluations or
 3000 updates and retains the lowest raw-loss iterate.
 
-At the present $n=25$ milestone, Experiment 1 has $25\times6=150$
-single-event fits. Experiment 2 has $4\times25\times6=600$ fits at
-$C\in\{2,4,6,8\}$, for exactly 750 fits. All six
+At the present $n=125$ milestone, Experiment 1 has $125\times6=750$
+single-event fits. Experiment 2 has $4\times125\times6=3000$ fits at
+$C\in\{2,4,6,8\}$, for exactly 3750 fits. All six
 losses are run in their canonical unweighted form. Hungarian assignment
 minimises
 \begin{equation}
@@ -301,7 +301,7 @@ lattice and normalised gradient coordinates as Fig.~\ref{fig:landscapes}.
 For the $t$-shift rows, Fourier
 places a zero-onset discrete half-raised-cosine (HRC) prototype with the
 official FLAMO v0.2.18 \texttt{Delay} response $e^{-j\omega D}$ and a
-65,536-point inverse FFT in the original matrix sweep; the selected
+65,536-point inverse FFT in the matrix sweep; the selected
 Fourier+Thiran cell was subsequently requalified at the campaign's
 262,144-point transform and remained 120/120 (100.0\%). Naive samples the
 continuous HRC at the requested real-valued onset; Lagrange denotes a
@@ -313,8 +313,17 @@ interpolator), checked against an explicit
 graph; Linear uses two-tap order-1 Lagrange FIR sections on both rails;
 Lagrange uses order 5 on the long pluck--nut rail but order 1 on the short
 pluck--bridge rail; and Thiran uses the registered
-order-3/order-1 all-pass split. All rail variants are tuned using their actual
-phase. Lagrange is deliberately \emph{not} order 5 everywhere: its
+order-3/order-1 all-pass split. The FLAMO waveguide is not accepted from a
+single circular-convolution setting: its 65,536-point transform is 8.192 times
+the 8000-sample retained response horizon, well beyond a two-horizon padding
+check. Separately, Hermitian consistency is imposed with real DC and Nyquist
+bins and conjugate negative-frequency completion. Because the feedback IR is
+theoretically infinite, we also doubled the transform to 131,072 points: the
+target waveform changed by only $2.14\times10^{-7}$ relative RMS, and all four
+Fourier-waveguide target-directed counts remained unchanged (82, 84, 106, and
+119 out of 120 for Naive, Lagrange, Fourier, and Thiran onset placement,
+respectively). All rail variants are
+tuned using their actual phase. Lagrange is deliberately \emph{not} order 5 everywhere: its
 maximally-flat delay is centred near half the FIR order
 \cite{laakso1996splitting}; over 80--320 Hz the uncompensated long delay is
 4.72--19.15 samples and safely accommodates that centring, whereas the short
@@ -329,14 +338,14 @@ order 1 remained unity-bounded.}
 \section{Descriptive results}
 Table~\ref{tab:pilot-compact} reports all 30 loss/event-count conditions using
 the adopted Fourier-onset/Thiran-propagation renderer whose local gradient
-geometry is shown in Fig.~\ref{fig:landscapes}. The completed $n=25$ milestone
-contains the unchanged original ten targets plus 15 appended targets and is
+geometry is shown in Fig.~\ref{fig:landscapes}. The completed $n=125$ milestone
+contains the unchanged original ten targets plus 115 appended targets and is
 descriptive; no $p$-value, confidence-based ranking, or superiority claim is
 made.
 
 \begin{table}[!t]
 \centering
-\caption{Event recovery at the completed $n=25$ milestone. Each entry is the
+\caption{Event recovery at the completed $n=125$ milestone. Each entry is the
 median across phrases of the within-phrase mean absolute $\Delta f_0$ (cents)
 or $\Delta t$ (ms) to the Hungarian-matched target events. The Hungarian
 algorithm pairs predicted and target events one-to-one to minimise the summed
@@ -353,7 +362,7 @@ third-lowest is italicised. Lower is better; results are descriptive.}
   \includegraphics[width=\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
 }{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
   Figure 4 LSD distributions pending checksum-complete regeneration.}}}
-\caption{Per-phrase LSD distributions at the same completed $n=25$ milestone,
+\caption{Per-phrase LSD distributions at the same completed $n=125$ milestone,
 using FLAMO Fourier onset placement and Thiran waveguide propagation. White
 bars span the interquartile range and outlined white points mark medians;
 lower is better.}
@@ -375,14 +384,15 @@ Targets are synthetic; cardinality is known; and target and candidate share
 excitation, damping, and waveguide structure. The 4-kHz rate restricts
 bandwidth, Thiran sections approximate ideal propagation delay, the finite
 Fourier onset shift has small periodic pre-ringing, and hard reset is an
-abstraction. Twenty-five targets per condition cannot establish generality.
+abstraction. The present 125-target milestone remains descriptive until the
+preregistered 150-target analysis is complete.
 Unknown cardinality, real recordings, dynamics, pickup position, decay,
 vibrato, slides, polyphony, and instrument-specific claims remain outside the
 present evidence.
 
 We formulate phrase analysis as direct recovery of event pitch and onset and
 introduce a loss that compares cumulative STFT power in both directions of
-both axes. The signed 750-fit milestone provides descriptive physical-unit errors
+both axes. The signed 3750-fit milestone provides descriptive physical-unit errors
 and audio distributions under one controlled renderer. The powered study is
 explicitly deferred rather than inferred from this small sample.
 

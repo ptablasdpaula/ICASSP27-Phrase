@@ -14,6 +14,7 @@ from torch import Tensor, nn
 
 from ._fractional import (
     causal_relocate_rows,
+    hermitian_rfft_projection,
     lagrange_anchor,
     lagrange_weights,
     thiran_anchor,
@@ -196,7 +197,10 @@ class Exciter(nn.Module):
             )
         elif method == "fourier":
             result = torch.fft.irfft(
-                self._fourier_spectra(onset_seconds),
+                hermitian_rfft_projection(
+                    self._fourier_spectra(onset_seconds),
+                    self.config.fourier_fft_length,
+                ),
                 n=self.config.fourier_fft_length,
                 dim=-1,
             )[..., : self.config.sample_count]
@@ -234,7 +238,9 @@ class Exciter(nn.Module):
         if self.config.method == "fourier":
             spectrum = self._fourier_spectra(onset_seconds).sum(dim=1)
             result = torch.fft.irfft(
-                spectrum, n=self.config.fourier_fft_length, dim=-1
+                hermitian_rfft_projection(spectrum, self.config.fourier_fft_length),
+                n=self.config.fourier_fft_length,
+                dim=-1,
             )[:, : self.config.sample_count]
         else:
             result = self.event_signals(onset_seconds).sum(dim=1)

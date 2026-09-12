@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 import torch
-
 from icassp27_phrase import (
     Exciter,
     ExciterConfig,
@@ -64,3 +63,12 @@ def test_invalid_combinations_fail_at_construction() -> None:
         WaveguideConfig(interpolation="fourier", realization="literal")
     with pytest.raises(ValueError, match="orders"):
         ExciterConfig(method="lagrange", lagrange_order=3)
+    with pytest.raises(ValueError, match="twice"):
+        ExciterConfig(method="fourier", sample_count=512, fourier_fft_length=512)
+    with pytest.raises(ValueError, match="twice"):
+        WaveguideConfig(
+            interpolation="fourier",
+            realization="frequency",
+            sample_count=512,
+            fourier_fft_length=512,
+        )

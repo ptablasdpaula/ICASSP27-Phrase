@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from ._fractional import (
+    hermitian_rfft_projection,
     lagrange_anchor,
     lagrange_weights,
     thiran_anchor,
@@ -591,8 +592,11 @@ class Waveguide(nn.Module):
                     continue
                 segment = source[row, start:stop]
                 spectrum = torch.fft.rfft(segment, n=self.config.fourier_fft_length)
+                output_spectrum = hermitian_rfft_projection(
+                    spectrum * shaped[row, event], self.config.fourier_fft_length
+                )
                 filtered = torch.fft.irfft(
-                    spectrum * shaped[row, event], n=self.config.fourier_fft_length
+                    output_spectrum, n=self.config.fourier_fft_length
                 )[: stop - start]
                 pieces[row].append(filtered)
         return torch.stack([torch.cat(row) for row in pieces])

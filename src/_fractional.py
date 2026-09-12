@@ -80,6 +80,26 @@ def fft_convolve_rows(left: Tensor, right: Tensor, length: int) -> Tensor:
     )[..., :length]
 
 
+def hermitian_rfft_projection(spectrum: Tensor, nfft: int) -> Tensor:
+    """Make the self-conjugate bins of an even-length real FFT explicitly real."""
+    if isinstance(nfft, bool) or not isinstance(nfft, int) or nfft < 2 or nfft % 2:
+        raise ValueError("nfft must be a positive even integer")
+    if not spectrum.is_complex() or spectrum.shape[-1] != nfft // 2 + 1:
+        raise ValueError("spectrum is not a compatible one-sided real FFT")
+    zero = torch.zeros_like(spectrum[..., :1].real)
+    projected = torch.cat(
+        (
+            torch.complex(spectrum[..., :1].real, zero),
+            spectrum[..., 1:-1],
+            torch.complex(spectrum[..., -1:].real, zero),
+        ),
+        dim=-1,
+    )
+    if not bool(torch.isfinite(projected.detach()).all()):
+        raise FloatingPointError("Hermitian projection produced non-finite values")
+    return projected
+
+
 def power_series_inverse_rows(denominator: Tensor, length: int) -> Tensor:
     """First ``length`` coefficients of independent ``1/A(z)`` series."""
     if denominator.ndim != 2 or length < 1:
@@ -127,6 +147,7 @@ def causal_relocate_rows(rows: Tensor, whole: Tensor, output_count: int) -> Tens
 
 __all__ = [
     "causal_relocate_rows",
+    "hermitian_rfft_projection",
     "lagrange_anchor",
     "lagrange_weights",
     "thiran_anchor",

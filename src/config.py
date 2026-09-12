@@ -83,8 +83,14 @@ class ExciterConfig:
             raise ValueError("exciter amplitude and duration must be positive")
         if self.lagrange_order != 5 or self.thiran_order != 1:
             raise ValueError("registered onset orders are Lagrange-5 and Thiran-1")
-        if self.fourier_fft_length < self.sample_count:
-            raise ValueError("the Fourier buffer must contain the output")
+        if self.method == "fourier" and (
+            self.fourier_fft_length % 2
+            or self.fourier_fft_length < 2 * self.sample_count
+        ):
+            raise ValueError(
+                "Fourier onset placement requires an even FFT at least twice "
+                "the rendered impulse-response horizon"
+            )
 
 
 @dataclass(frozen=True)
@@ -121,6 +127,14 @@ class WaveguideConfig:
             raise ValueError("the FLAMO frequency realization requires Fourier interpolation")
         if self.interpolation == "fourier" and self.state_policy != "hard_reset":
             raise ValueError("frequency-sampled propagation has no persistent state")
+        if self.interpolation == "fourier" and (
+            self.fourier_fft_length % 2
+            or self.fourier_fft_length < 2 * self.sample_count
+        ):
+            raise ValueError(
+                "Fourier waveguide propagation requires an even FFT at least "
+                "twice the rendered impulse-response horizon"
+            )
 
     @property
     def segment_orders(self) -> tuple[int, int] | None:
