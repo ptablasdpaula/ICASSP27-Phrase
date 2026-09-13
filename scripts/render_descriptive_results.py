@@ -234,7 +234,7 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
          r"{@{}l*{5}{>{\centering\arraybackslash}X}|"
          r"*{5}{>{\centering\arraybackslash}X}@{}}"),
         r"\toprule",
-        (r"Loss & \multicolumn{5}{c|}{$\Delta f_0$ (cents)} & "
+        (r"Loss & \multicolumn{5}{c|}{$\Delta f_0$ (Cents)} & "
          r"\multicolumn{5}{c}{$\Delta t$ (ms)} \\"),
         (r"& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events "
          r"& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\"),
