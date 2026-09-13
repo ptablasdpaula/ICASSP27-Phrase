@@ -39,7 +39,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
         torch_version = _installed_version("torch")
         return all(
             (
-                _installed_version("icassp27-phrase") == "0.1.1",
+                _installed_version("icassp27-phrase") == "0.1.2",
                 _installed_version("flamo") == "0.2.18",
                 _installed_version("torchlpc") is not None,
                 _installed_version("philtorch") is not None,

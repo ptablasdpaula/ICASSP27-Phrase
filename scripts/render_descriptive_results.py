@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the paper's descriptive table and LSD figure from a signed milestone."""
+"""Render the paper's seven-loss n=150 table and LSD figure."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ LOSS_NAMES = (
     "sot_published_composite",
     "log_jtfot",
     "bidirectional_cumulative_energy",
+    "log_quadrature_bicul",
 )
 LOSS_LABELS = (
     r"$\mathcal{L}_1$",
@@ -31,14 +32,16 @@ LOSS_LABELS = (
     "SOT",
     r"$\mathrm{TF}\mathcal{W}_2$",
     r"$\mathrm{BiCu}\mathcal{L}$",
+    r"Log-q. $\mathrm{BiCu}\mathcal{L}$",
 )
 TEX_LOSS_LABELS = (
-    r"\lossLone{}",
-    r"\lossLtwo{}",
-    r"\lossMSS{}",
-    r"\lossSOT{}",
-    r"\lossTFW{}",
-    r"\lossBiCum{}",
+    r"$\mathcal{L}_1$",
+    r"$\mathcal{L}_2$",
+    "MSS",
+    "SOT",
+    r"$\mathrm{TF}\mathcal{W}_2$",
+    r"$\mathrm{BiCu}\mathcal{L}$",
+    r"Log-q. $\mathrm{BiCu}\mathcal{L}$",
 )
 CARDINALITIES = (1, 2, 4, 6, 8)
 METRICS = (
@@ -109,20 +112,21 @@ def save_figure(figure: Any, path: Path) -> None:
 def load_rows(
     per_phrase: Path,
     summary: dict[str, Any],
-    health: dict[str, Any],
     milestone_n: int,
 ) -> list[dict[str, str]]:
     expected_fits = milestone_n * len(LOSS_NAMES) * len(CARDINALITIES)
-    for name, payload, count_key in (
-        ("report", summary, "raw_fit_count"),
-        ("health", health, "fit_count"),
+    if (
+        milestone_n != 150
+        or summary.get("schema") != "seven-loss-confirmatory-report-v1"
+        or summary.get("phrases_per_condition") != milestone_n
+        or summary.get("condition_count") != 35
+        or summary.get("loss_count") != 7
+        or summary.get("fit_count") != expected_fits
+        or tuple(summary.get("cardinalities", ())) != CARDINALITIES
+        or tuple(summary.get("losses", ())) != LOSS_NAMES
+        or summary.get("descriptive_only") is not True
     ):
-        if payload.get("milestone_n") != milestone_n:
-            raise ValueError(f"{name} milestone does not equal n={milestone_n}")
-        if payload.get("condition_count") != 30 or payload.get(count_key) != expected_fits:
-            raise ValueError(f"{name} has the wrong condition or fit count")
-        if payload.get("phrases_per_condition") != milestone_n:
-            raise ValueError(f"{name} has the wrong phrases-per-condition count")
+        raise ValueError("report is not the complete seven-loss n=150 artifact")
     expected_csv_hash = summary.get("artifacts", {}).get("per_phrase_csv_sha256")
     if sha256(per_phrase) != expected_csv_hash:
         raise ValueError("per_phrase.csv does not match the signed report")
@@ -147,10 +151,13 @@ def load_rows(
         if key not in grouped_targets:
             raise ValueError(f"unexpected condition {key}")
         target_index = int(row["target_index"])
+        if row.get("target_id") != f"C{key[1]:02d}-T{target_index:04d}":
+            raise ValueError(f"unexpected target identity in {key}")
         if target_index in grouped_targets[key]:
             raise ValueError(f"duplicate target index {target_index} in {key}")
         grouped_targets[key].add(target_index)
-        if not all(math.isfinite(float(row[field])) for field in finite_fields):
+        values = [float(row[field]) for field in finite_fields]
+        if not all(math.isfinite(value) and value >= 0.0 for value in values):
             raise FloatingPointError(f"non-finite reported metric in {key}")
     expected_targets = set(range(milestone_n))
     if any(targets != expected_targets for targets in grouped_targets.values()):
@@ -185,9 +192,9 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
 
     lines = [
         r"\begingroup",
-        r"\footnotesize",
-        r"\setlength{\tabcolsep}{2.5pt}",
-        r"\renewcommand{\arraystretch}{1.02}",
+        r"\scriptsize",
+        r"\setlength{\tabcolsep}{2.1pt}",
+        r"\renewcommand{\arraystretch}{1.00}",
         r"\begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}",
         r"\toprule",
         r"Loss & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\",
@@ -273,12 +280,12 @@ def render_lsd(rows: list[dict[str, str]], output_stem: Path) -> dict[str, str]:
     colors = dict(
         zip(
             LOSS_NAMES,
-            [cmap(value) for value in np.linspace(0.12, 0.88, 6)],
+            [cmap(value) for value in np.linspace(0.10, 0.90, len(LOSS_NAMES))],
             strict=True,
         )
     )
-    figure, axis = plt.subplots(figsize=(3.45, 2.42))
-    offsets = np.linspace(-0.34, 0.34, len(LOSS_NAMES))
+    figure, axis = plt.subplots(figsize=(3.45, 2.58))
+    offsets = np.linspace(-0.36, 0.36, len(LOSS_NAMES))
     for loss_index, loss_name in enumerate(LOSS_NAMES):
         for cardinality_index, cardinality in enumerate(CARDINALITIES):
             values = np.asarray(groups[(loss_name, cardinality)], dtype=np.float64)
@@ -286,7 +293,7 @@ def render_lsd(rows: list[dict[str, str]], output_stem: Path) -> dict[str, str]:
             violin = axis.violinplot(
                 values,
                 positions=[position],
-                widths=0.13,
+                widths=0.105,
                 showmeans=False,
                 showmedians=False,
                 showextrema=False,
@@ -294,17 +301,17 @@ def render_lsd(rows: list[dict[str, str]], output_stem: Path) -> dict[str, str]:
             for body in violin["bodies"]:
                 body.set_facecolor(colors[loss_name])
                 body.set_edgecolor("black")
-                body.set_linewidth(0.4)
-                body.set_alpha(0.62)
+                body.set_linewidth(0.35)
+                body.set_alpha(0.68)
             lower, median, upper = np.quantile(values, (0.25, 0.5, 0.75))
-            axis.vlines(position, lower, upper, color="white", linewidth=0.95)
+            axis.vlines(position, lower, upper, color="white", linewidth=0.85)
             axis.scatter(
                 position,
                 median,
-                s=10,
+                s=8,
                 color="white",
                 edgecolor="black",
-                linewidth=0.45,
+                linewidth=0.35,
                 zorder=4,
             )
     axis.set_xticks(range(len(CARDINALITIES)), [str(value) for value in CARDINALITIES])
@@ -317,18 +324,18 @@ def render_lsd(rows: list[dict[str, str]], output_stem: Path) -> dict[str, str]:
             Patch(facecolor=colors[name], edgecolor="black", label=label)
             for name, label in zip(LOSS_NAMES, LOSS_LABELS, strict=True)
         ],
-        ncol=3,
+        ncol=4,
         loc="lower center",
         bbox_to_anchor=(0.5, 1.005),
         frameon=False,
-        fontsize=6.6,
-        handlelength=1.15,
-        columnspacing=1.1,
+        fontsize=5.5,
+        handlelength=1.0,
+        columnspacing=0.75,
         borderaxespad=0.0,
     )
     for spine in axis.spines.values():
         spine.set_linewidth(0.6)
-    figure.subplots_adjust(left=0.15, right=0.99, bottom=0.17, top=0.79)
+    figure.subplots_adjust(left=0.15, right=0.99, bottom=0.17, top=0.77)
     paths = {suffix: output_stem.with_suffix(f".{suffix}") for suffix in ("pdf", "png")}
     for path in paths.values():
         save_figure(figure, path)
@@ -340,25 +347,24 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--per-phrase", type=Path, required=True)
     parser.add_argument("--summary", type=Path, required=True)
-    parser.add_argument("--health", type=Path, required=True)
     parser.add_argument("--milestone", type=int, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
-    if args.milestone < 1:
-        raise ValueError("milestone must be positive")
+    if args.milestone != 150:
+        raise ValueError("the combined seven-loss report is fixed at n=150")
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     summary = read_signed_json(args.summary, status="complete")
-    health = read_signed_json(args.health, status="passed")
-    rows = load_rows(args.per_phrase, summary, health, args.milestone)
+    rows = load_rows(args.per_phrase, summary, args.milestone)
     table_path = args.output_dir / "median_recovery_table.tex"
     table = render_table(rows, table_path)
     figure = render_lsd(rows, args.output_dir / "lsd_violin")
     provenance = {
-        "schema": "paper-descriptive-milestone-v1",
+        "schema": "paper-seven-loss-n150-v1",
         "created_utc": datetime.now(UTC).isoformat(),
         "milestone_n": args.milestone,
-        "condition_count": 30,
+        "condition_count": 35,
+        "loss_count": 7,
         "fit_count": len(rows),
         "selection": "target_index < milestone_n within every cardinality",
         "sources": {
@@ -367,9 +373,7 @@ def main() -> None:
             "report": str(args.summary),
             "report_sha256": sha256(args.summary),
             "report_payload_sha256": summary["payload_sha256"],
-            "health": str(args.health),
-            "health_sha256": sha256(args.health),
-            "health_payload_sha256": health["payload_sha256"],
+            "input_reports": summary["inputs"],
         },
         "table": table,
         "figure4": {

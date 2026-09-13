@@ -29,6 +29,7 @@ contact@example.invalid}}
 \newcommand{\lossSOT}{SOT}
 \newcommand{\lossTFW}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
 \newcommand{\lossBiCum}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}
+\newcommand{\lossLogQuad}{\ensuremath{\mathrm{LogQ}\text{-}\mathrm{BiCu}\mathcal{L}}}
 \newcommand{\redtodo}[1]{\textcolor{red}{\textbf{TODO:} #1}}
 
 \begin{document}
@@ -41,12 +42,12 @@ to recover by gradient descent. We study this geometry with a differentiable
 two-rail digital waveguide and propose \lossBiCum, a bidirectional
 cumulative-energy loss. \lossBiCum{} compares STFT power after cumulative sums in both directions of
 time and frequency, turning a local energy displacement into an extended
-difference. We compare six unweighted audio losses on 3750 direct
-analysis-by-synthesis fits spanning five known event cardinalities. The present
-125-phrase-per-condition milestone is descriptive: it reports Hungarian-matched
-pitch and onset errors and log-spectral-distance distributions, but makes no
-inferential claim. The implementation includes signed manifests, fail-fast
-scientific invariants, and a preregistered powered confirmatory design.
+difference. We compare six preregistered unweighted audio losses on 4500 direct
+analysis-by-synthesis fits spanning five known event cardinalities, plus an
+exploratory log-frequency-quadrature variant on 750 additional fits. Across 15
+paired confirmatory tests, \lossBiCum{} has lower mean error than
+\lossTFW{} in every comparison and survives familywise correction in 11. The
+implementation includes signed manifests and fail-fast scientific invariants.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -75,7 +76,8 @@ differentiable digital waveguide. Our contribution is \lossBiCum, a
 bidirectional cumulative-energy objective, compared with waveform \lossLone,
 waveform \lossLtwo, smooth \lossMSS, the published \lossSOT{} composite, and a
 log-frequency time--frequency transport loss \lossTFW. All optimizing and
-evaluation objectives in the registered rerun are unweighted.
+evaluation objectives in the registered rerun are unweighted. We additionally
+test \lossLogQuad{}, an exploratory physically weighted variant of \lossBiCum.
 
 \section{Differentiable phrase renderer}
 Figure~\ref{fig:waveguide} shows the Waveguide renderer. It is a reciprocal
@@ -174,11 +176,26 @@ from the event to a boundary, offering a global direction in time and
 frequency. The implementation extends Sebastian Schlecht's
 \texttt{MatchCumulativeEnergy} in both directions of both axes.
 
+Canonical \lossBiCum{} takes an unweighted RMS over the rectangular STFT-bin
+lattice. The exploratory \lossLogQuad{} instead evaluates that final RMS by
+quadrature in physical coordinates: seconds along time and
+$\log_2[\max(f,20)/20]$ octaves along frequency. For directional surface
+difference $E_{d_t,d_f}=\hat R-R$, it uses
+\begin{equation}
+\ell^{\rm LogQ}_{d_t,d_f}=\left[\frac{\sum_{k,n}
+w^f_{d_f,k}w^t_{d_t,n}E_{d_t,d_f}(k,n)^2}
+{\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2},
+\end{equation}
+where each $w$ is the exact adjacent-coordinate interval, aligned with the
+chosen cumulative direction. The four surfaces, target-maximum scaling, and
+square-root transform are unchanged. No event coordinates, detectors, or
+salience weights enter this construction.
+
 \section{Experiments}
 Master seed 2027 generates scrambled-Latin-hypercube targets at each
 $C\in\{1,2,4,6,8\}$. The confirmatory manifest preserves the original ten
 targets exactly and appends 140 targets under the same registered bounds and
-separation rules; the present milestone selects target indices 0--124. Pitches
+separation rules; the final analysis uses target indices 0--149. Pitches
 are log-mapped to 80--320 Hz. Sorted target
 onset latents guarantee the registered 50-ms separation:
 \begin{equation}
@@ -205,10 +222,12 @@ best is restored, learning rate is multiplied by 0.3 down to $10^{-5}$, and
 Adam moments are cleared. Optimization stops after 250 further evaluations or
 3000 updates and retains the lowest raw-loss iterate.
 
-At the present $n=125$ milestone, Experiment 1 has $125\times6=750$
-single-event fits. Experiment 2 has $4\times125\times6=3000$ fits at
-$C\in\{2,4,6,8\}$, for exactly 3750 fits. All six
-losses are run in their canonical unweighted form. Hungarian assignment
+At $n=150$, the preregistered experiment has $150\times6=900$ single-event
+fits and $4\times150\times6=3600$ multi-event fits, for exactly 4500 fits.
+The independently run \lossLogQuad{} extension contributes 750 fits on the
+same frozen targets, giving 5250 fits and 35 conditions in the combined
+descriptive report. It was specified after the six-loss study and is excluded
+from its confirmatory test family. All objectives are unweighted. Hungarian assignment
 minimises
 \begin{equation}
 d_{ij}=\left[\frac{\log_2(\hat f_i/f_j)}{2}\right]^2+
@@ -336,22 +355,22 @@ order 1 remained unity-bounded.}
 \end{table}
 
 \section{Descriptive results}
-Table~\ref{tab:pilot-compact} reports all 30 loss/event-count conditions using
+Table~\ref{tab:pilot-compact} reports all 35 loss/event-count conditions using
 the adopted Fourier-onset/Thiran-propagation renderer whose local gradient
-geometry is shown in Fig.~\ref{fig:landscapes}. The completed $n=125$ milestone
-contains the unchanged original ten targets plus 115 appended targets and is
-descriptive; no $p$-value, confidence-based ranking, or superiority claim is
-made.
+geometry is shown in Fig.~\ref{fig:landscapes}. The completed $n=150$ dataset
+contains the unchanged original ten targets plus all 140 appended targets.
+The rank styling is descriptive, particularly for post-hoc \lossLogQuad{}.
 
 \begin{table}[!t]
 \centering
-\caption{Event recovery at the completed $n=125$ milestone. Each entry is the
+\caption{Event recovery over $n=150$ phrases per cardinality. Each entry is the
 median across phrases of the within-phrase mean absolute $\Delta f_0$ (cents)
 or $\Delta t$ (ms) to the Hungarian-matched target events. The Hungarian
 algorithm pairs predicted and target events one-to-one to minimise the summed
 joint pitch--time cost in the equation above. Within each event count and
 metric, the lowest median is bold, the second-lowest is underlined, and the
-third-lowest is italicised. Lower is better; results are descriptive.}
+third-lowest is italicised. Lower is better. \lossLogQuad{} was exploratory;
+no inferential test involving it is reported.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
 \end{table}
@@ -362,10 +381,10 @@ third-lowest is italicised. Lower is better; results are descriptive.}
   \includegraphics[width=\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
 }{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
   Figure 4 LSD distributions pending checksum-complete regeneration.}}}
-\caption{Per-phrase LSD distributions at the same completed $n=125$ milestone,
+\caption{Per-phrase LSD distributions over the same $n=150$ phrases,
 using FLAMO Fourier onset placement and Thiran waveguide propagation. White
 bars span the interquartile range and outlined white points mark medians;
-lower is better.}
+lower is better. \lossLogQuad{} is exploratory.}
 \label{fig:lsd}
 \end{figure}
 
@@ -373,28 +392,30 @@ A signed noncentral-$t$ calculation defines the confirmatory family: paired
 \lossBiCum{} versus \lossTFW{} comparisons for cents, onset, and LSD at five
 cardinalities, giving 15 two-sided primary tests. Bonferroni familywise
 $\alpha=0.05$, target paired $d_z=0.35$, and 90\% power require 150 phrases per
-cardinality (power 0.901 at $n=150$ and 0.899 at $n=149$).
-
-\redtodo{Run the preregistered $n=150$-per-cardinality confirmatory experiment
-and perform the 15 paired \lossBiCum{}--\lossTFW{} tests before making any
-inferential comparison.}
+cardinality (power 0.901 at $n=150$ and 0.899 at $n=149$). All 15 paired
+two-sided tests used the exact shared phrases. \lossBiCum{} had the lower mean
+in every comparison. After correction, all five LSD comparisons and both
+pitch and onset comparisons at $C\in\{4,6,8\}$ rejected their nulls (11/15);
+pitch and onset at $C\in\{1,2\}$ did not.
 
 \section{Limitations and conclusion}
 Targets are synthetic; cardinality is known; and target and candidate share
 excitation, damping, and waveguide structure. The 4-kHz rate restricts
 bandwidth, Thiran sections approximate ideal propagation delay, the finite
 Fourier onset shift has small periodic pre-ringing, and hard reset is an
-abstraction. The present 125-target milestone remains descriptive until the
-preregistered 150-target analysis is complete.
+abstraction. The confirmatory inference is restricted to the preregistered
+\lossBiCum{}--\lossTFW{} family; the seven-loss ranks are descriptive.
 Unknown cardinality, real recordings, dynamics, pickup position, decay,
 vibrato, slides, polyphony, and instrument-specific claims remain outside the
 present evidence.
 
 We formulate phrase analysis as direct recovery of event pitch and onset and
 introduce a loss that compares cumulative STFT power in both directions of
-both axes. The signed 3750-fit milestone provides descriptive physical-unit errors
-and audio distributions under one controlled renderer. The powered study is
-explicitly deferred rather than inferred from this small sample.
+both axes. The signed 5250-fit study provides physical-unit errors and audio
+distributions under one controlled renderer. Its powered paired analysis
+supports canonical \lossBiCum{} over \lossTFW{} in 11 of 15 corrected tests,
+while \lossLogQuad{} improves the descriptive median pitch and onset recovery
+at four, six, and eight events and remains a hypothesis for independent study.
 
 \bibliographystyle{IEEEtran}
 \bibliography{\PaperRoot/references}

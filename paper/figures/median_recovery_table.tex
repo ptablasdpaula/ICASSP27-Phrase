@@ -1,28 +1,30 @@
 \begingroup
-\footnotesize
-\setlength{\tabcolsep}{2.5pt}
-\renewcommand{\arraystretch}{1.02}
+\scriptsize
+\setlength{\tabcolsep}{2.1pt}
+\renewcommand{\arraystretch}{1.00}
 \begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}
 \toprule
 Loss & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\
 \midrule
 & \multicolumn{5}{c}{$\Delta f_0$ (Cents)} \\
-\lossLone{} & 948 & 855 & 732 & 624 & 552 \\
-\lossLtwo{} & 921 & 894 & 800 & 687 & 600 \\
-\lossMSS{} & \textit{96.8} & \textit{262} & \textit{316} & \textit{278} & \textit{295} \\
-\lossSOT{} & 840 & 837 & 877 & 800 & 757 \\
-\lossTFW{} & \underline{0.173} & \underline{4.27} & \underline{98.4} & \underline{187} & \underline{180} \\
-\lossBiCum{} & {\bfseries\boldmath $0.000802$} & {\bfseries\boldmath $0.00139$} & {\bfseries\boldmath $38.4$} & {\bfseries\boldmath $145$} & {\bfseries\boldmath $152$} \\
+$\mathcal{L}_1$ & 1.03e3 & 863 & 732 & 642 & 564 \\
+$\mathcal{L}_2$ & 1.1e3 & 902 & 816 & 711 & 616 \\
+MSS & 58.6 & 244 & 329 & 277 & 302 \\
+SOT & 871 & 878 & 874 & 826 & 767 \\
+$\mathrm{TF}\mathcal{W}_2$ & \textit{0.156} & \textit{4.48} & \textit{101} & \textit{186} & \textit{197} \\
+$\mathrm{BiCu}\mathcal{L}$ & {\bfseries\boldmath $0.0008$} & {\bfseries\boldmath $0.00102$} & \underline{34.2} & \underline{142} & \underline{158} \\
+Log-q. $\mathrm{BiCu}\mathcal{L}$ & \underline{0.00148} & \underline{0.0022} & {\bfseries\boldmath $19.1$} & {\bfseries\boldmath $124$} & {\bfseries\boldmath $153$} \\
 \addlinespace[2pt]
 \midrule
 \addlinespace[1pt]
 & \multicolumn{5}{c}{$\Delta t$ (ms)} \\
-\lossLone{} & \textit{65.8} & \textit{190} & 235 & 186 & 185 \\
-\lossLtwo{} & 417 & 378 & 242 & 214 & 191 \\
-\lossMSS{} & 210 & 219 & \textit{201} & \textit{155} & \textit{154} \\
-\lossSOT{} & 97.1 & 228 & 206 & 192 & 167 \\
-\lossTFW{} & \underline{0.257} & \underline{6.46} & \underline{85.7} & \underline{106} & \underline{133} \\
-\lossBiCum{} & {\bfseries\boldmath $0.000321$} & {\bfseries\boldmath $0.000345$} & {\bfseries\boldmath $31.4$} & {\bfseries\boldmath $93.2$} & {\bfseries\boldmath $100$} \\
+$\mathcal{L}_1$ & 71.6 & 220 & 235 & 188 & 186 \\
+$\mathcal{L}_2$ & 443 & 360 & 242 & 215 & 198 \\
+MSS & 186 & 220 & 203 & 155 & 158 \\
+SOT & 104 & 241 & 216 & 194 & 173 \\
+$\mathrm{TF}\mathcal{W}_2$ & \textit{0.251} & \textit{6.59} & \textit{93.2} & \textit{110} & \textit{137} \\
+$\mathrm{BiCu}\mathcal{L}$ & {\bfseries\boldmath $0.000336$} & {\bfseries\boldmath $0.000296$} & \underline{26.6} & \underline{90.3} & \underline{104} \\
+Log-q. $\mathrm{BiCu}\mathcal{L}$ & \underline{0.00056} & \underline{0.000988} & {\bfseries\boldmath $6.75$} & {\bfseries\boldmath $83.7$} & {\bfseries\boldmath $92.8$} \\
 \bottomrule
 \end{tabularx}
 \endgroup

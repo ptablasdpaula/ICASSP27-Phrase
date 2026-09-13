@@ -1,4 +1,4 @@
-"""The six frozen 4-kHz objectives and their versioned registry."""
+"""The seven paper 4-kHz objectives and their versioned registry."""
 from __future__ import annotations
 
 import math
@@ -17,9 +17,10 @@ LOSS_NAMES: Final = (
     "sot_published_composite",
     "log_jtfot",
     "bidirectional_cumulative_energy",
+    "log_quadrature_bicul",
 )
 LOSS_LABELS: Final = (
-    "L_1", "L_2", "MSS", "SOT", "TFW_2", "BiCuL",
+    "L_1", "L_2", "MSS", "SOT", "TFW_2", "BiCuL", "LogQ_BiCuL",
 )
 PAPER_LOSSES: Final = dict(zip(LOSS_LABELS, LOSS_NAMES, strict=True))
 SMOOTH_WINDOWS: Final = (17, 31, 67, 127, 257, 509)
@@ -326,9 +327,117 @@ class BidirectionalCumulativeEnergyDistance(BoundLoss):
         return _restore(value, squeezed)
 
 
+class LogQuadratureBiCumulativeEnergyDistance(BoundLoss):
+    """BiCuL with its final RMS integrated over seconds and octaves.
+
+    The four cumulative-power surfaces, target-maximum normalization, and
+    square-root feature are identical to canonical BiCuL. Only the final grid
+    norm changes: exact adjacent-coordinate widths in seconds and
+    log2-frequency provide the quadrature weights. The loss uses no event
+    parameters, pitch/onset detectors, or salience weighting.
+    """
+
+    def __init__(self, target: Tensor, *, sample_rate: int = 4_000):
+        rows, squeezed = _batch(target)
+        if not squeezed:
+            raise ValueError("log-quadrature BiCuL requires one target vector")
+        self.target = target.detach()
+        self.sample_rate = sample_rate
+        self.n_fft = 256
+        self.hop = 64
+        self.sqrt_floor = 1e-12
+        self.window = torch.hann_window(
+            self.n_fft, periodic=True, dtype=target.dtype,
+            device=target.device)
+
+        with torch.no_grad():
+            power = self._power(rows)[0]
+            frequency = torch.arange(
+                power.shape[0], dtype=target.dtype, device=target.device
+            ) * (float(sample_rate) / float(self.n_fft))
+            frequency = torch.log2(torch.clamp(frequency, min=20.0) / 20.0)
+            time = torch.arange(
+                power.shape[1], dtype=target.dtype, device=target.device
+            ) * (float(self.hop) / float(sample_rate))
+            frequency_gap = torch.diff(frequency)
+            time_gap = torch.diff(time)
+            self.frequency_widths = (
+                torch.cat((frequency_gap, torch.zeros_like(frequency_gap[:1]))),
+                torch.cat((torch.zeros_like(frequency_gap[:1]), frequency_gap)),
+            )
+            self.time_widths = (
+                torch.cat((time_gap, torch.zeros_like(time_gap[:1]))),
+                torch.cat((torch.zeros_like(time_gap[:1]), time_gap)),
+            )
+            widths = (*self.frequency_widths, *self.time_widths)
+            if any(
+                not bool(torch.isfinite(value).all())
+                or bool((value < 0.0).any())
+                for value in widths
+            ):
+                raise FloatingPointError("invalid log-quadrature coordinate widths")
+
+            self.references: list[tuple[Tensor, Tensor]] = []
+            for time_reverse in (False, True):
+                time_surface = (
+                    reverse_cumsum(power, 1)
+                    if time_reverse else torch.cumsum(power, dim=1)
+                )
+                for frequency_reverse in (False, True):
+                    surface = (
+                        reverse_cumsum(time_surface, 0)
+                        if frequency_reverse else torch.cumsum(time_surface, dim=0)
+                    )
+                    scale = surface.amax().clamp_min(torch.finfo(surface.dtype).tiny)
+                    reference = torch.sqrt(
+                        (surface / scale).clamp_min(self.sqrt_floor)
+                    )
+                    self.references.append((reference.detach(), scale.detach()))
+
+    def _power(self, rows: Tensor) -> Tensor:
+        return _stft(
+            rows, n_fft=self.n_fft, hop=self.hop, window=self.window,
+            center=False, pad_mode="constant").abs().square()
+
+    def distances(self, candidate: Tensor) -> Tensor:
+        rows, squeezed = _batch(candidate)
+        power = self._power(rows)
+        terms: list[Tensor] = []
+        reference_index = 0
+        for time_index, time_reverse in enumerate((False, True)):
+            time_surface = (
+                reverse_cumsum(power, 2)
+                if time_reverse else torch.cumsum(power, dim=2)
+            )
+            time_width = self.time_widths[time_index]
+            for frequency_index, frequency_reverse in enumerate((False, True)):
+                surface = (
+                    reverse_cumsum(time_surface, 1)
+                    if frequency_reverse else torch.cumsum(time_surface, dim=1)
+                )
+                reference, scale = self.references[reference_index]
+                reference_index += 1
+                frequency_width = self.frequency_widths[frequency_index]
+                weight = frequency_width[:, None] * time_width[None, :]
+                weight_sum = weight.sum()
+                if not bool(weight_sum > 0.0):
+                    raise ValueError("log-quadrature surface has zero area")
+                difference = torch.sqrt(
+                    (surface / scale).clamp_min(self.sqrt_floor)
+                ) - reference[None]
+                terms.append(torch.sqrt(
+                    (difference.square() * weight[None]).sum(dim=(1, 2))
+                    / weight_sum
+                ))
+        value = torch.stack(terms, dim=-1).mean(dim=-1)
+        if not bool(torch.isfinite(value.detach()).all()):
+            raise FloatingPointError("log-quadrature BiCuL is non-finite")
+        return _restore(value, squeezed)
+
+
 @dataclass(frozen=True)
 class LossRegistry:
-    schema: str = "loss-registry-v1"
+    schema: str = "loss-registry-v2"
     names: tuple[str, ...] = LOSS_NAMES
 
     def build(self, name: str, target: Tensor) -> BoundLoss:
@@ -345,7 +454,9 @@ class LossRegistry:
             return PublishedSOTCompositeDistance(target)
         if name == "log_jtfot":
             return LogJTFOTDistance(target)
-        return BidirectionalCumulativeEnergyDistance(target)
+        if name == "bidirectional_cumulative_energy":
+            return BidirectionalCumulativeEnergyDistance(target)
+        return LogQuadratureBiCumulativeEnergyDistance(target)
 
 
 REGISTRY = LossRegistry()
@@ -368,6 +479,8 @@ def canonical_loss_name(name: str) -> str:
         "logjtfot": "log_jtfot",
         "bicul": "bidirectional_cumulative_energy",
         "bidirectionalcumulativeenergy": "bidirectional_cumulative_energy",
+        "logqbicul": "log_quadrature_bicul",
+        "logquadraturebicul": "log_quadrature_bicul",
     }
     if name in LOSS_NAMES:
         return name
@@ -388,6 +501,7 @@ __all__ = [
     "LOSS_NAMES",
     "PAPER_LOSSES",
     "LogJTFOTDistance",
+    "LogQuadratureBiCumulativeEnergyDistance",
     "LossRegistry",
     "PublishedSOTCompositeDistance",
     "REGISTRY",

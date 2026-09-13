@@ -3,7 +3,7 @@
 Code and manuscript for **Gradient Descent Optimization of Plucked-String
 Musical Phrases via Cumulative Energy Loss**.
 
-The repository contains one compact synthesis path, the six losses compared in
+The repository contains one compact synthesis path, the seven losses reported in
 the paper, all 150 frozen LHS target coordinate sets per event cardinality, and
 an interactive Marimo app that reruns any individual fit on demand. It does not
 store rendered target audio, optimisation trajectories, spectrogram caches,
@@ -93,7 +93,7 @@ pixi run app
 ```
 
 Choose `number_of_events` from 1, 2, 4, 6, or 8; choose `loss_type` from
-`L_1`, `L_2`, `MSS`, `SOT`, `TFW_2`, or `BiCuL`; and choose `target` from 1 to
+`L_1`, `L_2`, `MSS`, `SOT`, `TFW_2`, `BiCuL`, or `LogQ_BiCuL`; and choose `target` from 1 to
 150. The app renders and plays the target before fitting. During the synchronous
 fit it reports the evaluation, patience, best loss, and learning rate while
 refreshing the current candidate's spectrogram every ten evaluations. The
@@ -113,12 +113,15 @@ Overleaf. Build it locally with:
 pixi run paper
 ```
 
-The preregistered confirmatory study has 150 targets at each cardinality and 15
-paired BiCuL-versus-TFW2 primary tests. Its original ten-target prefix and the
-140 appended targets are frozen in `src/data/targets.json`.
-The active cluster campaign remains in its immutable execution repository;
-milestone tables and final aggregate results can be copied into `paper/` when
-complete without committing any checkpoints or machine-specific paths here.
+The completed preregistered confirmatory study has 150 targets at each
+cardinality and 15 paired BiCuL-versus-TFW2 primary tests. The exploratory
+LogQ-BiCuL extension reuses those same targets but is not part of that test
+family. The original ten-target prefix and 140 appended targets are frozen in
+`src/data/targets.json`; the paper contains the signed final aggregate without
+checkpoints or machine-specific campaign output.
+The signed combined report and the signed 15-test result are retained as
+`paper/figures/descriptive_results.provenance.json` and
+`paper/figures/primary_tests.json`, respectively.
 
 ## Repository scope
 
