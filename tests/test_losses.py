@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 import torch
-
 from icassp27_phrase.losses import LOSS_LABELS, build_loss, canonical_loss_name
 
 

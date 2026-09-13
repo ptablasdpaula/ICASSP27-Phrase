@@ -675,8 +675,8 @@ packages:
   timestamp: 1788405531557
 - pypi: ./
   name: icassp27-phrase
-  version: 0.1.1
-  sha256: 4ab1525f9e852c3b7702aff7a1acf3ff570aca2832e4d2d4725fde3a12f12855
+  version: 0.1.2
+  sha256: 5f04406c0c688985b9aa6f85a3a2d3774a5df7dd4f824c7f529c6406bf236714
   requires_dist:
   - flamo==0.2.18
   - numba>=0.61,<0.67
