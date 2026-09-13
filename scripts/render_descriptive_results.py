@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the paper's seven-loss n=150 table and LSD figure."""
+"""Render the paper's eight-loss n=150 table and LSD figure."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ LOSS_NAMES = (
     "waveform_mse",
     "smooth_mss",
     "sot_published_composite",
+    "linear_jtfot",
     "log_jtfot",
     "bidirectional_cumulative_energy",
     "log_quadrature_bicul",
@@ -31,8 +32,9 @@ LOSS_LABELS = (
     "MSS",
     "SOT",
     r"$\mathrm{TF}\mathcal{W}_2$",
+    r"$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$",
     r"$\mathrm{BiCu}\mathcal{L}$",
-    r"Log-q. $\mathrm{BiCu}\mathcal{L}$",
+    r"$\hookrightarrow$ Log-Q",
 )
 TEX_LOSS_LABELS = (
     r"$\mathcal{L}_1$",
@@ -40,8 +42,9 @@ TEX_LOSS_LABELS = (
     "MSS",
     "SOT",
     r"$\mathrm{TF}\mathcal{W}_2$",
+    r"$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$",
     r"$\mathrm{BiCu}\mathcal{L}$",
-    r"Log-q. $\mathrm{BiCu}\mathcal{L}$",
+    r"$\hookrightarrow$ Log-Q",
 )
 CARDINALITIES = (1, 2, 4, 6, 8)
 METRICS = (
@@ -117,16 +120,16 @@ def load_rows(
     expected_fits = milestone_n * len(LOSS_NAMES) * len(CARDINALITIES)
     if (
         milestone_n != 150
-        or summary.get("schema") != "seven-loss-confirmatory-report-v1"
+        or summary.get("schema") != "eight-loss-confirmatory-report-v1"
         or summary.get("phrases_per_condition") != milestone_n
-        or summary.get("condition_count") != 35
-        or summary.get("loss_count") != 7
+        or summary.get("condition_count") != 40
+        or summary.get("loss_count") != 8
         or summary.get("fit_count") != expected_fits
         or tuple(summary.get("cardinalities", ())) != CARDINALITIES
         or tuple(summary.get("losses", ())) != LOSS_NAMES
         or summary.get("descriptive_only") is not True
     ):
-        raise ValueError("report is not the complete seven-loss n=150 artifact")
+        raise ValueError("report is not the complete eight-loss n=150 artifact")
     expected_csv_hash = summary.get("artifacts", {}).get("per_phrase_csv_sha256")
     if sha256(per_phrase) != expected_csv_hash:
         raise ValueError("per_phrase.csv does not match the signed report")
@@ -190,20 +193,10 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
         for key, values in grouped.items()
     }
 
-    lines = [
-        r"\begingroup",
-        r"\scriptsize",
-        r"\setlength{\tabcolsep}{2.1pt}",
-        r"\renewcommand{\arraystretch}{1.00}",
-        r"\begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}",
-        r"\toprule",
-        r"Loss & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\",
-        r"\midrule",
-    ]
     ranking: dict[str, dict[str, dict[str, str]]] = {}
     serializable_medians: dict[str, dict[str, dict[str, float]]] = {}
-    for metric_index, (metric, symbol, unit) in enumerate(METRICS):
-        lines.append(rf"& \multicolumn{{5}}{{c}}{{${symbol}$ ({unit})}} \\")
+    ranks_by_metric: dict[str, dict[int, dict[int, str]]] = {}
+    for metric, _, _ in METRICS:
         rank_by_cardinality: dict[int, dict[int, str]] = {}
         for cardinality in CARDINALITIES:
             values = np.asarray(
@@ -216,6 +209,7 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
                 int(order[1]): "second",
                 int(order[2]): "third",
             }
+        ranks_by_metric[metric] = rank_by_cardinality
         ranking[metric] = {
             str(cardinality): {
                 LOSS_NAMES[index]: rank
@@ -230,13 +224,30 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
             }
             for loss in LOSS_NAMES
         }
-        for loss_index, (loss, label) in enumerate(
-            zip(LOSS_NAMES, TEX_LOSS_LABELS, strict=True)
-        ):
-            cells: list[str] = []
+
+    lines = [
+        r"\begingroup",
+        r"\tiny",
+        r"\setlength{\tabcolsep}{0.55pt}",
+        r"\renewcommand{\arraystretch}{1.08}",
+        (r"\begin{tabularx}{\columnwidth}"
+         r"{@{}l*{5}{>{\centering\arraybackslash}X}|"
+         r"*{5}{>{\centering\arraybackslash}X}@{}}"),
+        r"\toprule",
+        (r"Loss & \multicolumn{5}{c|}{$\Delta f_0$ (cents)} & "
+         r"\multicolumn{5}{c}{$\Delta t$ (ms)} \\"),
+        (r"& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events "
+         r"& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\"),
+        r"\midrule",
+    ]
+    for loss_index, (loss, label) in enumerate(
+        zip(LOSS_NAMES, TEX_LOSS_LABELS, strict=True)
+    ):
+        cells: list[str] = []
+        for metric, _, _ in METRICS:
             for cardinality in CARDINALITIES:
                 value = format_table_value(medians[(loss, cardinality, metric)])
-                rank = rank_by_cardinality[cardinality].get(loss_index)
+                rank = ranks_by_metric[metric][cardinality].get(loss_index)
                 if rank == "best":
                     value = r"{\bfseries\boldmath $" + value + "$}"
                 elif rank == "second":
@@ -244,9 +255,9 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
                 elif rank == "third":
                     value = r"\textit{" + value + "}"
                 cells.append(value)
-            lines.append(label + " & " + " & ".join(cells) + r" \\")
-        if metric_index == 0:
-            lines.extend((r"\addlinespace[2pt]", r"\midrule", r"\addlinespace[1pt]"))
+        lines.append(label + " & " + " & ".join(cells) + r" \\")
+        if loss == "log_jtfot":
+            lines.append(r"\addlinespace[1pt]")
     lines.extend((r"\bottomrule", r"\end{tabularx}", r"\endgroup"))
     atomic_text(output, "\n".join(lines) + "\n")
     return {
@@ -351,7 +362,7 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     if args.milestone != 150:
-        raise ValueError("the combined seven-loss report is fixed at n=150")
+        raise ValueError("the combined eight-loss report is fixed at n=150")
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     summary = read_signed_json(args.summary, status="complete")
@@ -360,11 +371,11 @@ def main() -> None:
     table = render_table(rows, table_path)
     figure = render_lsd(rows, args.output_dir / "lsd_violin")
     provenance = {
-        "schema": "paper-seven-loss-n150-v1",
+        "schema": "paper-eight-loss-n150-v1",
         "created_utc": datetime.now(UTC).isoformat(),
         "milestone_n": args.milestone,
-        "condition_count": 35,
-        "loss_count": 7,
+        "condition_count": 40,
+        "loss_count": 8,
         "fit_count": len(rows),
         "selection": "target_index < milestone_n within every cardinality",
         "sources": {

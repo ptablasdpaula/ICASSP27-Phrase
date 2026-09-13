@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import pytest
 import torch
-from icassp27_phrase.losses import LOSS_LABELS, build_loss, canonical_loss_name
+from icassp27_phrase.losses import (
+    FABIANI_TIME_SCALE_HZ_PER_SECOND,
+    LOSS_LABELS,
+    build_loss,
+    canonical_loss_name,
+)
 
 
-def test_paper_loss_labels_resolve_to_seven_distinct_losses() -> None:
+def test_paper_loss_labels_resolve_to_eight_distinct_losses() -> None:
     assert LOSS_LABELS == (
-        "L_1", "L_2", "MSS", "SOT", "TFW_2", "BiCuL", "LogQ_BiCuL",
+        "L_1", "L_2", "MSS", "SOT", "TFW_2", "TFW_2 (1s=1oct)",
+        "BiCuL", "LogQ_BiCuL",
     )
-    assert len({canonical_loss_name(name) for name in LOSS_LABELS}) == 7
+    assert len({canonical_loss_name(name) for name in LOSS_LABELS}) == 8
+    assert FABIANI_TIME_SCALE_HZ_PER_SECOND == 1_000.0
 
 
 @pytest.mark.parametrize("name", LOSS_LABELS)

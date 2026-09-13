@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "icassp27-phrase"
-version = "0.1.2"
+version = "0.1.3"
 description = "Differentiable plucked-string phrase recovery for ICASSP 2027"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"

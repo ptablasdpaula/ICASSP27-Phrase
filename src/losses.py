@@ -1,4 +1,4 @@
-"""The seven paper 4-kHz objectives and their versioned registry."""
+"""The eight paper 4-kHz objectives and their versioned registry."""
 from __future__ import annotations
 
 import math
@@ -15,18 +15,21 @@ LOSS_NAMES: Final = (
     "waveform_mse",
     "smooth_mss",
     "sot_published_composite",
+    "linear_jtfot",
     "log_jtfot",
     "bidirectional_cumulative_energy",
     "log_quadrature_bicul",
 )
 LOSS_LABELS: Final = (
-    "L_1", "L_2", "MSS", "SOT", "TFW_2", "BiCuL", "LogQ_BiCuL",
+    "L_1", "L_2", "MSS", "SOT", "TFW_2", "TFW_2 (1s=1oct)",
+    "BiCuL", "LogQ_BiCuL",
 )
 PAPER_LOSSES: Final = dict(zip(LOSS_LABELS, LOSS_NAMES, strict=True))
 SMOOTH_WINDOWS: Final = (17, 31, 67, 127, 257, 509)
 SMOOTH_HOPS: Final = (8, 15, 33, 63, 128, 254)
 SOT_MSS_WINDOWS: Final = (512, 256, 128, 64, 32, 16)
 SOT_MSS_HOPS: Final = tuple(value // 4 for value in SOT_MSS_WINDOWS)
+FABIANI_TIME_SCALE_HZ_PER_SECOND: Final = 1_000.0
 
 
 def _batch(audio: Tensor) -> tuple[Tensor, bool]:
@@ -206,6 +209,36 @@ def _projection_geometry(frequency_bins: int, time_bins: int,
     return torch.stack(orders), torch.stack(positions)
 
 
+@lru_cache(maxsize=32)
+def _linear_projection_geometry(
+        frequency_bins: int, time_bins: int, sample_rate: int, n_fft: int,
+        hop: int, device: str, dtype_name: str) -> tuple[Tensor, Tensor]:
+    """Fabiani et al.'s linear-Hz geometry with sqrt(k)=1000 Hz/s."""
+    if (frequency_bins < 2 or time_bins < 2 or sample_rate != 4_000
+            or n_fft != 256 or hop != 128):
+        raise ValueError("linear JTFOT received an unregistered STFT geometry")
+    dtype = getattr(torch, dtype_name)
+    frequency = torch.arange(
+        frequency_bins, dtype=dtype, device=device
+    ) * (float(sample_rate) / float(n_fft))
+    time = torch.arange(
+        time_bins, dtype=dtype, device=device
+    ) * (float(hop) / float(sample_rate)) * FABIANI_TIME_SCALE_HZ_PER_SECOND
+    fcoord = frequency[:, None].expand(-1, time_bins).reshape(-1)
+    tcoord = time[None, :].expand(frequency_bins, -1).reshape(-1)
+    orders, positions = [], []
+    for index in range(10):
+        angle = 2.0 * math.pi * index / 10.0
+        coordinate = tcoord * math.cos(angle) + fcoord * math.sin(angle)
+        order = torch.argsort(coordinate, stable=True)
+        orders.append(order)
+        positions.append(coordinate[order])
+    result = torch.stack(orders), torch.stack(positions)
+    if not all(bool(torch.isfinite(value).all()) for value in result):
+        raise FloatingPointError("linear JTFOT geometry is non-finite")
+    return result
+
+
 def _wasserstein_projected(x: Tensor, y: Tensor, positions: Tensor) -> Tensor:
     cumulative_x = torch.cumsum(x, dim=-1)
     cumulative_y = torch.cumsum(y, dim=-1)
@@ -263,6 +296,46 @@ class LogJTFOTDistance(BoundLoss):
         x = magnitude.reshape(rows.shape[0], -1) / mass_x[:, None]
         y = target.reshape(rows.shape[0], -1) / mass_y[:, None]
         value = _wasserstein_projected(x[:, order], y[:, order], positions).mean(dim=-1)
+        return _restore(value, squeezed)
+
+
+class LinearJTFOTDistance(BoundLoss):
+    """Published JTFOT: physical hertz with one second equal to 1000 Hz."""
+
+    def __init__(self, target: Tensor, *, sample_rate: int = 4_000):
+        self.target = target.detach()
+        self.sample_rate = sample_rate
+        self.n_fft = 256
+        self.hop = 128
+        self.window = torch.hann_window(
+            self.n_fft, periodic=True, dtype=target.dtype,
+            device=target.device)
+        magnitude = _stft(
+            target[None], n_fft=self.n_fft, hop=self.hop,
+            window=self.window, center=True, pad_mode="constant").abs()
+        self.target_magnitude = magnitude.detach()
+
+    def distances(self, candidate: Tensor) -> Tensor:
+        rows, squeezed = _batch(candidate)
+        magnitude = _stft(
+            rows, n_fft=self.n_fft, hop=self.hop, window=self.window,
+            center=True, pad_mode="constant").abs()
+        target = self.target_magnitude.expand(rows.shape[0], -1, -1)
+        mass_x = magnitude.sum(dim=(-2, -1))
+        mass_y = target.sum(dim=(-2, -1))
+        if bool((mass_x.detach() <= 1e-12).any()) or bool(
+                (mass_y.detach() <= 1e-12).any()):
+            raise ValueError("linear JTFOT is undefined on silence")
+        order, positions = _linear_projection_geometry(
+            magnitude.shape[-2], magnitude.shape[-1], self.sample_rate,
+            self.n_fft, self.hop, str(rows.device),
+            str(rows.dtype).removeprefix("torch."))
+        x = magnitude.reshape(rows.shape[0], -1) / mass_x[:, None]
+        y = target.reshape(rows.shape[0], -1) / mass_y[:, None]
+        value = _wasserstein_projected(
+            x[:, order], y[:, order], positions).mean(dim=-1)
+        if not bool(torch.isfinite(value.detach()).all()):
+            raise FloatingPointError("linear JTFOT produced a non-finite loss")
         return _restore(value, squeezed)
 
 
@@ -452,6 +525,8 @@ class LossRegistry:
             return SmoothMSSDistance(target)
         if name == "sot_published_composite":
             return PublishedSOTCompositeDistance(target)
+        if name == "linear_jtfot":
+            return LinearJTFOTDistance(target)
         if name == "log_jtfot":
             return LogJTFOTDistance(target)
         if name == "bidirectional_cumulative_energy":
@@ -464,6 +539,8 @@ REGISTRY = LossRegistry()
 
 def canonical_loss_name(name: str) -> str:
     """Map paper labels and friendly spellings to the frozen implementation."""
+    if name in PAPER_LOSSES:
+        return PAPER_LOSSES[name]
     normalized = name.strip().lower().replace("mathcal", "").replace("_", "")
     aliases = {
         "l1": "waveform_l1",
@@ -475,7 +552,10 @@ def canonical_loss_name(name: str) -> str:
         "smoothmss": "smooth_mss",
         "sot": "sot_published_composite",
         "sotpublishedcomposite": "sot_published_composite",
-        "tfw2": "log_jtfot",
+        "tfw2": "linear_jtfot",
+        "linearjtfot": "linear_jtfot",
+        "tfw2 (1s=1oct)": "log_jtfot",
+        "tfw21s1oct": "log_jtfot",
         "logjtfot": "log_jtfot",
         "bicul": "bidirectional_cumulative_energy",
         "bidirectionalcumulativeenergy": "bidirectional_cumulative_energy",
@@ -497,10 +577,12 @@ def build_loss(name: str, target: Tensor) -> BoundLoss:
 
 __all__ = [
     "BidirectionalCumulativeEnergyDistance",
+    "FABIANI_TIME_SCALE_HZ_PER_SECOND",
     "LOSS_LABELS",
     "LOSS_NAMES",
     "PAPER_LOSSES",
     "LogJTFOTDistance",
+    "LinearJTFOTDistance",
     "LogQuadratureBiCumulativeEnergyDistance",
     "LossRegistry",
     "PublishedSOTCompositeDistance",
