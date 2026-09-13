@@ -304,7 +304,7 @@ def render_lsd(rows: list[dict[str, str]], output_stem: Path) -> dict[str, str]:
             violin = axis.violinplot(
                 values,
                 positions=[position],
-                widths=0.105,
+                widths=0.090,
                 showmeans=False,
                 showmedians=False,
                 showextrema=False,
