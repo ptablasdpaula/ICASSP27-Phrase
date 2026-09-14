@@ -231,7 +231,10 @@ a $\pm0.8$-s shift and pitch logarithmic over a $\pm1$-octave shift, with the
 exact target inserted at the centre. Each surface is independently min--max
 normalised. White arrows show the autograd unit-descent direction
 $-\nabla\mathcal L$ on the registered 11-by-11 sublattice; the target gradient
-is omitted.
+is omitted. A direction is target-directed when its angle to the target
+displacement is below $90^\circ$. For \lone{}, \ltwo{}, \mss{}, \sot{},
+\tfw{}, and \bicul{}, respectively, 60.0\%, 49.2\%, 42.5\%, 51.7\%, 75.8\%,
+and 100.0\% of the 120 non-target directions satisfy this criterion.
 
 \begin{figure}[t]
 \centering
@@ -241,12 +244,8 @@ is omitted.
 }{\fbox{\parbox[c][58mm][c]{0.94\columnwidth}{\centering
   Loss-direction figure pending checksum-complete generation.}}}
 \vspace{-5.8mm}
-\caption{End-to-end parameter-space loss landscapes under the fixed reference
-renderer of Sec.~\ref{sec:renderer}. The cross marks the target; a descent
-direction is target-directed when its angle to the target displacement is
-$<90^\circ$ in normalised coordinates. Of 120 displayed non-target gradients,
-the target-directed percentages are \lone{}: 60.0\%, \ltwo{}: 49.2\%,
-\mss{}: 42.5\%, \sot{}: 51.7\%, \tfw{}: 75.8\%, and \bicul{}: 100.0\%.}
+\caption{Normalised single-pluck loss landscapes; the cross marks the target
+and arrows show unit descent.}
 \label{fig:landscapes}
 \end{figure}
 
@@ -275,9 +274,7 @@ velocity.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
-\caption{Two-rail digital waveguide. The excitation point partitions each
-travelling direction into pluck--nut and pluck--bridge delays; their total
-length controls $f_0$ and their ratio controls pluck position.}
+\caption{Two-rail digital waveguide renderer.}
 \label{fig:waveguide}
 \end{figure}
 
@@ -323,11 +320,8 @@ Hermitian symmetry.
 
 \begin{table}[t]
 \centering
-\caption{\normalfont Target-directed \bicul{} descent directions (\%) when target and
-candidate share the indicated $t$-shift and waveguide-$f_0$-interpolation
-realisations. Each entry is the percentage of the 120 displayed non-target
-gradients that point towards the target. Every cell rerenders the same
-25-by-25 lattice as Fig.~\ref{fig:landscapes}; higher is better.}
+\caption{\normalfont Target-directed \bicul{} descent directions (\%) by onset
+placement (rows) and propagation interpolation (columns); higher is better.}
 \label{tab:interpolation-onset}
 \resizebox{\columnwidth}{!}{%
 \input{\PaperRoot/figures/interpolation_gradient_table.tex}}
@@ -374,14 +368,8 @@ changes, corrugating the loss; future work should isolate this mechanism.
 }{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
   State-realisation comparison pending checksum-complete generation.}}}
 \vspace{-7.0mm}
-\caption{Phase interference and string reset for the target phrase
-$(110\,\mathrm{Hz},0.5\,\mathrm{s})$,
-$(160\,\mathrm{Hz},1.0\,\mathrm{s})$, and
-$(280\,\mathrm{Hz},1.5\,\mathrm{s})$. Red marks the swept middle event and
-cyan the fixed events. Purple solid curves retain state; yellow dashed curves
-reset it, with each curve normalised independently. Persistent DF2 and Literal
-have different but rugged landscapes; reset makes them agree and restores
-smooth, target-directed slopes.}
+\caption{Reset-DF2 target spectrogram and middle-event \bicul{} sweeps for
+collapsed DF2 and Literal waveguides.}
 \label{fig:state-realization}
 \end{figure*}
 
@@ -406,6 +394,7 @@ is cleared. Optimisation stops after 250 further evaluations or 3000 updates
 and retains the lowest raw-loss iterate.
 
 \subsection{Loss variants}
+\label{sec:loss-variants}
 The time--frequency transport row labelled $1\,\mathrm{s}=1\,\mathrm{oct}$
 changes only the coordinates of Fabiani et al.'s \tfw{}: frequency becomes
 $\log_2[\max(f,20)/20]$ octaves and time is measured in seconds, giving equal
@@ -436,6 +425,15 @@ with target events by minimising
 d_{ij}=\left[\frac{\log_2(\hat f_i/f_j)}{2}\right]^2+
 \left[\frac{\hat t_i-t_j}{1.6}\right]^2.
 \end{equation}
+
+\begin{table*}[!t]
+\centering
+\caption{\normalfont Median Hungarian-matched pitch and onset errors over 150
+phrases per event count; lower is better.}
+\label{tab:pilot-compact}
+\input{\PaperRoot/figures/median_recovery_table.tex}
+\end{table*}
+
 We compute within-phrase mean absolute cents and onset milliseconds after
 assignment, then report their median across phrases. Periodic-Hann
 FFT-256/hop-64 log-spectral distance (LSD) supplies an objective-independent
@@ -443,24 +441,12 @@ audio summary, shown as its complete per-phrase distribution.
 
 \section{Results}
 Table~\ref{tab:pilot-compact} reports all 40 loss/event-count conditions over
-$n=150$ targets per event count.
-
-\begin{table*}[!t]
-\centering
-\caption{\normalfont Event recovery over $n=150$ phrases per event count. Each entry is the
-median across phrases of the within-phrase mean absolute $\Delta f_0$ (cents)
-or $\Delta t$ (ms) to the Hungarian-matched target events. The Hungarian
-algorithm pairs predicted and target events one-to-one to minimise the summed
-joint pitch--time cost in the equation above. The vertical rule separates the
-frequency and time metric blocks. Within each event count and
-metric, the lowest median is bold, the second-lowest is underlined, and the
-third-lowest is italicised. Lower is better. A hooked row is a variant of the
-loss immediately above: $1\,\mathrm{s}=1\,\mathrm{oct}$ replaces the linear
-frequency coordinate of \tfw{} with log-frequency octaves, while Log-Q uses
-log-frequency quadrature for \bicul.}
-\label{tab:pilot-compact}
-\input{\PaperRoot/figures/median_recovery_table.tex}
-\end{table*}
+$n=150$ targets per event count. Within each metric and event count, bold,
+underlined, and italic entries are respectively the three lowest medians;
+lower is better. Hooked rows denote the loss variants defined in
+Sec.~\ref{sec:loss-variants}. Figure~\ref{fig:lsd} shows the corresponding
+complete LSD distributions; white bars span the interquartile range and
+outlined white points mark medians.
 
 \begin{figure}[!t]
 \centering
@@ -470,10 +456,7 @@ log-frequency quadrature for \bicul.}
 }{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
   Figure 4 LSD distributions pending checksum-complete regeneration.}}}
 \vspace{-8.0mm}
-\caption{Per-phrase LSD distributions over the same $n=150$ phrases. White
-bars span the interquartile range and outlined white points mark medians;
-lower is better. Hooked legend entries denote the two variants defined in
-Table~\ref{tab:pilot-compact}.}
+\caption{Per-phrase LSD distributions over the same targets; lower is better.}
 \label{fig:lsd}
 \end{figure}
 
