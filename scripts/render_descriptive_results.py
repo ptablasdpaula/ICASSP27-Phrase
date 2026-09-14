@@ -227,10 +227,10 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
 
     lines = [
         r"\begingroup",
-        r"\tiny",
-        r"\setlength{\tabcolsep}{0.55pt}",
-        r"\renewcommand{\arraystretch}{1.08}",
-        (r"\begin{tabularx}{\columnwidth}"
+        r"\scriptsize",
+        r"\setlength{\tabcolsep}{2.0pt}",
+        r"\renewcommand{\arraystretch}{1.05}",
+        (r"\begin{tabularx}{\linewidth}"
          r"{@{}l*{5}{>{\centering\arraybackslash}X}|"
          r"*{5}{>{\centering\arraybackslash}X}@{}}"),
         r"\toprule",
@@ -249,11 +249,13 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
                 value = format_table_value(medians[(loss, cardinality, metric)])
                 rank = ranks_by_metric[metric][cardinality].get(loss_index)
                 if rank == "best":
-                    value = r"{\bfseries\boldmath $" + value + "$}"
+                    value = r"\ensuremath{\mathbf{" + value + "}}"
                 elif rank == "second":
-                    value = r"\underline{" + value + "}"
+                    value = r"\mbox{\underline{" + value + "}}"
                 elif rank == "third":
-                    value = r"\textit{" + value + "}"
+                    value = r"\ensuremath{\mathit{" + value + "}}"
+                else:
+                    value = r"\mbox{" + value + "}"
                 cells.append(value)
         lines.append(label + " & " + " & ".join(cells) + r" \\")
         if loss == "log_jtfot":

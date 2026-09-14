@@ -1,30 +1,21 @@
 \begingroup
 \scriptsize
-\setlength{\tabcolsep}{2.1pt}
-\renewcommand{\arraystretch}{1.00}
-\begin{tabularx}{\columnwidth}{@{}l*{5}{>{\centering\arraybackslash}X}@{}}
+\setlength{\tabcolsep}{2.0pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}l*{5}{>{\centering\arraybackslash}X}|*{5}{>{\centering\arraybackslash}X}@{}}
 \toprule
-Loss & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\
+Loss & \multicolumn{5}{c|}{$\Delta f_0$ (Cents)} & \multicolumn{5}{c}{$\Delta t$ (ms)} \\
+& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\
 \midrule
-& \multicolumn{5}{c}{$\Delta f_0$ (Cents)} \\
-$\mathcal{L}_1$ & 1.03e3 & 863 & 732 & 642 & 564 \\
-$\mathcal{L}_2$ & 1.1e3 & 902 & 816 & 711 & 616 \\
-MSS & 58.6 & 244 & 329 & 277 & 302 \\
-SOT & 871 & 878 & 874 & 826 & 767 \\
-$\mathrm{TF}\mathcal{W}_2$ & \textit{0.156} & \textit{4.48} & \textit{101} & \textit{186} & \textit{197} \\
-$\mathrm{BiCu}\mathcal{L}$ & {\bfseries\boldmath $0.0008$} & {\bfseries\boldmath $0.00102$} & \underline{34.2} & \underline{142} & \underline{158} \\
-Log-q. $\mathrm{BiCu}\mathcal{L}$ & \underline{0.00148} & \underline{0.0022} & {\bfseries\boldmath $19.1$} & {\bfseries\boldmath $124$} & {\bfseries\boldmath $153$} \\
-\addlinespace[2pt]
-\midrule
+$\mathcal{L}_1$ & \mbox{1.03e3} & \mbox{863} & \mbox{732} & \mbox{642} & \mbox{564} & \mbox{71.6} & \mbox{220} & \mbox{235} & \mbox{188} & \mbox{186} \\
+$\mathcal{L}_2$ & \mbox{1.1e3} & \mbox{902} & \mbox{816} & \mbox{711} & \mbox{616} & \mbox{443} & \mbox{360} & \mbox{242} & \mbox{215} & \mbox{198} \\
+MSS & \mbox{58.6} & \mbox{244} & \mbox{329} & \mbox{277} & \mbox{302} & \mbox{186} & \mbox{220} & \mbox{203} & \mbox{155} & \mbox{158} \\
+SOT & \mbox{871} & \mbox{878} & \mbox{874} & \mbox{826} & \mbox{767} & \mbox{104} & \mbox{241} & \mbox{216} & \mbox{194} & \mbox{173} \\
+$\mathrm{TF}\mathcal{W}_2$ & \mbox{1.58} & \mbox{11.1} & \mbox{121} & \mbox{234} & \mbox{253} & \mbox{0.346} & \ensuremath{\mathit{2.23}} & \mbox{\underline{16}} & \ensuremath{\mathbf{60.9}} & \ensuremath{\mathbf{81.7}} \\
+$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$ & \ensuremath{\mathit{0.156}} & \ensuremath{\mathit{4.48}} & \ensuremath{\mathit{101}} & \ensuremath{\mathit{186}} & \ensuremath{\mathit{197}} & \ensuremath{\mathit{0.251}} & \mbox{6.59} & \mbox{93.2} & \mbox{110} & \mbox{137} \\
 \addlinespace[1pt]
-& \multicolumn{5}{c}{$\Delta t$ (ms)} \\
-$\mathcal{L}_1$ & 71.6 & 220 & 235 & 188 & 186 \\
-$\mathcal{L}_2$ & 443 & 360 & 242 & 215 & 198 \\
-MSS & 186 & 220 & 203 & 155 & 158 \\
-SOT & 104 & 241 & 216 & 194 & 173 \\
-$\mathrm{TF}\mathcal{W}_2$ & \textit{0.251} & \textit{6.59} & \textit{93.2} & \textit{110} & \textit{137} \\
-$\mathrm{BiCu}\mathcal{L}$ & {\bfseries\boldmath $0.000336$} & {\bfseries\boldmath $0.000296$} & \underline{26.6} & \underline{90.3} & \underline{104} \\
-Log-q. $\mathrm{BiCu}\mathcal{L}$ & \underline{0.00056} & \underline{0.000988} & {\bfseries\boldmath $6.75$} & {\bfseries\boldmath $83.7$} & {\bfseries\boldmath $92.8$} \\
+$\mathrm{BiCu}\mathcal{L}$ & \ensuremath{\mathbf{0.0008}} & \ensuremath{\mathbf{0.00102}} & \mbox{\underline{34.2}} & \mbox{\underline{142}} & \mbox{\underline{158}} & \ensuremath{\mathbf{0.000336}} & \ensuremath{\mathbf{0.000296}} & \ensuremath{\mathit{26.6}} & \ensuremath{\mathit{90.3}} & \ensuremath{\mathit{104}} \\
+$\hookrightarrow$ Log-Q & \mbox{\underline{0.00148}} & \mbox{\underline{0.0022}} & \ensuremath{\mathbf{19.1}} & \ensuremath{\mathbf{124}} & \ensuremath{\mathbf{153}} & \mbox{\underline{0.00056}} & \mbox{\underline{0.000988}} & \ensuremath{\mathbf{6.75}} & \mbox{\underline{83.7}} & \mbox{\underline{92.8}} \\
 \bottomrule
 \end{tabularx}
 \endgroup
