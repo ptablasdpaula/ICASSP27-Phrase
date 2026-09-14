@@ -228,85 +228,40 @@ Accordingly, this work makes three contributions:
     frequency.
 \end{itemize}
 
-\section{Differentiable phrase renderer}
-Figure~\ref{fig:waveguide} shows the Waveguide renderer. It is a reciprocal
-two-rail waveguide split at the excitation point, following established
-plucked-string and digital-waveguide practice
-\cite{valimaki1996plucked,depaula2026waveguides}. A rigid nut reflects with
-gain $-1$, and the bridge reflection is $-H_L(z)$ with
+\section{Cumulative energy losses}
+\label{sec:losses}
+Let $x$ be a target, let $\theta$ collect the candidate event coordinates, and
+let $\hat x=R_\rho(\theta)$ be the audio produced by renderer realisation
+$\rho$. A loss can be defined on $(x,\hat x)$ without reference to the
+synthesizer, but its event-parameter gradient also contains the renderer
+Jacobian:
 \begin{equation}
-H_L(z)=g\frac{1-a_1}{1-a_1z^{-1}},\qquad g=0.99,\quad a_1=0.2.
+\nabla_\theta\mathcal L(x,R_\rho(\theta))=
+J_{R_\rho}(\theta)^\mathsf{T}\nabla_{\hat x}\mathcal L(x,\hat x).
+\label{eq:pullback}
 \end{equation}
-The pluck position is 0.23 measured from the bridge. The output is the
-bridge-incident travelling velocity; no pickup model is used.
+We therefore study two controlled slices: Fig.~\ref{fig:landscapes} fixes
+$\rho$ and varies the loss, whereas Table~\ref{tab:interpolation-onset} fixes
+\bicul{} and varies $\rho$.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
-\caption{Waveguide target and candidate renderer. FLAMO frequency sampling
-places each excitation at its continuous onset; fixed-order causal Thiran
-sections implement the waveguide segment delays, and the exact rational
-realisation is evaluated on CUDA.}
-\label{fig:waveguide}
-\end{figure}
-
-We write a fractional delay as $\mathcal D_p(D;z)\approx z^{-D}$. A Thiran
-all-pass preserves magnitude while approximating the requested group delay
-\cite{laakso1996splitting}. The long pluck--nut segment uses order 3 and the
-short pluck--bridge segment order 1 in both directions; the order is fixed at
-construction and never selected from an event parameter. Rail tuning includes
-the actual fractional-delay phase and one-pole loop-filter phase.
-
-Each constant event regime is reduced algebraically to its exact rational
-transfer. PhilTorch calls the native TorchLPC CUDA recurrence; a direct rail
-recursion is retained only as a numerical oracle. A hard-reset phrase clears
-all histories at each event boundary. The persistent diagnostic instead
-carries the parameter-varying direct-form history. State policy is the only
-difference between those two renderings.
-
-Audio is float64, two seconds long, and sampled at 4 kHz. We first sample one
-zero-onset half-raised-cosine (HRC) prototype
-\begin{equation}
-e_0(t)=\begin{cases}
-0.4[1-\cos(\pi t/0.01)],&0\leq t<0.01,\\
-0,&\text{otherwise,}
-\end{cases}
-\end{equation}
-with amplitude 0.8 and duration 10 ms. For every event, the official FLAMO
-v0.2.18 \texttt{parallelDelay} frequency response $e^{-j\omega D}$ places a
-copy at the real-valued delay $D=t_if_s$. We use a 262,144-point transform,
-disable FLAMO's alias-decay envelope, sum the independently delayed event
-spectra, invert once, and retain the first 8000 samples. We do not mask the
-small periodic sinc pre-ringing: such masking would add a second,
-onset-dependent operation. The state-switch boundary remains the detached
-$\lfloor t_i f_s\rfloor$ sample. Thus ``Fourier+Thiran'' below means Fourier
-placement of the HRC only and the registered order-3/order-1 causal Thiran
-sections for waveguide propagation. We adopt this pairing because it gives the
-most consistently target-directed \bicul{} geometry in
-Table~\ref{tab:interpolation-onset}, while Fig.~\ref{fig:landscapes} verifies
-the resulting gradients for all six displayed losses on the full registered lattice.
-There is no dynamics parameter, source filter, output normalisation, or
-in-loop DC blocker.
-
-\section{Audio losses}
-Let $x$ and $\hat x$ be target and candidate. \lone{} is mean absolute
-sample error and \ltwo{} is mean squared sample error. \mss{} is the
-smooth multi-scale spectral loss \cite{schwar2023mss}, using periodic flat-top
-windows $\{17,31,67,127,257,509\}$, hops $\{8,15,33,63,128,254\}$,
+\subsection{Reference objectives}
+\lone{} is mean absolute sample error and \ltwo{} is mean squared sample
+error. \mss{} is the smooth multi-scale spectral loss
+\cite{schwar2023mss}, using periodic flat-top windows
+$\{17,31,67,127,257,509\}$, hops $\{8,15,33,63,128,254\}$,
 $\log(1+|\operatorname{STFT}|)$ features, and summed squared
 $\mathcal{L}_2$ distance.
 
 \sot{} is the full published composite \cite{torres2024sot}: a flat-top
 FFT-512/hop-64 transport term on squared magnitudes with its published
 normalisation and quantile cutoff, plus 0.05 times its Hann-windowed
-linear-magnitude MSS term. Published \tfw{} uses joint time--frequency
-sliced $W_2$ \cite{fabiani2024jtfot}: a periodic-Hann FFT-256/hop-128
-magnitude STFT is globally unit-normalised and projected along ten fixed
-angles. Its coordinates are physical frequency in Hz and
-$\widetilde t=1000t$ in Hz, so 1~s equals 1000~Hz. The registered
-variant changes only this geometry: frequency becomes
-$\log_2(\max(f,20)/20)$ and time is measured in seconds, so its two axes
-equate 1~s with 1~octave.
+linear-magnitude MSS term. Published \tfw{} uses joint time--frequency sliced
+$W_2$ \cite{fabiani2024jtfot}: a periodic-Hann FFT-256/hop-128 magnitude STFT
+is globally unit-normalised and projected along ten fixed angles. Its
+coordinates are physical frequency in Hz and $\widetilde t=1000t$ in Hz, so
+1~s equals 1000~Hz. The registered variant changes only this geometry:
+frequency becomes $\log_2(\max(f,20)/20)$ and time is measured in seconds, so
+its axes equate 1~s with 1~octave.
 
 \subsection{Bidirectional cumulative energy}
 Let $P$ and $\hat P$ be periodic-Hann FFT-256/hop-64 STFT power. For time
@@ -342,6 +297,172 @@ where each $w$ is the exact adjacent-coordinate interval, aligned with the
 chosen cumulative direction. The four surfaces, target-maximum scaling, and
 square-root transform are unchanged. No event coordinates, detectors, or
 salience weights enter this construction.
+
+\subsection{Conditional loss geometry}
+Although these objectives are renderer-independent, their geometry with
+respect to $t$ and $f_0$ is not. To compare them under controlled conditions,
+Fig.~\ref{fig:landscapes} holds the renderer fixed to the Fourier-onset/Thiran-
+propagation realisation defined and qualified in Sec.~\ref{sec:renderer}. It
+uses a 160-Hz event at 1.0 s on an exact 25-by-25 lattice: time is linear over
+a $\pm0.8$-s shift and pitch logarithmic over a $\pm1$-octave shift, with the
+exact target inserted at the centre. Each surface is independently min--max
+normalised. White arrows show the autograd unit-descent direction
+$-\nabla\mathcal L$ on the registered 11-by-11 sublattice; the target gradient
+is omitted.
+
+\begin{figure}[t]
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\IfFileExists{\PaperRoot/figures/loss_landscapes.pdf}{
+  \includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_landscapes.pdf}
+}{\fbox{\parbox[c][58mm][c]{0.94\columnwidth}{\centering
+  Loss-direction figure pending checksum-complete generation.}}}
+\vspace{-5.8mm}
+\caption{End-to-end parameter-space loss landscapes under the fixed reference
+renderer of Sec.~\ref{sec:renderer}. The cross marks the target; a descent
+direction is target-directed when its angle to the target displacement is
+$<90^\circ$ in normalised coordinates. Of 120 displayed non-target gradients,
+the target-directed percentages are \lone{}: 60.0\%, \ltwo{}: 49.2\%,
+\mss{}: 42.5\%, \sot{}: 51.7\%, \tfw{}: 75.8\%, and \bicul{}: 100.0\%.}
+\label{fig:landscapes}
+\end{figure}
+
+\section{Differentiable phrase renderer}
+\label{sec:renderer}
+We now instantiate $R_\rho$. The physical topology is fixed independently of
+the numerical realisation studied below. Figure~\ref{fig:waveguide} shows a
+reciprocal two-rail waveguide split at the excitation point, following
+established plucked-string practice
+\cite{valimaki1996plucked,depaula2026waveguides}. A rigid nut reflects with
+gain $-1$, and the bridge reflection is $-H_L(z)$ with
+\begin{equation}
+H_L(z)=g\frac{1-a_1}{1-a_1z^{-1}},\qquad g=0.99,\quad a_1=0.2.
+\end{equation}
+The pluck position is 0.23 measured from the bridge. The output is the
+bridge-incident travelling velocity; no pickup model is used.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
+\caption{Waveguide target and candidate renderer. FLAMO frequency sampling
+places each excitation at its continuous onset; fixed-order causal Thiran
+sections implement waveguide propagation, and the exact rational realisation
+is evaluated on CUDA.}
+\label{fig:waveguide}
+\end{figure}
+
+\subsection{Continuous event rendering}
+Audio is float64, two seconds long, and sampled at 4 kHz. A zero-onset
+half-raised-cosine (HRC) prototype is
+\begin{equation}
+e_0(t)=\begin{cases}
+0.4[1-\cos(\pi t/0.01)],&0\leq t<0.01,\\
+0,&\text{otherwise,}
+\end{cases}
+\end{equation}
+with amplitude 0.8 and duration 10 ms. The onset comparison applies four
+continuous shifts to this prototype. Naive placement samples the analytic HRC
+at the requested onset; Lagrange uses a six-tap, fifth-order maximally-flat
+FIR shift; Fourier uses the official FLAMO v0.2.18 delay response
+$e^{-j\omega D}$; and Thiran uses a causal first-order all-pass shift.
+
+We write a propagation delay as $\mathcal D_p(D;z)\approx z^{-D}$. The four
+waveguide realisations are frequency sampling with no polynomial interpolator;
+two-tap, order-1 Lagrange sections on both rails (Linear); order 5 on the long
+pluck--nut rail and order 1 on the short pluck--bridge rail (Lagrange); and the
+registered order-3/order-1 Thiran all-pass split. Thiran preserves magnitude
+while approximating the requested group delay \cite{laakso1996splitting}.
+Every rail is tuned using its realised fractional-delay and one-pole-filter
+phase.
+
+Lagrange is deliberately \emph{not} order 5 everywhere: its maximally-flat
+delay is centred near half the FIR order \cite{laakso1996splitting}. Across
+80--320 Hz, the uncompensated long delay is 4.72--19.15 samples and
+accommodates that centring, whereas the short delay is only 1.41--5.72 samples.
+At its short-delay endpoint, order 5 reached peak gain 2.50 in qualification;
+order 1 remained unity-bounded.
+
+\subsection{Renderer qualification}
+\label{sec:renderer-qualification}
+Table~\ref{tab:interpolation-onset} is the complementary slice to
+Fig.~\ref{fig:landscapes}: it fixes \bicul{} and varies onset placement and
+propagation interpolation. Target and candidate share the named construction
+within each cell, so the result measures its derivative geometry rather than a
+renderer-mismatch penalty. Every cell rerenders the 160-Hz, 1.0-s target and
+the same 25-by-25 lattice, then measures the 120 non-target directions on the
+registered 11-by-11 sublattice.
+
+The matrix sweep uses 65,536-point Fourier transforms. The frequency-sampled
+waveguide was checked against an explicit
+\texttt{Series}/\texttt{Parallel}/nested-\texttt{Recursion} FLAMO graph, with
+real DC and Nyquist bins and conjugate negative-frequency completion. Its
+transform is 8.192 times the retained 8000-sample horizon. Doubling it to
+131,072 points changed the target by only $2.14\times10^{-7}$ relative RMS and
+left all four Fourier-waveguide counts unchanged: 82, 84, 106, and 119 of 120
+for Naive, Lagrange, Fourier, and Thiran onset placement.
+
+\begin{table}[t]
+\centering
+\caption{Target-directed \bicul{} descent directions (\%) when target and
+candidate share the indicated $t$-shift and waveguide-$f_0$-interpolation
+realisations. Every cell uses the registered single-pluck lattice of
+Fig.~\ref{fig:landscapes}; higher is better. Fourier onset placement with
+Thiran propagation is frozen thereafter.}
+\label{tab:interpolation-onset}
+\resizebox{\columnwidth}{!}{%
+\input{\PaperRoot/figures/interpolation_gradient_table.tex}}
+\end{table}
+
+Fourier onset placement with Thiran propagation is the only cell with 120/120
+target-directed gradients. Beyond that diagnostic, Fourier placement shifts a
+fixed excitation without direct resampling, while Thiran supplies causal,
+stateful, all-pass propagation. We therefore freeze this pair for
+Fig.~\ref{fig:landscapes} and the phrase-recovery campaign. In production, the
+official FLAMO \texttt{parallelDelay} places each HRC copy at $D=t_if_s$ using
+a 262,144-point transform; independently delayed spectra are summed, inverted
+once, and truncated to 8000 samples. Requalification at that transform length
+remained 120/120. FLAMO's alias-decay envelope is disabled, and the small
+periodic sinc pre-ringing is not masked because masking would add another
+onset-dependent operation. The state-switch boundary remains the detached
+$\lfloor t_i f_s\rfloor$ sample. There is no dynamics parameter, source
+filter, output normalisation, or in-loop DC blocker.
+
+\subsection{State policy and recursive realisation}
+Each constant event regime is reduced algebraically to an exact rational
+transfer. PhilTorch calls the native TorchLPC CUDA recurrence; a direct rail
+recursion is retained as a numerical oracle. The collapsed direct-form-II
+(DF2) transfer compresses the rail delays, reflections, and bridge termination
+into one history, which is reinterpreted when coefficients change. The Literal
+realisation instead retains separate histories on the physical right- and
+left-going rail sections and bridge filter. They are equivalent for fixed
+coefficients but need not remain so under a parameter switch.
+
+The production hard-reset policy clears every relevant history at an event
+boundary before processing the new excitation. The persistent diagnostic
+instead carries history across the switch. Figure~\ref{fig:state-realization}
+uses the target phrase $(110,0.5),(160,1.0),(280,1.5)$ in Hz and seconds and
+sweeps only the middle event. Reset produces the same smooth \bicul{} sweep in
+both recursive realisations, whereas both persistent sweeps are rugged.
+
+\begin{figure*}[t]
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\IfFileExists{\PaperRoot/figures/state_realization.pdf}{
+  \includegraphics[width=\textwidth]
+  {\PaperRoot/figures/state_realization.pdf}
+}{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
+  State-realisation comparison pending checksum-complete generation.}}}
+\vspace{-7.0mm}
+\caption{State policy and recursive realisation for the target phrase
+$(110\,\mathrm{Hz},0.5\,\mathrm{s})$,
+$(160\,\mathrm{Hz},1.0\,\mathrm{s})$, and
+$(280\,\mathrm{Hz},1.5\,\mathrm{s})$. Red marks the swept middle event and
+cyan the fixed events. Purple solid curves retain state; yellow dashed curves
+reset it, with each curve normalised independently. Reset agrees across DF2
+and Literal realisations, while both persistent sweeps are rugged. All panels
+use Fourier HRC placement and order-3/order-1 Thiran propagation.}
+\label{fig:state-realization}
+\end{figure*}
 
 \section{Experiments}
 Master seed 2027 generates scrambled-Latin-hypercube targets at each
@@ -397,123 +518,7 @@ wrong schemas/cardinalities, mixed source identities, wrong tensor shapes or
 dtypes, invalid target spacing, changed initialization, constrained candidate
 coordinates, and non-finite audio, loss, gradient, coordinate, or metric data.
 
-\section{Loss geometry}
-Figure~\ref{fig:landscapes} evaluates \lone, \ltwo, \mss,
-\sot, the published linear-Hz \tfw, and \bicul{} with the adopted
-Fourier-onset/Thiran renderer for a 160-Hz event at 1.0 s on an exact
-25-by-25 lattice: time is linear over a $\pm0.8$-s shift and pitch is
-logarithmic over a $\pm1$-octave shift, with the exact target inserted at the
-centre. Each surface is independently min--max normalised. White arrows show
-the autograd unit-descent direction $-\nabla\mathcal L$ on the registered
-11-by-11 sublattice; the target gradient itself is omitted.
-
-\begin{figure}[t]
-\centering
-\setlength{\abovecaptionskip}{0pt}
-\IfFileExists{\PaperRoot/figures/loss_landscapes.pdf}{
-  \includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_landscapes.pdf}
-}{\fbox{\parbox[c][58mm][c]{0.94\columnwidth}{\centering
-  Loss-direction figure pending checksum-complete generation.}}}
-\vspace{-5.8mm}
-\caption{Loss landscapes and unit descent directions for the six unweighted
-objectives. The cross marks the target.
-A direction is target-directed when its angle to the target displacement is
-$<90^\circ$ in the normalised coordinates. Among the 120 displayed non-target
-gradients per panel, the target-directed percentages are \lone{}:
-60.0\%, \ltwo{}: 49.2\%, \mss{}: 42.5\%, \sot{}: 51.7\%,
-\tfw{}: 75.8\%, and \bicul{}: 100.0\%.}
-\label{fig:landscapes}
-\end{figure}
-
-Figure~\ref{fig:state-realization} separates the effect of state policy from
-the choice of recursive realisation. It uses the target phrase
-$(110,0.5),(160,1.0),(280,1.5)$ in Hz and seconds and varies only the middle
-event.
-
-\begin{figure*}[t]
-\centering
-\setlength{\abovecaptionskip}{0pt}
-\IfFileExists{\PaperRoot/figures/state_realization.pdf}{
-  \includegraphics[width=\textwidth]
-  {\PaperRoot/figures/state_realization.pdf}
-}{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
-  State-realisation comparison pending checksum-complete generation.}}}
-\vspace{-7.0mm}
-\caption{State policy and recursive realisation for the target phrase
-$(110\,\mathrm{Hz},0.5\,\mathrm{s})$,
-$(160\,\mathrm{Hz},1.0\,\mathrm{s})$,
-$(280\,\mathrm{Hz},1.5\,\mathrm{s})$. The sole spectrogram is the reset DF2
-target. Red dashed vertical and horizontal lines identify the middle event at
-1.0 s and 160 Hz; cyan vertical and horizontal lines identify the other
-events at 0.5/1.5 s and 110/280 Hz.
-The four remaining panels sweep only the middle-event onset or $f_0$ under
-the labelled DF2 and Literal realisations. The same red and cyan coordinates
-are carried into the corresponding loss plots. Purple solid
-curves retain state; yellow dashed curves reset it, and each curve is
-min--max normalised independently. DF2 algebraically collapses the rail
-delays, reflections, and bridge termination into one rational transfer whose
-compressed direct-form-II history is reinterpreted when coefficients change.
-Literal instead retains separate histories on the physical right/left-going
-rail sections and bridge filter. They are equivalent for fixed coefficients
-but not necessarily under a parameter switch. Reset zeros every relevant
-history at each event boundary before the new excitation is processed; it
-therefore produces the same smooth \bicul{} sweep in both realisations,
-whereas both persistent sweeps are rugged. All panels use the registered
-Fourier HRC placement and order-3/order-1 Thiran propagation.}
-\label{fig:state-realization}
-\end{figure*}
-
-Table~\ref{tab:interpolation-onset} makes the fractional-delay and onset
-choices a controlled factor. Target and candidate use the same construction
-within each cell, so the comparison measures the geometry induced by that
-construction rather than a renderer-mismatch penalty.
-
-\begin{table}[t]
-\centering
-\caption{Matched $t$-shift $\times$ waveguide-$f_0$-interpolation comparison for
-\bicul. Each entry is the percentage of the 120 displayed non-target
-descent directions whose angle to the target displacement is below
-$90^\circ$. Every cell rerenders both the 160-Hz, 1.0-s target and all
-candidates with its named row and column methods, using the same 25-by-25
-lattice and normalised gradient coordinates as Fig.~\ref{fig:landscapes}.
-For the $t$-shift rows, Fourier
-places a zero-onset discrete half-raised-cosine (HRC) prototype with the
-official FLAMO v0.2.18 \texttt{Delay} response $e^{-j\omega D}$ and a
-65,536-point inverse FFT in the matrix sweep; the selected
-Fourier+Thiran cell was subsequently requalified at the campaign's
-262,144-point transform and remained 120/120 (100.0\%). Naive samples the
-continuous HRC at the requested real-valued onset; Lagrange denotes a
-six-tap, fifth-order maximally-flat FIR shift, and Thiran a causal first-order
-all-pass shift. For the interpolation columns, Fourier uses
-FLAMO frequency-sampling delay responses (and therefore no polynomial
-interpolator), checked against an explicit
-\texttt{Series}/\texttt{Parallel}/nested-\texttt{Recursion} FLAMO Waveguide
-graph; Linear uses two-tap order-1 Lagrange FIR sections on both rails;
-Lagrange uses order 5 on the long pluck--nut rail but order 1 on the short
-pluck--bridge rail; and Thiran uses the registered
-order-3/order-1 all-pass split. The FLAMO waveguide is not accepted from a
-single circular-convolution setting: its 65,536-point transform is 8.192 times
-the 8000-sample retained response horizon, well beyond a two-horizon padding
-check. Separately, Hermitian consistency is imposed with real DC and Nyquist
-bins and conjugate negative-frequency completion. Because the feedback IR is
-theoretically infinite, we also doubled the transform to 131,072 points: the
-target waveform changed by only $2.14\times10^{-7}$ relative RMS, and all four
-Fourier-waveguide target-directed counts remained unchanged (82, 84, 106, and
-119 out of 120 for Naive, Lagrange, Fourier, and Thiran onset placement,
-respectively). All rail variants are
-tuned using their actual phase. Lagrange is deliberately \emph{not} order 5 everywhere: its
-maximally-flat delay is centred near half the FIR order
-\cite{laakso1996splitting}; over 80--320 Hz the uncompensated long delay is
-4.72--19.15 samples and safely accommodates that centring, whereas the short
-delay is only 1.41--5.72 samples. On the latter, order 5 is off-centre at the
-short-delay end and reached peak gain 2.50 in the qualification sweep, while
-order 1 remained unity-bounded.}
-\label{tab:interpolation-onset}
-\resizebox{\columnwidth}{!}{%
-\input{\PaperRoot/figures/interpolation_gradient_table.tex}}
-\end{table}
-
-\section{Descriptive results}
+\section{Results}
 Table~\ref{tab:pilot-compact} reports all 40 loss/event-count conditions using
 the adopted Fourier-onset/Thiran-propagation renderer whose local gradient
 geometry is shown in Fig.~\ref{fig:landscapes}. The completed $n=150$ dataset
