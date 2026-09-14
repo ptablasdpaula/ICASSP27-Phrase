@@ -224,6 +224,19 @@ velocity.
 \end{figure}
 
 \subsection{Differentiable onset placement and interpolation}
+\begin{figure*}[t!]
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\IfFileExists{\PaperRoot/figures/state_realization.pdf}{
+  \includegraphics[width=\textwidth]
+  {\PaperRoot/figures/state_realization.pdf}
+}{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
+  State-realisation comparison pending checksum-complete generation.}}}
+\vspace{-7.0mm}
+\caption{Reset-DF2 target spectrogram and middle-event \bicul{} sweeps for
+collapsed DF2 and Literal waveguides.}
+\label{fig:state-realization}
+\end{figure*}
 Audio is float64, 2~s long, and sampled at 4~kHz. Each event excites the
 zero-onset half-raised-cosine (HRC)
 \begin{equation}
@@ -255,7 +268,7 @@ from renderer mismatch. The Fourier waveguide is a FLAMO module whose
 aliasing; real DC/Nyquist bins and conjugate negative frequencies enforce
 Hermitian symmetry.
 
-\begin{table}[t]
+\begin{table}[h]
 \centering
 \caption{\normalfont Target-directed \bicul{} descent directions (\%) by onset
 placement (rows) and propagation interpolation (columns); higher is better.}
@@ -286,20 +299,6 @@ all filter and delay histories at each event boundary makes them agree and
 restores smooth, target-directed slopes, so subsequent experiments use reset.
 We hypothesise that phase interference between carried oscillation and the new
 pluck corrugates persistent loss; future work should isolate this mechanism.
-
-\begin{figure*}[t]
-\centering
-\setlength{\abovecaptionskip}{0pt}
-\IfFileExists{\PaperRoot/figures/state_realization.pdf}{
-  \includegraphics[width=\textwidth]
-  {\PaperRoot/figures/state_realization.pdf}
-}{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
-  State-realisation comparison pending checksum-complete generation.}}}
-\vspace{-7.0mm}
-\caption{Reset-DF2 target spectrogram and middle-event \bicul{} sweeps for
-collapsed DF2 and Literal waveguides.}
-\label{fig:state-realization}
-\end{figure*}
 
 \section{Experiments}
 \subsection{Targets}
