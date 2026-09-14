@@ -53,25 +53,7 @@ contact@example.invalid}}
 \maketitle
 
 \begin{abstract}
-Differentiable digital signal processing enables interpretable, label-free
-analysis by synthesis, yet fundamental frequency and onset remain difficult to
-recover: changing either displaces coherent energy, while waveform and
-pointwise spectral losses do not encode the displacement direction. External
-detectors bypass this geometry but prevent the reconstruction objective from
-correcting their estimates. We instead optimise a sparse sequence of plucks,
-each defined by onset and fundamental frequency, through a differentiable
-digital waveguide whose state and feedback delay expose onset-placement and
-fractional-delay effects. Our bidirectional cumulative-energy loss compares
-normalised spectral-power accumulations in both directions of time and
-frequency. Across 6000 fits of one- to eight-pluck phrases, it gives more
-reliable joint onset--pitch recovery than waveform, spectral, framewise
-spectral-transport, and joint time--frequency-transport objectives, and is the
-only loss among the six landscape objectives with
-target-directed descent at every sampled point in the single-pluck landscape.
-Crossing four onset-placement and four delay-interpolation methods further
-identifies Fourier placement with causal Thiran propagation as the most
-consistently target-directed combination. These results support direct
-audio-supervised optimisation of pitch, event timing, and delay-line length.
+Differentiable digital signal processing has become a framework adopted by numerous tasks, allowing unsupervised, interpretable, analysis by synthesis. Yet, essential parameters such as fundamental frequency and onset estimation remain difficult to recover. Traditional waveform and pointwise spectral losses do not encode the displacement direction caused by these parameters, prompting the use of external detectors. These bypass the problematic geometry but prevent the loss from correcting their estimates, causing a reconstruction ceiling. On this work, we compare traditional and previously proposed optimal transport based losses, and propose a new efficient loss based on cumulative energy, comparing spectral power accumulations in both directions of time and frequency. We use this loss to optimise a sparse sequence of plucks exciting a differentiable digital waveguide, whose delay length defines the fundamental frequency, to render musical phrases. Firstly, we find out proposed cumulative energy loss is the only objective whose gradients are directed towards the correct onset and fundamental frequency in a single pluck landscape. Secondly, we cross four onset placement methods and four waveguide fractional delay interpolators, and identify Fourier placement with Thiran propagation as the most consistently target directed combination. Lastly, across 6000 fits of musical phrases containing one to eight plucks, we find our proposed cumulative energy loss gives more reliable joint onset--pitch recovery than traditional and optimal transport objectives. These results support unsupervised optimisation of pitch, event timing, and delay-line length.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -80,57 +62,18 @@ analysis by synthesis, event parameter estimation
 \end{IEEEkeywords}
 
 \section{Introduction}
-Differentiable digital signal processing (\ddsp) places interpretable audio
-processors in automatic-differentiation graphs for analysis by synthesis
-\cite{engel2020ddsp,caspe2022ddx7}. Sound matching usually represents control
-as either a global vector for a fixed or approximately linear time-invariant
-processor, or dense frame-rate trajectories. Dense control suits continuously
-driven instruments and evolving modulation, but is excessive when musical
-changes occur at a few discrete instants.
+Differentiable digital signal processing (\ddsp) allows analysis by synthesis of audio processors within automatic differentiation graphs \cite{engel2020ddsp}, triggering its wide adoption in sound matching of multiple synthesizers and audio effects \cite{caspe2022ddx7} \textcolor{red}{add carson}. However, it usually represents control as either global LTI processors, or dense frame rate trajectories. While the first naturally represent static systems, such as room reverberation \textcolor{red}{add flamo}, the latter suits continuously driven instruments, such as bowing or singing voice \textcolor{red}{pink trombone}. However, a range of instruments are not faithfully represented by either of these approaches; plucked and struck strings are, expressive techniques aside, instinctively performed as a collection of note events with onset, pitch, duration and velocity, as commonly represented in MIR and symbolic music \cite{hawthorne2018onsets}. 
 
-Music Information Retrieval (MIR), by contrast, represents performances as
-note events with onset, pitch, duration, and velocity
-\cite{hawthorne2018onsets}. Let $C$ be the number of plucks in a phrase and
-$\mathcal E$ its event set:
-\begin{equation}
-    \mathcal{E}=\{(t_i,f_{0,i})\}_{i=1}^{C},
-\end{equation}
-where $i\in\{1,\ldots,C\}$ indexes plucks, $t_i$ is the onset in seconds, and
-$f_{0,i}$ is the fundamental frequency in Hz; other controls may still vary.
-This gives audio-domain sound matching a note-centred
-representation without a dense trajectory. Tablas de Paula et al.\ likewise
-use an event-prediction encoder with a differentiable Karplus--Strong
-synthesizer \cite{tablasdepaula2026karplus}, but find unreliable joint onset
-and pitch gradients with standard audio losses, while synthetic parameter
-supervision transfers poorly to recordings. Event parameterisation alone is
-therefore insufficient.
+However, as Turian and Henry found, traditional pointwise and waveform-based losses are poor at pitch estimation, as they become misleading when spectral energy is displaced and does not overlap \cite{turian2020loss}. Hayes et al. proposed complex surrogates to sidestep this issue, but remain synth dependant \cite{hayes2023sinusoidal}. A common trick is the use of external $f_0$ detectors or synthetic parameter labels, capping reconstruction and vetoing further end-to-end training \cite{engel2020ddsp, engel2020inverse}. Optimal transport has progressively been introduced to DDSP by Torres et al. and Fabiani et al., as it addresses displacement directly, with STFT frame-wise and joint time-frequency implementations proposed for $f_0$ independently and jointly for time and frequency shifts respectively \cite{torres2024sot, fabiani2024jtfot}.
 
-Fundamental frequency and onset instead displace coherent energy. Pitch
-perturbations alter phase throughout a note, making waveform-distance surfaces
-oscillatory; pointwise spectral distances compare only corresponding bins and
-become weak or misleading when candidate and target energy do not overlap
-\cite{turian2020loss,hayes2023sinusoidal}. Many DDSP systems bypass this
-geometry with external $f_0$ estimates or synthetic parameter labels
-\cite{engel2020inverse}, respectively preventing audio-objective correction or
-risking a simulation-to-recording gap.
+Tablas de Paula et al. recently proposed an event-based prediction architecture, jointly estimating the $f_0$, onset time and timbre parameters of events in a plucked-string algorithm \cite{tablasdepaula2026karplus}. They found that synthetic data labelling generalised poorly to real world data, while spectral optimal transport is unreliable at joint onset and pitch optimization, and eventually fell back to external detectors \cite{tablasdepaula2026karplus}. On this work, we adopt a simple digital waveguide \cite{depaula2026waveguides} for musical phrase optimization of plucked-string via a similar event-based representation, but compare it with joint time-frequency optimal transport based losses. Additionally, we propose the use of cumulative energy losses, which compare normalised spectral-power accumulations. Specifically, we use a bidirectional implementation, \bicul{}, which accumulates energy in both directions of both STFT axes. Along the way, we outline the importance of the rendered jacobian, where different sub-sample onset placement method and fractional delay interpolation methods can give similar audio but aggresively different derivatives.
 
-Optimal transport addresses displacement directly: spectral optimal transport
-(\sot) moves energy along frequency within each frame \cite{torres2024sot},
-whereas joint time--frequency optimal transport (\tfw) also moves it across
-time \cite{fabiani2024jtfot}, subject to the metric and relative axis scale. We
-instead introduce the bidirectional cumulative-energy loss (\bicul), comparing
-normalised spectral-power accumulations in both directions of both axes without
-detectors or target-event coordinates.
-
-We evaluate direct event optimisation through a differentiable digital
-waveguide: excitation time sets onset, propagation delay sets $f_0$, and
-recursive state couples plucks. This compact model yields a rich, decaying
-string signal \cite{valimaki1996plucked,depaula2026waveguides} while exposing
-the renderer Jacobian: sub-sample onset placement and fractional-delay
-interpolation can give similar audio but different derivatives
-\cite{tablasdepaula2026karplus}. We contribute the event formulation, \bicul's
-gradient and phrase-recovery evaluation, and a controlled study of how onset
-placement, delay interpolation, and recursive state affect those gradients.
+Hence our contributions are threefold:
+\begin{itemize}
+    \item We provide an efficient loss, \bicul{}, that recovers onset time and fundamental frequency in rich synthesisers, opening up the task of musical phrase recovery to differentiable digital signal processing, and provide a pytorch library for ease of use.
+    \item We find time-domain Thiran interpolation and Frequency Sampling delay and sum for onset placement to provide the jacobian that more consistently point towards the target.
+    \item We find phase interference between events to complicate the loss landscape w.r.t $f_0$ and onset time, and propose reseting the waveguide state to make it convex.
+\end{itemize}
 
 \section{Cumulative energy losses}
 \label{sec:losses}
@@ -316,18 +259,6 @@ reflections, and bridge termination into one history, whereas Literal retains
 separate physical rail and bridge-filter histories. They are equivalent within
 a constant regime but need not agree across changes.
 
-\begin{figure}[!t]
-\centering
-\setlength{\abovecaptionskip}{0pt}
-\IfFileExists{\PaperRoot/figures/lsd_violin.pdf}{
-  \includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
-}{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
-  Figure 4 LSD distributions pending checksum-complete regeneration.}}}
-\vspace{-5.0mm}
-\caption{Per-phrase LSD distributions over the same targets; lower is better.}
-\label{fig:lsd}
-\end{figure}
-
 Figure~\ref{fig:state-realization} sweeps the middle event in a three-pluck
 target $(110,0.5),(160,1.0),(280,1.5)$ in Hz and seconds. Persistent DF2 and
 Literal slopes differ, but both are rugged and repeatedly misdirected. Clearing
@@ -372,6 +303,18 @@ $(k,n)$; and $\ell^{\rm quad}_q$ denotes this weighted RMS rather than
 $\ell_q$. Other operations are unchanged. With Sec.~\ref{sec:losses}'s six
 objectives, the variants yield 6000 fits: 150 targets at five event counts
 across 40 conditions.
+
+\begin{figure}[h]
+\centering
+\setlength{\abovecaptionskip}{0pt}
+\IfFileExists{\PaperRoot/figures/lsd_violin.pdf}{
+  \includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
+}{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
+  Figure 4 LSD distributions pending checksum-complete regeneration.}}}
+\vspace{-5.0mm}
+\caption{Per-phrase LSD distributions over the same targets; lower is better.}
+\label{fig:lsd}
+\end{figure}
 
 \subsection{Evaluation}
 Let $i$ index an unordered prediction and $j$ a target. Their assignment cost is
