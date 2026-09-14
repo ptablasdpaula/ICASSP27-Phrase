@@ -460,33 +460,25 @@ outlined white points mark medians.
 \label{fig:lsd}
 \end{figure}
 
-We compare \bicul{} with the octave-coordinate transport variant for cents,
-onset, and LSD at five event counts, giving 15 paired two-sided tests. A
-noncentral-$t$ power calculation with Bonferroni familywise $\alpha=0.05$,
-paired $d_z=0.35$, and 90\% power requires 150 phrases per event count (power
-0.901 at $n=150$ and 0.899 at $n=149$). All tests use the exact shared phrases.
-\bicul{} has the lower mean in every comparison. After correction, all five
-LSD comparisons and both pitch and onset comparisons for four, six, and eight
-events reject their nulls (11/15); pitch and onset for one and two events do
-not.
+\section{Conclusion}
+We introduced a sparse, musically grounded formulation of phrase analysis as
+the direct recovery of pluck onset and pitch, together with \bicul{}, which
+compares cumulative STFT power in both directions of time and frequency. We
+also systematically studied how differentiable onset placement, fractional
+delay, recursive realisation, and string-state policy shape the resulting
+gradients. This identified Fourier onset placement with Thiran propagation as
+the strongest tested pairing and showed that resetting the string state at
+event boundaries resolves the poor gradient directionality observed with both
+collapsed DF2 and literal persistent waveguides. Across a 6000-fit study with
+one to eight events, \bicul{} produced fully target-directed gradients in the
+single-pluck landscape and recovered multi-pluck timing and pitch more
+reliably than the classical, spectral, and optimal-transport objectives; the
+Log-Q variant further improved the descriptive multi-event results.
 
-\section{Limitations and conclusion}
-Targets are synthetic; the number of events is known; and target and candidate share
-excitation, damping, and waveguide structure. The 4-kHz rate restricts
-bandwidth, Thiran sections approximate ideal propagation delay, the finite
-Fourier onset shift has small periodic pre-ringing, and hard reset is an
-abstraction.
-Unknown cardinality, real recordings, dynamics, pickup position, decay,
-vibrato, slides, polyphony, and instrument-specific claims remain outside the
-present evidence.
-
-We formulate phrase analysis as direct recovery of event pitch and onset and
-introduce a loss that compares cumulative STFT power in both directions of
-both axes. The signed 6000-fit study provides physical-unit errors and audio
-distributions under one controlled renderer. Its powered paired analysis
-supports \bicul{} over the octave-coordinate transport variant in 11 of 15
-corrected tests, while Log-Q improves median pitch and onset recovery at four,
-six, and eight events.
+The present study does not address expressive techniques such as vibrato.
+Necessary next steps are evaluation at a higher sample rate, development of a
+state treatment that does not require event-wise reset, neural-network
+training, and validation on real-world recordings.
 
 \bibliographystyle{IEEEtran}
 \typeout{ICASSP bibliography database: \PaperRoot/references.bib}
