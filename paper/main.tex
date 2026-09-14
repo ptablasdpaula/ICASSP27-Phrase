@@ -100,30 +100,124 @@ analysis by synthesis, event parameter estimation
 
 \section{Introduction}
 Differentiable digital signal processing (\ddsp) places interpretable audio
-processors inside an automatic-differentiation graph \cite{engel2020ddsp} and
-supports neural resynthesis systems such as DDX7 \cite{caspe2022ddx7}. The same
-gradient can be used directly for label-free analysis-by-synthesis.
+processors inside an automatic-differentiation graph, enabling
+analysis-by-synthesis systems in which synthesizer controls are inferred by
+minimising an audio reconstruction objective
+\cite{engel2020ddsp,caspe2022ddx7}. Existing systems commonly adopt one of two
+temporal control regimes. At one extreme, a sound is represented by a single
+global parameter vector, as is appropriate for a fixed or approximately LTI
+processor. At the other, synthesizer parameters are predicted as dense
+frame-rate trajectories, as in DDSP resynthesis and differentiable FM
+synthesis. Dense control is suitable for continuously driven instruments and
+evolving modulation, but may be unnecessarily high-dimensional when the
+principal musical changes occur at a small number of discrete instants.
 
-A pluck is naturally represented by onset and fundamental frequency. Both are
-hard to fit: a small frequency error accumulates phase and produces repeated
-local minima \cite{hayes2023sinusoidal}, while an onset error displaces energy
-across analysis frames. Multi-scale spectral loss (\mss) reduces leakage
-structure \cite{schwar2023mss}; spectral optimal transport (\sot) moves energy
-rather than comparing fixed bins \cite{torres2024sot}; and joint
-time--frequency optimal transport (\tfw) embeds both axes in its cost
-\cite{fabiani2024jtfot}. Related work
-also shows that renderer and loss design jointly determine useful gradients
-\cite{anonymous2026dafx,carson2026modulation}.
+This contrasts with the symbolic representations commonly used in Music
+Information Retrieval (MIR). Sheet music, MIDI, and automatic music
+transcription describe music primarily through note events, identified by
+quantities such as onset, pitch, duration, and velocity
+\cite{hawthorne2018onsets}. Consequently, audio-domain DDSP systems and
+symbolic music systems often describe the same performance at markedly
+different temporal resolutions. For plucked and struck instruments, a natural
+intermediate representation is a sparse set of excitation events
+\begin{equation}
+    \mathcal{E}=\{(t_i,f_{0,i})\}_{i=1}^{C},
+\end{equation}
+where each event is a pluck with onset $t_i$ and fundamental frequency
+$f_{0,i}$. This representation concerns the occurrence and pitch of the
+plucks; it does not require every other synthesizer control to remain constant
+between them. It therefore moves differentiable sound matching closer to a
+musically meaningful, note-centred representation while retaining direct
+audio-domain supervision.
 
-We isolate these effects with a fixed-cardinality phrase rendered by one
-differentiable digital waveguide. Our contribution is the bidirectional
-cumulative-energy loss (\bicul). The combined report compares it
-with waveform \lone, waveform \ltwo, smooth \mss, the published
-\sot{} composite, and the published linear-Hz \tfw. The preregistered
-campaign used a variant that instead measures frequency in octaves and equates
-1~s with 1~octave; we additionally evaluate a variant of \bicul{} whose
-final surface RMS uses log-frequency quadrature. No objective uses external
-spectral pre-emphasis.
+Related work has also sought compact control representations between global
+parameters and unconstrained framewise trajectories. Mitcheltree et al., for
+example, represent synthesizer modulation through low-dimensional constrained
+curves and piecewise B\'ezier splines \cite{mitcheltree2025modulation}. Their
+objective is continuous modulation discovery rather than discrete note-event
+recovery, but the underlying philosophy is similar: the parameterisation
+should reflect the structure with which musical sounds are produced. More
+directly, Tablas de Paula et al.\ propose an event-prediction encoder for sound
+matching with a differentiable Karplus--Strong algorithm
+\cite{tablasdepaula2026karplus}. Their experiments show, however, that standard
+audio losses provide unreliable joint gradients for event onsets and
+fundamental frequencies. Parameter supervision on synthetic sounds performs
+well in-domain but does not transfer reliably to recorded instruments, for
+which externally estimated pitch and onset remain more effective.
+
+This failure is not primarily an encoder problem. Fundamental frequency and
+onset are displacement parameters: changing either one relocates coherent
+signal energy instead of merely changing its amplitude. A frequency
+perturbation changes phase throughout the duration of a note, producing an
+oscillatory waveform-distance surface, while pointwise spectral distances
+compare energy only between corresponding time--frequency bins. A candidate
+can therefore receive a weak or misleading gradient whenever its energy does
+not overlap that of the target \cite{turian2020loss,hayes2023sinusoidal}. This
+helps explain why $f_0$ is commonly supplied by an external pitch estimator in
+DDSP systems, or learned using parameter labels from synthesizer-generated
+data \cite{engel2020inverse}. These strategies bypass the problematic
+audio-loss geometry: an externally supplied estimate is no longer adjustable
+by the reconstruction objective, whereas synthetic parameter supervision can
+introduce a simulation-to-recording generalisation gap.
+
+Optimal transport has been proposed to address this problem by measuring the
+displacement of spectral energy rather than comparing fixed coordinates.
+Spectral optimal transport (\sot) moves energy along frequency within each
+analysis frame \cite{torres2024sot}, while joint time--frequency optimal
+transport (\tfw) also permits transport between times
+\cite{fabiani2024jtfot}. The latter is particularly relevant to event-based
+sound matching because both pitch and onset must be recovered. Nevertheless,
+its behaviour depends on the metric and relative scaling assigned to the time
+and frequency coordinates.
+
+In this work, we introduce the bidirectional cumulative-energy loss (\bicul),
+which compares normalised cumulative spectral-power surfaces in both
+directions of both time and frequency. This cumulative representation provides
+a global indication of the direction in which displaced energy must move,
+without using an $f_0$ estimator, onset detector, or information about the
+target event parameters. We evaluate whether this produces better gradient
+fields and more accurate recovery of pluck onsets and pitches than waveform,
+spectral, and optimal-transport objectives as the number of events in a phrase
+increases. By optimising the event parameters directly, rather than training an
+encoder, the experiments isolate the geometry supplied by the renderer and
+loss.
+
+We use a differentiable digital waveguide because it brings these questions
+together in one compact model. A waveguide produces a timbrically rich,
+decaying plucked-string sound from an excitation, short delay lines, filters,
+and recursive state \cite{valimaki1996plucked,depaula2026waveguides}. The
+excitation time determines the onset of a pluck, while the propagation delay
+determines its fundamental frequency. Successive events can also interact
+through the state of the string. The model therefore exhibits meaningful
+time-varying behaviour using only a small number of event parameters, rather
+than requiring densely sampled control trajectories.
+
+A suitable loss is necessary but not sufficient for recovering those
+parameters. The final parameter gradient also depends on the Jacobian of the
+renderer. Sub-sample onset placement determines how a continuous event time
+enters the discrete-time excitation, while fractional-delay interpolation
+determines how a continuous delay-line length is mapped to the waveguide
+samples. Numerical methods with similar forward responses may consequently
+produce substantially different derivatives. Tablas de Paula et al.\ already
+observe differences between frequency-sampled and time-domain fractional
+delays \cite{tablasdepaula2026karplus}. We investigate this effect
+systematically by crossing four onset-placement methods with four
+fractional-delay realisations and measuring whether their pitch and onset
+gradients point towards the target.
+
+Accordingly, this work makes three contributions:
+\begin{itemize}
+    \item We formulate differentiable phrase matching using sparse, musically
+    meaningful pluck events, providing a controlled connection between audio
+    synthesis parameters and symbolic note-event representations.
+    \item We introduce \bicul{} and compare its pitch and onset gradient
+    geometry and phrase-recovery performance against waveform, spectral, and
+    optimal-transport losses over phrases containing increasingly many plucks.
+    \item We systematically evaluate how sub-sample onset placement,
+    waveguide fractional-delay interpolation, and recursive state affect the
+    direction of gradients with respect to event timing and fundamental
+    frequency.
+\end{itemize}
 
 \section{Differentiable phrase renderer}
 Figure~\ref{fig:waveguide} shows the Waveguide renderer. It is a reciprocal
