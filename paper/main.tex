@@ -27,6 +27,7 @@ contact@example.invalid}}
 % \l_one and \l_two source names are represented by \lone and \ltwo.
 \newcommand{\lone}{\ensuremath{\mathcal{L}_1}}
 \newcommand{\ltwo}{\ensuremath{\mathcal{L}_2}}
+\newcommand{\ddsp}{DDSP}
 \newcommand{\mss}{MSS}
 \newcommand{\sot}{SOT}
 \newcommand{\tfw}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
@@ -37,7 +38,7 @@ contact@example.invalid}}
 \maketitle
 
 \begin{abstract}
-Differentiable digital signal processing (DDSP) is widely used for sound
+Differentiable digital signal processing is widely used for sound
 matching and timbre transfer because it combines efficient synthesis with
 interpretable controls and permits label-free analysis by synthesis. However,
 the end-to-end recovery of fundamental frequency remains difficult.
@@ -46,7 +47,7 @@ corresponding samples or time--frequency bins without representing the
 direction or extent of a frequency displacement. For oscillatory signals,
 their loss surfaces therefore contain local minima and broad regions whose
 gradients provide little indication of whether a candidate frequency should
-increase or decrease. Consequently, DDSP systems frequently obtain
+increase or decrease. Consequently, these systems frequently obtain
 fundamental frequency from an external pitch estimator; event timing may
 similarly be fixed by an onset detector or event annotation. The reconstruction
 objective is then unable to revise these variables when different values would
@@ -73,9 +74,9 @@ propagation delay, analogous to string length. Its excitation, filtering,
 delay, and feedback components are also shared with broader families of
 source--filter synthesizers and artificial reverberators, making it a useful
 test case beyond this particular instrument. We introduce \bicul, a
-bidirectional cumulative-energy loss that compares normalised STFT-power
-accumulations in both directions of both time and frequency. \bicul{} is the
-only evaluated loss whose descent direction points towards the target at every
+bidirectional cumulative-energy loss that compares normalised cumulative
+spectral-power surfaces in both directions of both time and frequency. \bicul{}
+is the only evaluated loss whose descent direction points towards the target at every
 sampled point in the single-pluck landscape. Across 6000 direct
 analysis-by-synthesis fits, as phrases grow from one to eight plucks, classical
 waveform and spectral losses and framewise spectral optimal transport
@@ -98,7 +99,7 @@ analysis by synthesis, event parameter estimation
 \end{IEEEkeywords}
 
 \section{Introduction}
-Differentiable digital signal processing (DDSP) places interpretable audio
+Differentiable digital signal processing (\ddsp) places interpretable audio
 processors inside an automatic-differentiation graph \cite{engel2020ddsp} and
 supports neural resynthesis systems such as DDX7 \cite{caspe2022ddx7}. The same
 gradient can be used directly for label-free analysis-by-synthesis.
@@ -106,16 +107,17 @@ gradient can be used directly for label-free analysis-by-synthesis.
 A pluck is naturally represented by onset and fundamental frequency. Both are
 hard to fit: a small frequency error accumulates phase and produces repeated
 local minima \cite{hayes2023sinusoidal}, while an onset error displaces energy
-across analysis frames. Smooth multi-scale spectral loss reduces leakage
-structure \cite{schwar2023mss}; spectral optimal transport moves energy rather
-than comparing fixed bins \cite{torres2024sot}; and joint time--frequency
-transport embeds both axes in its cost \cite{fabiani2024jtfot}. Related work
+across analysis frames. Multi-scale spectral loss (\mss) reduces leakage
+structure \cite{schwar2023mss}; spectral optimal transport (\sot) moves energy
+rather than comparing fixed bins \cite{torres2024sot}; and joint
+time--frequency optimal transport (\tfw) embeds both axes in its cost
+\cite{fabiani2024jtfot}. Related work
 also shows that renderer and loss design jointly determine useful gradients
 \cite{anonymous2026dafx,carson2026modulation}.
 
 We isolate these effects with a fixed-cardinality phrase rendered by one
-differentiable digital waveguide. Our contribution is \bicul, a
-bidirectional cumulative-energy objective. The combined report compares it
+differentiable digital waveguide. Our contribution is the bidirectional
+cumulative-energy loss (\bicul). The combined report compares it
 with waveform \lone, waveform \ltwo, smooth \mss, the published
 \sot{} composite, and the published linear-Hz \tfw. The preregistered
 campaign used a variant that instead measures frequency in octaves and equates
