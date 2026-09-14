@@ -77,46 +77,14 @@ Hence our contributions are threefold:
 
 \section{Cumulative energy losses}
 \label{sec:losses}
-Let $x,\hat x\in\mathbb R^N$ be $N$-sample target and candidate waveforms,
-$\theta$ the candidate onset--pitch vector, $\rho$ a numerical renderer
-realisation, $\hat x=R_\rho(\theta)$ its output, and $\mathcal L$ a scalar audio
-loss. Its parameter gradient is
-\begin{equation}
-\nabla_\theta\mathcal L(x,R_\rho(\theta))=
-J_{R_\rho}(\theta)^\mathsf{T}\nabla_{\hat x}\mathcal L(x,\hat x).
-\label{eq:pullback}
-\end{equation}
-Here $J_{R_\rho}=\partial\hat x/\partial\theta$ is the renderer Jacobian,
-$\nabla_u$ denotes differentiation with respect to $u$, and
-$\mathsf T$ denotes matrix transpose.
-We therefore compare losses under one fixed renderer, then fix \bicul{} to
-compare renderer realisations.
-
-\subsection{Reference objectives}
-\lone{} is mean absolute sample error and \ltwo{} is mean squared sample
-error. Following Schw\"ar and M\"uller \cite{schwar2023mss}, \mss{} sums
-squared \ltwo{} distances between $\log(1+|\operatorname{STFT}|)$ magnitudes.
-Periodic prime-length flat-top windows
-$\{17,31,67,127,257,509\}$ with hops $\{8,15,33,63,128,254\}$ suppress
-spectral-leakage sidelobes without aligning DFT bins across resolutions.
-Here $|\cdot|$ is complex magnitude and $\log$ is the natural logarithm.
-
-Torres et al.'s \sot{} \cite{torres2024sot} combines frame-normalised
-transport on FFT-512/hop-64 flat-top STFT power, with their unbalanced quantile
-cutoff, and $0.05$ times Hann-windowed linear-magnitude MSS. Fabiani et al.'s
-\tfw{} \cite{fabiani2024jtfot} globally normalises a periodic-Hann
-FFT-256/hop-128 magnitude STFT and projects it along ten fixed angles;
-frequency is in Hz and $\widetilde t=1000t$ in Hz, equating 1~s with 1000~Hz.
-Thus $t$ is physical frame time in seconds and $\widetilde t$ its transport
-coordinate.
-
-\subsection{Bidirectional cumulative energy}
-Let $P_{k,n}$ and $\hat P_{k,n}$ be target and candidate STFT power at
-frequency-bin index $k$ and time-frame index $n$, using periodic-Hann
-FFT-256/hop-64 analysis. Set $q=(d_t,d_f)$, where
-$d_t\in\{\rightarrow,\leftarrow\}$ and
-$d_f\in\{\uparrow,\downarrow\}$ select time and frequency accumulation
-directions; $C^t_{d_t}$ and $C^f_{d_f}$ are the corresponding cumulative sums:
+The bidirectional cumulative-energy loss, \bicul{}, compares STFT power
+accumulated towards all four time--frequency corners. Displacement alters values
+between the energy and each boundary, exposing early/late and low/high direction
+without favouring a boundary. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and
+candidate periodic-Hann FFT-256/hop-64 power at frequency bin $k$ and frame $n$.
+For $q=(d_t,d_f)$, $d_t\in\{\rightarrow,\leftarrow\}$ and
+$d_f\in\{\uparrow,\downarrow\}$ select accumulation direction; $C^t_{d_t}$ and
+$C^f_{d_f}$ are the corresponding cumulative sums:
 \begin{equation}
 \begin{aligned}
 S_q&=C^f_{d_f}(C^t_{d_t}(P)),\\
@@ -126,25 +94,18 @@ m_q&=\max S_q,\qquad R_q=\sqrt{\max(S_q/m_q,10^{-12})},\\
 \ell_q&=\operatorname{RMS}(R_q-\hat R_q).
 \end{aligned}
 \end{equation}
-Here $S_q,\hat S_q$ are the target and candidate cumulative surfaces; $m_q$ is
-the target maximum over $(k,n)$; $R_q,\hat R_q$ are their target-normalised
-square roots with numerical floor $10^{-12}$; and $\ell_q$ is their
-root-mean-square (RMS) difference over $(k,n)$. \bicul{} averages the four
-$\ell_q$. Displacement changes cumulative values from
-its location to a boundary, exposing whether energy is early/late or low/high;
-both orientations avoid favouring one boundary. The construction uses no event
-coordinates, detectors, or salience weights.
+Here $S_q,\hat S_q$ are the target/candidate cumulative surfaces; $m_q$ is the
+target maximum; $R_q,\hat R_q$ are target-normalised square roots floored at
+$10^{-12}$; and $\ell_q$ is their root-mean-square (RMS) difference over
+$(k,n)$. \bicul{} averages all four $\ell_q$ without event coordinates,
+detectors, or salience weights.
 
-\subsection{Conditional loss geometry}
-Figure~\ref{fig:landscapes} fixes the reference renderer from
-Sec.~\ref{sec:renderer} and evaluates a 160-Hz, 1.0-s event on an exact
-25-by-25 lattice spanning $\pm0.8$~s linearly and $\pm1$ octave
-logarithmically, including the centred target. Surfaces are independently
-min--max normalised; white arrows are autograd unit-descent directions on an
-11-by-11 sublattice, excluding the target. A direction is target-directed when
-its angle to the target displacement is below $90^\circ$. Of 120 non-target
-directions, \lone{}, \ltwo{}, \mss{}, \sot{}, \tfw{}, and \bicul{} achieve
-60.0\%, 49.2\%, 42.5\%, 51.7\%, 75.8\%, and 100.0\%, respectively.
+Figure~\ref{fig:landscapes} compares six losses with Sec.~\ref{sec:renderer}'s
+fixed renderer for a 160-Hz, 1.0-s event on a target-inclusive 25-by-25 lattice
+over $\pm0.8$~s and $\pm1$ octave. Surfaces are independently min--max
+normalised. White arrows show autograd unit descent on an 11-by-11 non-target
+sublattice; directions within $90^\circ$ of the target displacement are
+target-directed.
 
 \begin{figure}[t]
 \centering
@@ -158,6 +119,22 @@ directions, \lone{}, \ltwo{}, \mss{}, \sot{}, \tfw{}, and \bicul{} achieve
 and arrows show unit descent.}
 \label{fig:landscapes}
 \end{figure}
+
+Reading left-to-right by row, \lone{} is mean absolute and \ltwo{} mean squared
+sample error; 60.0\% and 49.2\% of their 120 directions are target-directed.
+Following Schw\"ar and M\"uller \cite{schwar2023mss}, \mss{} sums squared
+\ltwo{} distances between $\log(1+|\operatorname{STFT}|)$ magnitudes. Its
+prime-length flat-top windows $\{17,31,67,127,257,509\}$ and hops
+$\{8,15,33,63,128,254\}$ limit leakage without aligning DFT bins; it achieves
+42.5\%, where $|\cdot|$ is magnitude and $\log$ the natural logarithm. Beside
+it, Torres et al.'s \sot{} \cite{torres2024sot} combines frame-normalised
+FFT-512/hop-64 flat-top STFT-power transport with their unbalanced quantile
+cutoff and $0.05$ Hann-windowed linear-magnitude MSS; it achieves 51.7\%.
+Finally, Fabiani et al.'s \tfw{} \cite{fabiani2024jtfot} globally normalises a
+periodic-Hann FFT-256/hop-128 magnitude STFT and projects it along ten angles.
+Its frequency is in Hz and $\widetilde t=1000t$ in Hz, equating 1~s with
+1000~Hz; $t$ is frame time and $\widetilde t$ its transport coordinate. \tfw{}
+achieves 75.8\%, while the final \bicul{} panel achieves 100.0\%.
 
 \begin{figure}[t]
 \centering
@@ -182,6 +159,17 @@ collapsed DF2 and Literal waveguides.}
 
 \section{Differentiable phrase renderer}
 \label{sec:renderer}
+Let $x,\hat x\in\mathbb R^N$ be target and candidate $N$-sample waveforms,
+$\theta$ the onset--pitch vector, $\rho$ a renderer realisation,
+$\hat x=R_\rho(\theta)$ its output, and $\mathcal L$ the audio loss. Then
+\begin{equation}
+\nabla_\theta\mathcal L(x,R_\rho(\theta))=
+J_{R_\rho}(\theta)^\mathsf{T}\nabla_{\hat x}\mathcal L(x,\hat x).
+\label{eq:pullback}
+\end{equation}
+Here $J_{R_\rho}=\partial\hat x/\partial\theta$ is the renderer Jacobian;
+$\nabla_u$ and $\mathsf T$ denote differentiation in $u$ and transposition.
+
 Figure~\ref{fig:waveguide} shows $R_\rho$: two oppositely travelling rails split
 by the pluck into nut- and bridge-side paths. Their length sum sets $f_0$ and
 their ratio sets pluck position \cite{depaula2026waveguides}, fixed at 0.23
@@ -194,7 +182,8 @@ H_L(z)=g\frac{1-a_1}{1-a_1z^{-1}},\qquad g=0.99,\quad a_1=0.2.
 $g$ is low-frequency round-trip gain and $a_1$ the one-pole coefficient
 increasing high-frequency attenuation. They produce a complex, $f_0$-dependent
 RT60 \cite[Fig.~3]{tablasdepaula2026karplus}. Output is bridge-incident
-travelling velocity.
+travelling velocity. Thus Sec.~\ref{sec:losses} fixes $\rho$ to compare losses;
+the remainder of this section fixes \bicul{} to compare renderer realisations.
 
 \subsection{Differentiable onset placement and interpolation}
 Audio is float64, 2~s long, and sampled at 4~kHz. Each event excites a zero-onset
