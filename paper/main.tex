@@ -1,5 +1,14 @@
-\providecommand{\PaperRoot}{.}
 \documentclass[conference]{IEEEtran}
+% Overleaf runs BibTeX from the project top level even when the selected main
+% document lives in paper/.  Resolve one prefix for both a full-repository
+% Overleaf project and a standalone upload of the paper/ directory.
+\ifdefined\PaperRoot\else
+  \IfFileExists{paper/references.bib}{%
+    \newcommand{\PaperRoot}{paper}%
+  }{%
+    \newcommand{\PaperRoot}{.}%
+  }%
+\fi
 % \IEEEoverridecommandlockouts is intentionally disabled: there is no funding
 % footnote in the anonymous submission.
 % IEEE conference template version as of 6/27/2024.
@@ -577,5 +586,6 @@ in 11 of 15 corrected tests, while the log-frequency-quadrature variant of
 six, and eight events and remains a hypothesis for independent study.
 
 \bibliographystyle{IEEEtran}
+\typeout{ICASSP bibliography database: \PaperRoot/references.bib}
 \bibliography{\PaperRoot/references}
 \end{document}
