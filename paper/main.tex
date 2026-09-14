@@ -224,8 +224,8 @@ salience weights enter the construction.
 \subsection{Conditional loss geometry}
 Although these objectives are renderer-independent, their geometry with
 respect to $t$ and $f_0$ is not. To compare them under controlled conditions,
-Fig.~\ref{fig:landscapes} holds the renderer fixed to the Fourier-onset/Thiran-
-propagation realisation defined and qualified in Sec.~\ref{sec:renderer}. It
+Fig.~\ref{fig:landscapes} holds the renderer fixed to the reference
+realisation qualified in Sec.~\ref{sec:renderer}. It
 uses a 160-Hz event at 1.0 s on an exact 25-by-25 lattice: time is linear over
 a $\pm0.8$-s shift and pitch logarithmic over a $\pm1$-octave shift, with the
 exact target inserted at the centre. Each surface is independently min--max
@@ -281,7 +281,7 @@ length controls $f_0$ and their ratio controls pluck position.}
 \label{fig:waveguide}
 \end{figure}
 
-\subsection{Continuous event rendering}
+\subsection{Differentiable onset placement and interpolation}
 Audio is float64, two seconds long, and sampled at 4 kHz. A zero-onset
 half-raised-cosine (HRC) prototype is
 \begin{equation}
@@ -310,8 +310,6 @@ can make the bridge-side section shorter than those requirements, motivating
 the order-1 short section for both methods. Every rail is tuned using the
 realised fractional-delay and one-pole-filter phase.
 
-\subsection{Renderer qualification}
-\label{sec:renderer-qualification}
 Table~\ref{tab:interpolation-onset} is the complementary slice to
 Fig.~\ref{fig:landscapes}: it fixes \bicul{} and varies onset placement and
 propagation interpolation on the same 25-by-25 lattice. Target and candidate
@@ -335,29 +333,37 @@ gradients that point towards the target. Every cell rerenders the same
 \input{\PaperRoot/figures/interpolation_gradient_table.tex}}
 \end{table}
 
-Fourier onset placement with Thiran propagation is the only cell with 120/120
-target-directed gradients. Beyond that diagnostic, Fourier placement shifts a
-fixed excitation without direct resampling, while Thiran supplies causal,
-stateful, all-pass propagation. We therefore freeze this pair for
-Fig.~\ref{fig:landscapes} and all subsequent phrase-recovery experiments.
+Table~\ref{tab:interpolation-onset} identifies Fourier onset placement with
+Thiran propagation as the only combination with 120/120 target-directed
+gradients. Fourier placement shifts a fixed excitation without direct
+resampling, while Thiran supplies causal, stateful, all-pass propagation. We
+therefore adopt this combination as the reference realisation for
+Fig.~\ref{fig:landscapes} and all remaining experiments.
 
-\subsection{State policy and recursive realisation}
-Each constant event regime is reduced algebraically to an exact rational
-transfer. We evaluate the recurrent IIR filter and backpropagate through it
-with PhilTorch's direct-form-II (DF2) interface
-\cite{yu2025philtorch}, using its TorchLPC backend. The collapsed DF2 transfer
-compresses the rail delays, reflections, and bridge termination into one
-history, which is reinterpreted when coefficients change. The Literal
-realisation instead retains separate histories on the physical right- and
-left-going rail sections and bridge filter. They are equivalent for fixed
-coefficients but need not remain so under a parameter switch.
+\subsection{Phase interference and string reset}
+Each constant event regime can be collapsed algebraically to an exact rational
+transfer, which we evaluate and differentiate using PhilTorch's direct-form-II
+(DF2) interface and TorchLPC backend \cite{yu2025philtorch}. As Yu et al.'s
+TorchLPC study notes, filtering order matters in time-varying systems:
+rearrangements that are equivalent for fixed coefficients need not remain so
+once the coefficients change \cite{yu2024torchlpc}. Our collapsed DF2
+realisation compresses the rail delays, reflections, and bridge termination
+into one history, whose values are reinterpreted by the new coefficients at an
+event boundary. To test this collapse, the Literal realisation evaluates the
+uncollapsed digital waveguide and retains separate histories for its physical
+right- and left-going rail sections and bridge filter. The two agree within a
+constant regime but need not agree across an event boundary.
 
-The hard-reset policy clears every relevant history at an event
-boundary before processing the new excitation. The persistent diagnostic
-instead carries history across the switch. Figure~\ref{fig:state-realization}
-uses the target phrase $(110,0.5),(160,1.0),(280,1.5)$ in Hz and seconds and
-sweeps only the middle event. Reset produces the same smooth \bicul{} sweep in
-both recursive realisations, whereas both persistent sweeps are rugged.
+Figure~\ref{fig:state-realization} sweeps the middle event in a three-pluck
+target: 110 Hz at 0.5 s, 160 Hz at 1.0 s, and 280 Hz at 1.5 s. With persistent
+state, DF2 and Literal produce different slopes, but both landscapes remain
+rugged and their gradients repeatedly turn away from the target. Resetting the
+string---clearing every filter and delay-line history at each event boundary
+before applying the new excitation---makes the realisations agree and restores
+smooth, target-directed slopes. We therefore use string reset for all remaining
+experiments. We hypothesise that the carried oscillation and new pluck alternate
+between constructive and destructive phase interference as the swept coordinate
+changes, corrugating the loss; future work should isolate this mechanism.
 
 \begin{figure*}[t]
 \centering
@@ -368,14 +374,14 @@ both recursive realisations, whereas both persistent sweeps are rugged.
 }{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
   State-realisation comparison pending checksum-complete generation.}}}
 \vspace{-7.0mm}
-\caption{State policy and recursive realisation for the target phrase
+\caption{Phase interference and string reset for the target phrase
 $(110\,\mathrm{Hz},0.5\,\mathrm{s})$,
 $(160\,\mathrm{Hz},1.0\,\mathrm{s})$, and
 $(280\,\mathrm{Hz},1.5\,\mathrm{s})$. Red marks the swept middle event and
 cyan the fixed events. Purple solid curves retain state; yellow dashed curves
-reset it, with each curve normalised independently. Reset agrees across DF2
-and Literal realisations, while both persistent sweeps are rugged. All panels
-use Fourier HRC placement and order-3/order-1 Thiran propagation.}
+reset it, with each curve normalised independently. Persistent DF2 and Literal
+have different but rugged landscapes; reset makes them agree and restores
+smooth, target-directed slopes.}
 \label{fig:state-realization}
 \end{figure*}
 
@@ -439,11 +445,9 @@ dtypes, invalid target spacing, changed initialization, constrained candidate
 coordinates, and non-finite audio, loss, gradient, coordinate, or metric data.
 
 \section{Results}
-Table~\ref{tab:pilot-compact} reports all 40 loss/event-count conditions using
-the adopted Fourier-onset/Thiran-propagation renderer whose local gradient
-geometry is shown in Fig.~\ref{fig:landscapes}. The dataset contains $n=150$
-targets per event count. The rank styling is descriptive, particularly for the
-two post-hoc extensions.
+Table~\ref{tab:pilot-compact} reports all 40 loss/event-count conditions over
+$n=150$ targets per event count. The rank styling is descriptive, particularly
+for the two post-hoc extensions.
 
 \begin{table*}[!t]
 \centering
@@ -471,8 +475,7 @@ row are exploratory; neither enters the confirmatory test family.}
 }{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
   Figure 4 LSD distributions pending checksum-complete regeneration.}}}
 \vspace{-8.0mm}
-\caption{Per-phrase LSD distributions over the same $n=150$ phrases,
-using FLAMO Fourier onset placement and Thiran waveguide propagation. White
+\caption{Per-phrase LSD distributions over the same $n=150$ phrases. White
 bars span the interquartile range and outlined white points mark medians;
 lower is better. Hooked legend entries denote the two variants defined in
 Table~\ref{tab:pilot-compact}; both added extension rows are exploratory.}
