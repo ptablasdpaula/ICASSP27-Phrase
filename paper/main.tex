@@ -246,22 +246,22 @@ $\rho$ and varies the loss, whereas Table~\ref{tab:interpolation-onset} fixes
 
 \subsection{Reference objectives}
 \lone{} is mean absolute sample error and \ltwo{} is mean squared sample
-error. \mss{} is the smooth multi-scale spectral loss
-\cite{schwar2023mss}, using periodic flat-top windows
-$\{17,31,67,127,257,509\}$, hops $\{8,15,33,63,128,254\}$,
-$\log(1+|\operatorname{STFT}|)$ features, and summed squared
+error. For \mss{}, we follow Schw\"ar and M\"uller's smooth configuration
+\cite{schwar2023mss}. Their periodic flat-top windows suppress the sidelobes
+responsible for spectral-leakage fluctuations, while using the prime lengths
+$\{17,31,67,127,257,509\}$ prevents several resolutions from aligning their
+DFT bins. The corresponding hops are $\{8,15,33,63,128,254\}$; features are
+$\log(1+|\operatorname{STFT}|)$ magnitudes, compared by a summed squared
 $\mathcal{L}_2$ distance.
 
-\sot{} is the full published composite \cite{torres2024sot}: a flat-top
-FFT-512/hop-64 transport term on squared magnitudes with its published
-normalisation and quantile cutoff, plus 0.05 times its Hann-windowed
-linear-magnitude MSS term. Published \tfw{} uses joint time--frequency sliced
-$W_2$ \cite{fabiani2024jtfot}: a periodic-Hann FFT-256/hop-128 magnitude STFT
-is globally unit-normalised and projected along ten fixed angles. Its
-coordinates are physical frequency in Hz and $\widetilde t=1000t$ in Hz, so
-1~s equals 1000~Hz. The registered variant changes only this geometry:
-frequency becomes $\log_2(\max(f,20)/20)$ and time is measured in seconds, so
-its axes equate 1~s with 1~octave.
+For \sot{}, we use the implementation of Torres et al.\
+\cite{torres2024sot}. It combines a frame-normalised transport term on
+FFT-512/hop-64 flat-top-windowed STFT power, including their unbalanced
+quantile cutoff, with 0.05 times a Hann-windowed, linear-magnitude MSS term.
+For \tfw{}, we follow Fabiani et al.\ \cite{fabiani2024jtfot}: a
+periodic-Hann FFT-256/hop-128 magnitude STFT is globally unit-normalised and
+projected along ten fixed angles. Frequency is measured in Hz and the time
+coordinate is $\widetilde t=1000t$ in Hz, so 1~s equals 1000~Hz.
 
 \subsection{Bidirectional cumulative energy}
 Let $P$ and $\hat P$ be periodic-Hann FFT-256/hop-64 STFT power. For time
@@ -278,25 +278,13 @@ R&=\sqrt{\max(S_{d_t,d_f}/m,10^{-12})},\\
 \end{align}
 \bicul{} averages the four choices
 $d_t\in\{\rightarrow,\leftarrow\}$ and
-$d_f\in\{\uparrow,\downarrow\}$. Accumulation extends a local displacement
-from the event to a boundary, offering a global direction in time and
-frequency. The implementation extends Sebastian Schlecht's
-\texttt{MatchCumulativeEnergy} in both directions of both axes.
-
-Canonical \bicul{} takes an unweighted RMS over the rectangular STFT-bin
-lattice. An exploratory variant instead evaluates that final RMS by quadrature
-in physical coordinates: seconds along time and
-$\log_2[\max(f,20)/20]$ octaves along frequency. For directional surface
-difference $E_{d_t,d_f}=\hat R-R$, it uses
-\begin{equation}
-\ell^{\rm quad}_{d_t,d_f}=\left[\frac{\sum_{k,n}
-w^f_{d_f,k}w^t_{d_t,n}E_{d_t,d_f}(k,n)^2}
-{\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2},
-\end{equation}
-where each $w$ is the exact adjacent-coordinate interval, aligned with the
-chosen cumulative direction. The four surfaces, target-maximum scaling, and
-square-root transform are unchanged. No event coordinates, detectors, or
-salience weights enter this construction.
+$d_f\in\{\uparrow,\downarrow\}$. A displaced energy component changes every
+cumulative value between its location and the corresponding boundary. The
+forward and backward time sums therefore expose whether candidate energy is
+too early or too late, while the upward and downward frequency sums expose
+whether it is too low or too high. Averaging all four orientations avoids
+privileging a particular boundary. No event coordinates, detectors, or
+salience weights enter the construction.
 
 \subsection{Conditional loss geometry}
 Although these objectives are renderer-independent, their geometry with
@@ -330,24 +318,31 @@ the target-directed percentages are \lone{}: 60.0\%, \ltwo{}: 49.2\%,
 \section{Differentiable phrase renderer}
 \label{sec:renderer}
 We now instantiate $R_\rho$. The physical topology is fixed independently of
-the numerical realisation studied below. Figure~\ref{fig:waveguide} shows a
-reciprocal two-rail waveguide split at the excitation point, following
-established plucked-string practice
-\cite{valimaki1996plucked,depaula2026waveguides}. A rigid nut reflects with
-gain $-1$, and the bridge reflection is $-H_L(z)$ with
+the numerical realisation studied below. Figure~\ref{fig:waveguide} implements
+a digital waveguide as two oppositely travelling rails. Introducing the pluck
+at a point along the string divides each rail into a pluck--nut and a
+pluck--bridge section, giving four one-way delay sections; the sum of the two
+section lengths determines $f_0$, while their ratio determines pluck position
+\cite{depaula2026waveguides}. We set this ratio to 0.23 measured from the
+bridge. A rigid nut reflects with gain $-1$, and the bridge reflection is
+$-H_L(z)$ with
 \begin{equation}
 H_L(z)=g\frac{1-a_1}{1-a_1z^{-1}},\qquad g=0.99,\quad a_1=0.2.
 \end{equation}
-The pluck position is 0.23 measured from the bridge. The output is the
-bridge-incident travelling velocity; no pickup model is used.
+Here $g$ is the low-frequency round-trip gain, while $a_1$ controls the
+increasing attenuation of higher frequencies. The chosen values produce a
+timbrally complex, decaying string response whose RT60 also varies with
+$f_0$, because higher pitches complete more round trips per second; this
+dependence is illustrated in Fig.~3 of Tablas de Paula et al.\
+\cite{tablasdepaula2026karplus}. The output is the bridge-incident travelling
+velocity.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
-\caption{Waveguide target and candidate renderer. FLAMO frequency sampling
-places each excitation at its continuous onset; fixed-order causal Thiran
-sections implement waveguide propagation, and the exact rational realisation
-is evaluated on CUDA.}
+\caption{Two-rail digital waveguide. The excitation point partitions each
+travelling direction into pluck--nut and pluck--bridge delays; their total
+length controls $f_0$ and their ratio controls pluck position.}
 \label{fig:waveguide}
 \end{figure}
 
@@ -356,58 +351,50 @@ Audio is float64, two seconds long, and sampled at 4 kHz. A zero-onset
 half-raised-cosine (HRC) prototype is
 \begin{equation}
 e_0(t)=\begin{cases}
-0.4[1-\cos(\pi t/0.01)],&0\leq t<0.01,\\
+\dfrac{A_e}{2}[1-\cos(\pi t/T_e)],&0\leq t<T_e,\\
 0,&\text{otherwise,}
 \end{cases}
 \end{equation}
-with amplitude 0.8 and duration 10 ms. The onset comparison applies four
-continuous shifts to this prototype. Naive placement samples the analytic HRC
-at the requested onset; Lagrange uses a six-tap, fifth-order maximally-flat
-FIR shift; Fourier uses the official FLAMO v0.2.18 delay response
-$e^{-j\omega D}$; and Thiran uses a causal first-order all-pass shift.
+where the excitation amplitude and duration are fixed to $A_e=0.8$ and
+$T_e=10$ ms. The onset comparison applies four continuous shifts to this
+prototype. Naive placement samples the analytic HRC at the requested onset;
+Lagrange uses a six-tap, fifth-order maximally-flat FIR shift; Fourier uses the
+delay response $e^{-j\omega D}$ implemented in FLAMO
+\cite{dalsanto2025flamo}; and Thiran uses a causal first-order all-pass shift.
 
-We write a propagation delay as $\mathcal D_p(D;z)\approx z^{-D}$. The four
-waveguide realisations are frequency sampling with no polynomial interpolator;
-two-tap, order-1 Lagrange sections on both rails (Linear); order 5 on the long
-pluck--nut rail and order 1 on the short pluck--bridge rail (Lagrange); and the
-registered order-3/order-1 Thiran all-pass split. Thiran preserves magnitude
-while approximating the requested group delay \cite{laakso1996splitting}.
-Every rail is tuned using its realised fractional-delay and one-pole-filter
-phase.
-
-Lagrange is deliberately \emph{not} order 5 everywhere: its maximally-flat
-delay is centred near half the FIR order \cite{laakso1996splitting}. Across
-80--320 Hz, the uncompensated long delay is 4.72--19.15 samples and
-accommodates that centring, whereas the short delay is only 1.41--5.72 samples.
-At its short-delay endpoint, order 5 reached peak gain 2.50 in qualification;
-order 1 remained unity-bounded.
+We write a propagation delay as $\mathcal D_p(D;z)\approx z^{-D}$. Linear uses
+two-tap, order-1 Lagrange sections on both rails; Lagrange uses order 5 on the
+long pluck--nut section and order 1 on the short pluck--bridge section; Fourier
+samples the delay responses without a polynomial interpolator; and Thiran uses
+order 3 on the long section and order 1 on the short section. Thiran preserves
+magnitude while approximating the requested group delay. As described by
+Laakso et al.\ \cite{laakso1996splitting}, Lagrange and Thiran are
+corresponding maximally-flat FIR and all-pass designs, but their higher-order
+forms require a sufficiently long realizable delay. The chosen pluck position
+can make the bridge-side section shorter than those requirements, motivating
+the order-1 short section for both methods. Every rail is tuned using the
+realised fractional-delay and one-pole-filter phase.
 
 \subsection{Renderer qualification}
 \label{sec:renderer-qualification}
 Table~\ref{tab:interpolation-onset} is the complementary slice to
 Fig.~\ref{fig:landscapes}: it fixes \bicul{} and varies onset placement and
-propagation interpolation. Target and candidate share the named construction
-within each cell, so the result measures its derivative geometry rather than a
-renderer-mismatch penalty. Every cell rerenders the 160-Hz, 1.0-s target and
-the same 25-by-25 lattice, then measures the 120 non-target directions on the
-registered 11-by-11 sublattice.
-
-The matrix sweep uses 65,536-point Fourier transforms. The frequency-sampled
-waveguide was checked against an explicit
-\texttt{Series}/\texttt{Parallel}/nested-\texttt{Recursion} FLAMO graph, with
-real DC and Nyquist bins and conjugate negative-frequency completion. Its
-transform is 8.192 times the retained 8000-sample horizon. Doubling it to
-131,072 points changed the target by only $2.14\times10^{-7}$ relative RMS and
-left all four Fourier-waveguide counts unchanged: 82, 84, 106, and 119 of 120
-for Naive, Lagrange, Fourier, and Thiran onset placement.
+propagation interpolation on the same 25-by-25 lattice. Target and candidate
+share the named construction in each cell, so the comparison measures its
+derivative geometry rather than a renderer mismatch. For the Fourier
+propagation column, the waveguide is assembled as a FLAMO module
+\cite{dalsanto2025flamo}. Its 65,536-point transform is 8.192 times the
+retained 8000-sample horizon to suppress circular time aliasing, and real DC
+and Nyquist bins with conjugate negative-frequency completion enforce
+Hermitian symmetry.
 
 \begin{table}[t]
 \centering
 \caption{Target-directed \bicul{} descent directions (\%) when target and
 candidate share the indicated $t$-shift and waveguide-$f_0$-interpolation
-realisations. Every cell uses the registered single-pluck lattice of
-Fig.~\ref{fig:landscapes}; higher is better. Fourier onset placement with
-Thiran propagation is frozen thereafter.}
+realisations. Each entry is the percentage of the 120 displayed non-target
+gradients that point towards the target. Every cell rerenders the same
+25-by-25 lattice as Fig.~\ref{fig:landscapes}; higher is better.}
 \label{tab:interpolation-onset}
 \resizebox{\columnwidth}{!}{%
 \input{\PaperRoot/figures/interpolation_gradient_table.tex}}
@@ -417,27 +404,20 @@ Fourier onset placement with Thiran propagation is the only cell with 120/120
 target-directed gradients. Beyond that diagnostic, Fourier placement shifts a
 fixed excitation without direct resampling, while Thiran supplies causal,
 stateful, all-pass propagation. We therefore freeze this pair for
-Fig.~\ref{fig:landscapes} and the phrase-recovery campaign. In production, the
-official FLAMO \texttt{parallelDelay} places each HRC copy at $D=t_if_s$ using
-a 262,144-point transform; independently delayed spectra are summed, inverted
-once, and truncated to 8000 samples. Requalification at that transform length
-remained 120/120. FLAMO's alias-decay envelope is disabled, and the small
-periodic sinc pre-ringing is not masked because masking would add another
-onset-dependent operation. The state-switch boundary remains the detached
-$\lfloor t_i f_s\rfloor$ sample. There is no dynamics parameter, source
-filter, output normalisation, or in-loop DC blocker.
+Fig.~\ref{fig:landscapes} and all subsequent phrase-recovery experiments.
 
 \subsection{State policy and recursive realisation}
 Each constant event regime is reduced algebraically to an exact rational
-transfer. PhilTorch calls the native TorchLPC CUDA recurrence; a direct rail
-recursion is retained as a numerical oracle. The collapsed direct-form-II
-(DF2) transfer compresses the rail delays, reflections, and bridge termination
-into one history, which is reinterpreted when coefficients change. The Literal
+transfer. We evaluate the recurrent IIR filter and backpropagate through it
+with PhilTorch's direct-form-II (DF2) interface
+\cite{yu2025philtorch}, using its TorchLPC backend. The collapsed DF2 transfer
+compresses the rail delays, reflections, and bridge termination into one
+history, which is reinterpreted when coefficients change. The Literal
 realisation instead retains separate histories on the physical right- and
 left-going rail sections and bridge filter. They are equivalent for fixed
 coefficients but need not remain so under a parameter switch.
 
-The production hard-reset policy clears every relevant history at an event
+The hard-reset policy clears every relevant history at an event
 boundary before processing the new excitation. The persistent diagnostic
 instead carries history across the switch. Figure~\ref{fig:state-realization}
 uses the target phrase $(110,0.5),(160,1.0),(280,1.5)$ in Hz and seconds and
@@ -465,45 +445,50 @@ use Fourier HRC placement and order-3/order-1 Thiran propagation.}
 \end{figure*}
 
 \section{Experiments}
-Master seed 2027 generates scrambled-Latin-hypercube targets at each
-$C\in\{1,2,4,6,8\}$. The confirmatory manifest preserves the original ten
-targets exactly and appends 140 targets under the same registered bounds and
-separation rules; the final analysis uses target indices 0--149. Pitches
-are log-mapped to 80--320 Hz. Sorted target
-onset latents guarantee the registered 50-ms separation:
+\subsection{Targets and optimisation}
+Master seed 2027 generates 150 scrambled-Latin-hypercube targets for each of
+one, two, four, six, and eight events. Pitches are log-mapped to 80--320 Hz.
+All target and candidate onsets lie between 0.2 and 1.8 s; target events are
+separated by at least 50 ms. Candidate pitches are initialised at 160 Hz, and
+their onsets at the centres of equal-width cells spanning the allowed time
+interval. Pitch and onset use independent elementwise bounded logits, and all
+event coordinates are optimised independently.
+
+We use Adam with learning rate 0.05. During optimisation, each loss is divided
+by its value at initialisation so that objectives of different numerical scale
+receive comparable step sizes; this factor does not change the reported loss.
+A relative raw-loss decrease of $10^{-4}$ resets patience. After 100
+evaluations without such improvement, the strict best is restored, the
+learning rate is multiplied by 0.3 down to $10^{-5}$, and the optimiser state
+is cleared. Optimisation stops after 250 further evaluations or 3000 updates
+and retains the lowest raw-loss iterate.
+
+\subsection{Coordinate variants and evaluation}
+The time--frequency transport row labelled $1\,\mathrm{s}=1\,\mathrm{oct}$
+changes only the coordinates of Fabiani et al.'s \tfw{}: frequency becomes
+$\log_2[\max(f,20)/20]$ octaves and time is measured in seconds, giving equal
+coordinate distance to one second and one octave. This is the transport
+variant used in the six-loss study.
+
+The exploratory Log-Q variant changes only the final RMS in \bicul. Whereas
+canonical \bicul{} weights every point of the rectangular STFT-bin lattice
+equally, Log-Q approximates integration in physical coordinates: seconds
+along time and $\log_2[\max(f,20)/20]$ octaves along frequency. For
+$E_{d_t,d_f}=\hat R-R$, it uses
 \begin{equation}
-t_i=0.2+v_{(i)}[1.6-(C-1)0.05]+0.05i,
+\ell^{\rm quad}_{d_t,d_f}=\left[\frac{\sum_{k,n}
+w^f_{d_f,k}w^t_{d_t,n}E_{d_t,d_f}(k,n)^2}
+{\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2},
 \end{equation}
-within 0.2--1.8 s. Workers receive target audio, checksum, and cardinality,
-never target parameters.
+where each $w$ is the adjacent-coordinate interval aligned with the
+cumulative direction. The cumulative surfaces, target scaling, and square-root
+transform remain unchanged.
 
-Every candidate pitch starts at 160 Hz and candidate onsets start at
-\begin{equation}
-\hat t_i=0.2+(i+0.5)\frac{1.6}{C}.
-\end{equation}
-Thus $C=2$ starts at 0.6 and 1.4 s. Pitch and onset use independent
-elementwise bounded logits. Candidate onsets have no ordering transform,
-spacing constraint, canonical parameterisation, or ``Magic Clamp''; slots may
-cross or coincide and are matched only after fitting.
-
-Targets and candidates use this same Fourier-onset/Thiran-propagation renderer.
-We use float64 Adam with learning rate 0.05, betas $(0.9,0.999)$, epsilon
-$10^{-8}$, and no weight decay. Division by each fit's initial raw loss is
-scalar optimizer conditioning only. A relative raw-loss decrease of $10^{-4}$
-resets patience. After 100 evaluations without such improvement, the strict
-best is restored, learning rate is multiplied by 0.3 down to $10^{-5}$, and
-Adam moments are cleared. Optimization stops after 250 further evaluations or
-3000 updates and retains the lowest raw-loss iterate.
-
-At $n=150$, the preregistered experiment has $150\times6=900$ single-event
-fits and $4\times150\times6=3600$ multi-event fits, for exactly 4500 fits.
-The independently run log-frequency-quadrature variant of \bicul{} and
-published \tfw{} each contribute 750 fits on the same frozen targets,
-giving 6000 fits and 40 conditions in the combined descriptive report. Both
-were specified after the six-loss study and are excluded from its confirmatory
-test family. No objective uses spectral pre-emphasis; the quadrature variant's
-only weights are its fixed coordinate-integration intervals. Hungarian assignment
-minimises
+The six-loss study contains 4500 fits. The original linear-Hz \tfw{} of
+Fabiani et al. and Log-Q were evaluated separately on the same targets, adding
+750 fits each and giving 6000 fits across 40 conditions. These two extensions
+are excluded from the confirmatory test family. No objective uses spectral
+pre-emphasis. Hungarian assignment minimises
 \begin{equation}
 d_{ij}=\left[\frac{\log_2(\hat f_i/f_j)}{2}\right]^2+
 \left[\frac{\hat t_i-t_j}{1.6}\right]^2.
@@ -521,13 +506,13 @@ coordinates, and non-finite audio, loss, gradient, coordinate, or metric data.
 \section{Results}
 Table~\ref{tab:pilot-compact} reports all 40 loss/event-count conditions using
 the adopted Fourier-onset/Thiran-propagation renderer whose local gradient
-geometry is shown in Fig.~\ref{fig:landscapes}. The completed $n=150$ dataset
-contains the unchanged original ten targets plus all 140 appended targets.
-The rank styling is descriptive, particularly for the two post-hoc extensions.
+geometry is shown in Fig.~\ref{fig:landscapes}. The dataset contains $n=150$
+targets per event count. The rank styling is descriptive, particularly for the
+two post-hoc extensions.
 
 \begin{table*}[!t]
 \centering
-\caption{Event recovery over $n=150$ phrases per cardinality. Each entry is the
+\caption{Event recovery over $n=150$ phrases per event count. Each entry is the
 median across phrases of the within-phrase mean absolute $\Delta f_0$ (cents)
 or $\Delta t$ (ms) to the Hungarian-matched target events. The Hungarian
 algorithm pairs predicted and target events one-to-one to minimise the summed
@@ -561,16 +546,16 @@ Table~\ref{tab:pilot-compact}; both added extension rows are exploratory.}
 
 A signed noncentral-$t$ calculation defines the confirmatory family: paired
 \bicul{} versus the octave-coordinate transport variant for cents, onset,
-and LSD at five cardinalities, giving 15 two-sided primary tests. Bonferroni familywise
+and LSD at five event counts, giving 15 two-sided primary tests. Bonferroni familywise
 $\alpha=0.05$, target paired $d_z=0.35$, and 90\% power require 150 phrases per
-cardinality (power 0.901 at $n=150$ and 0.899 at $n=149$). All 15 paired
+event count (power 0.901 at $n=150$ and 0.899 at $n=149$). All 15 paired
 two-sided tests used the exact shared phrases. \bicul{} had the lower mean
 in every comparison. After correction, all five LSD comparisons and both
-pitch and onset comparisons at $C\in\{4,6,8\}$ rejected their nulls (11/15);
-pitch and onset at $C\in\{1,2\}$ did not.
+pitch and onset comparisons for four, six, and eight events rejected their
+nulls (11/15); pitch and onset for one and two events did not.
 
 \section{Limitations and conclusion}
-Targets are synthetic; cardinality is known; and target and candidate share
+Targets are synthetic; the number of events is known; and target and candidate share
 excitation, damping, and waveguide structure. The 4-kHz rate restricts
 bandwidth, Thiran sections approximate ideal propagation delay, the finite
 Fourier onset shift has small periodic pre-ringing, and hard reset is an
