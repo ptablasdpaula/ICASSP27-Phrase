@@ -73,16 +73,16 @@ plucked string while exposing pitch through a physically meaningful
 propagation delay, analogous to string length. Its excitation, filtering,
 delay, and feedback components are also shared with broader families of
 source--filter synthesizers and artificial reverberators, making it a useful
-test case beyond this particular instrument. We introduce \bicul, a
-bidirectional cumulative-energy loss that compares normalised cumulative
-spectral-power surfaces in both directions of both time and frequency. \bicul{}
-is the only evaluated loss whose descent direction points towards the target at every
+test case beyond this particular instrument. We introduce a bidirectional
+cumulative-energy loss that compares normalised cumulative spectral-power
+surfaces in both directions of both time and frequency. This loss is the only
+evaluated loss whose descent direction points towards the target at every
 sampled point in the single-pluck landscape. Across 6000 direct
 analysis-by-synthesis fits, as phrases grow from one to eight plucks, classical
 waveform and spectral losses and framewise spectral optimal transport
-frequently collapse to poor multi-event solutions, whereas \bicul{} recovers
-pluck pitches and onset times more reliably than joint time--frequency optimal
-transport.
+frequently collapse to poor multi-event solutions, whereas the cumulative
+loss recovers pluck pitches and onset times more reliably than joint
+time--frequency optimal transport.
 
 Separately, we show that gradient direction within the waveguide depends on
 how continuous pluck placement and fractional delay are implemented. Fourier
