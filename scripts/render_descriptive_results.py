@@ -37,13 +37,13 @@ LOSS_LABELS = (
     r"$\hookrightarrow$ Log-Q",
 )
 TEX_LOSS_LABELS = (
-    r"$\mathcal{L}_1$",
-    r"$\mathcal{L}_2$",
-    "MSS",
-    "SOT",
-    r"$\mathrm{TF}\mathcal{W}_2$",
+    r"\lone",
+    r"\ltwo",
+    r"\mss",
+    r"\sot",
+    r"\tfw",
     r"$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$",
-    r"$\mathrm{BiCu}\mathcal{L}$",
+    r"\bicul",
     r"$\hookrightarrow$ Log-Q",
 )
 CARDINALITIES = (1, 2, 4, 6, 8)

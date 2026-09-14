@@ -23,13 +23,15 @@ Cumulative Energy Loss}
 \IEEEauthorblockA{Institution withheld for double-blind review\\
 contact@example.invalid}}
 
-\newcommand{\lossLone}{\ensuremath{\mathcal{L}_1}}
-\newcommand{\lossLtwo}{\ensuremath{\mathcal{L}_2}}
-\newcommand{\lossMSS}{MSS}
-\newcommand{\lossSOT}{SOT}
-\newcommand{\lossTFW}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
-\newcommand{\lossBiCum}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}
-\newcommand{\redtodo}[1]{\textcolor{red}{\textbf{TODO:} #1}}
+% LaTeX control words cannot contain underscores, so the requested
+% \l_one and \l_two source names are represented by \lone and \ltwo.
+\newcommand{\lone}{\ensuremath{\mathcal{L}_1}}
+\newcommand{\ltwo}{\ensuremath{\mathcal{L}_2}}
+\newcommand{\mss}{MSS}
+\newcommand{\sot}{SOT}
+\newcommand{\tfw}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
+\newcommand{\bicul}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}
+\newcommand{\redtodo}[1]{\textcolor{red}{#1}}
 
 \begin{document}
 \maketitle
@@ -38,15 +40,15 @@ contact@example.invalid}}
 Musical controls such as pluck time and fundamental frequency form a sparse
 event sequence, but their phase-sensitive audio effects make them difficult
 to recover by gradient descent. We study this geometry with a differentiable
-two-rail digital waveguide and propose \lossBiCum, a bidirectional
-cumulative-energy loss. \lossBiCum{} compares STFT power after cumulative sums in both directions of
+two-rail digital waveguide and propose \bicul, a bidirectional
+cumulative-energy loss. \bicul{} compares STFT power after cumulative sums in both directions of
 time and frequency, turning a local energy displacement into an extended
 difference. We compare six preregistered unweighted audio losses on 4500 direct
 analysis-by-synthesis fits spanning five known event cardinalities; one is a
 transport variant whose axes equate 1~s with 1~octave. Two exploratory 750-fit
-extensions evaluate the published linear-Hz \lossTFW{} and a log-frequency
-quadrature variant of \lossBiCum. Across 15 paired confirmatory tests,
-\lossBiCum{} has lower mean error than the octave-coordinate transport variant
+extensions evaluate the published linear-Hz \tfw{} and a log-frequency
+quadrature variant of \bicul. Across 15 paired confirmatory tests,
+\bicul{} has lower mean error than the octave-coordinate transport variant
 in every comparison and
 survives familywise correction in 11. The
 implementation includes signed manifests and fail-fast scientific invariants.
@@ -74,12 +76,12 @@ also shows that renderer and loss design jointly determine useful gradients
 \cite{anonymous2026dafx,carson2026modulation}.
 
 We isolate these effects with a fixed-cardinality phrase rendered by one
-differentiable digital waveguide. Our contribution is \lossBiCum, a
+differentiable digital waveguide. Our contribution is \bicul, a
 bidirectional cumulative-energy objective. The combined report compares it
-with waveform \lossLone, waveform \lossLtwo, smooth \lossMSS, the published
-\lossSOT{} composite, and the published linear-Hz \lossTFW. The preregistered
+with waveform \lone, waveform \ltwo, smooth \mss, the published
+\sot{} composite, and the published linear-Hz \tfw. The preregistered
 campaign used a variant that instead measures frequency in octaves and equates
-1~s with 1~octave; we additionally evaluate a variant of \lossBiCum{} whose
+1~s with 1~octave; we additionally evaluate a variant of \bicul{} whose
 final surface RMS uses log-frequency quadrature. No objective uses external
 spectral pre-emphasis.
 
@@ -137,24 +139,24 @@ onset-dependent operation. The state-switch boundary remains the detached
 $\lfloor t_i f_s\rfloor$ sample. Thus ``Fourier+Thiran'' below means Fourier
 placement of the HRC only and the registered order-3/order-1 causal Thiran
 sections for waveguide propagation. We adopt this pairing because it gives the
-most consistently target-directed \lossBiCum{} geometry in
+most consistently target-directed \bicul{} geometry in
 Table~\ref{tab:interpolation-onset}, while Fig.~\ref{fig:landscapes} verifies
 the resulting gradients for all six displayed losses on the full registered lattice.
 There is no dynamics parameter, source filter, output normalisation, or
 in-loop DC blocker.
 
 \section{Audio losses}
-Let $x$ and $\hat x$ be target and candidate. \lossLone{} is mean absolute
-sample error and \lossLtwo{} is mean squared sample error. \lossMSS{} is the
+Let $x$ and $\hat x$ be target and candidate. \lone{} is mean absolute
+sample error and \ltwo{} is mean squared sample error. \mss{} is the
 smooth multi-scale spectral loss \cite{schwar2023mss}, using periodic flat-top
 windows $\{17,31,67,127,257,509\}$, hops $\{8,15,33,63,128,254\}$,
 $\log(1+|\operatorname{STFT}|)$ features, and summed squared
 $\mathcal{L}_2$ distance.
 
-\lossSOT{} is the full published composite \cite{torres2024sot}: a flat-top
+\sot{} is the full published composite \cite{torres2024sot}: a flat-top
 FFT-512/hop-64 transport term on squared magnitudes with its published
 normalisation and quantile cutoff, plus 0.05 times its Hann-windowed
-linear-magnitude MSS term. Published \lossTFW{} uses joint time--frequency
+linear-magnitude MSS term. Published \tfw{} uses joint time--frequency
 sliced $W_2$ \cite{fabiani2024jtfot}: a periodic-Hann FFT-256/hop-128
 magnitude STFT is globally unit-normalised and projected along ten fixed
 angles. Its coordinates are physical frequency in Hz and
@@ -176,14 +178,14 @@ R&=\sqrt{\max(S_{d_t,d_f}/m,10^{-12})},\\
 \hat R&=\sqrt{\max(\hat S_{d_t,d_f}/m,10^{-12})},\\
 \ell_{d_t,d_f}&=\operatorname{RMS}(R-\hat R).
 \end{align}
-\lossBiCum{} averages the four choices
+\bicul{} averages the four choices
 $d_t\in\{\rightarrow,\leftarrow\}$ and
 $d_f\in\{\uparrow,\downarrow\}$. Accumulation extends a local displacement
 from the event to a boundary, offering a global direction in time and
 frequency. The implementation extends Sebastian Schlecht's
 \texttt{MatchCumulativeEnergy} in both directions of both axes.
 
-Canonical \lossBiCum{} takes an unweighted RMS over the rectangular STFT-bin
+Canonical \bicul{} takes an unweighted RMS over the rectangular STFT-bin
 lattice. An exploratory variant instead evaluates that final RMS by quadrature
 in physical coordinates: seconds along time and
 $\log_2[\max(f,20)/20]$ octaves along frequency. For directional surface
@@ -231,8 +233,8 @@ Adam moments are cleared. Optimization stops after 250 further evaluations or
 
 At $n=150$, the preregistered experiment has $150\times6=900$ single-event
 fits and $4\times150\times6=3600$ multi-event fits, for exactly 4500 fits.
-The independently run log-frequency-quadrature variant of \lossBiCum{} and
-published \lossTFW{} each contribute 750 fits on the same frozen targets,
+The independently run log-frequency-quadrature variant of \bicul{} and
+published \tfw{} each contribute 750 fits on the same frozen targets,
 giving 6000 fits and 40 conditions in the combined descriptive report. Both
 were specified after the six-loss study and are excluded from its confirmatory
 test family. No objective uses spectral pre-emphasis; the quadrature variant's
@@ -253,8 +255,8 @@ dtypes, invalid target spacing, changed initialization, constrained candidate
 coordinates, and non-finite audio, loss, gradient, coordinate, or metric data.
 
 \section{Loss geometry}
-Figure~\ref{fig:landscapes} evaluates \lossLone, \lossLtwo, \lossMSS,
-\lossSOT, the published linear-Hz \lossTFW, and \lossBiCum{} with the adopted
+Figure~\ref{fig:landscapes} evaluates \lone, \ltwo, \mss,
+\sot, the published linear-Hz \tfw, and \bicul{} with the adopted
 Fourier-onset/Thiran renderer for a 160-Hz event at 1.0 s on an exact
 25-by-25 lattice: time is linear over a $\pm0.8$-s shift and pitch is
 logarithmic over a $\pm1$-octave shift, with the exact target inserted at the
@@ -274,9 +276,9 @@ the autograd unit-descent direction $-\nabla\mathcal L$ on the registered
 objectives. The cross marks the target.
 A direction is target-directed when its angle to the target displacement is
 $<90^\circ$ in the normalised coordinates. Among the 120 displayed non-target
-gradients per panel, the target-directed percentages are \lossLone{}:
-60.0\%, \lossLtwo{}: 49.2\%, \lossMSS{}: 42.5\%, \lossSOT{}: 51.7\%,
-\lossTFW{}: 75.8\%, and \lossBiCum{}: 100.0\%.}
+gradients per panel, the target-directed percentages are \lone{}:
+60.0\%, \ltwo{}: 49.2\%, \mss{}: 42.5\%, \sot{}: 51.7\%,
+\tfw{}: 75.8\%, and \bicul{}: 100.0\%.}
 \label{fig:landscapes}
 \end{figure}
 
@@ -312,7 +314,7 @@ Literal instead retains separate histories on the physical right/left-going
 rail sections and bridge filter. They are equivalent for fixed coefficients
 but not necessarily under a parameter switch. Reset zeros every relevant
 history at each event boundary before the new excitation is processed; it
-therefore produces the same smooth \lossBiCum{} sweep in both realisations,
+therefore produces the same smooth \bicul{} sweep in both realisations,
 whereas both persistent sweeps are rugged. All panels use the registered
 Fourier HRC placement and order-3/order-1 Thiran propagation.}
 \label{fig:state-realization}
@@ -326,7 +328,7 @@ construction rather than a renderer-mismatch penalty.
 \begin{table}[t]
 \centering
 \caption{Matched $t$-shift $\times$ waveguide-$f_0$-interpolation comparison for
-\lossBiCum. Each entry is the percentage of the 120 displayed non-target
+\bicul. Each entry is the percentage of the 120 displayed non-target
 descent directions whose angle to the target displacement is below
 $90^\circ$. Every cell rerenders both the 160-Hz, 1.0-s target and all
 candidates with its named row and column methods, using the same 25-by-25
@@ -386,8 +388,8 @@ frequency and time metric blocks. Within each event count and
 metric, the lowest median is bold, the second-lowest is underlined, and the
 third-lowest is italicised. Lower is better. A hooked row is a variant of the
 loss immediately above: $1\,\mathrm{s}=1\,\mathrm{oct}$ replaces the linear
-frequency coordinate of \lossTFW{} with log-frequency octaves, while Log-Q uses
-log-frequency quadrature for \lossBiCum. The plain \lossTFW{} row and Log-Q
+frequency coordinate of \tfw{} with log-frequency octaves, while Log-Q uses
+log-frequency quadrature for \bicul. The plain \tfw{} row and Log-Q
 row are exploratory; neither enters the confirmatory test family.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
@@ -410,11 +412,11 @@ Table~\ref{tab:pilot-compact}; both added extension rows are exploratory.}
 \end{figure}
 
 A signed noncentral-$t$ calculation defines the confirmatory family: paired
-\lossBiCum{} versus the octave-coordinate transport variant for cents, onset,
+\bicul{} versus the octave-coordinate transport variant for cents, onset,
 and LSD at five cardinalities, giving 15 two-sided primary tests. Bonferroni familywise
 $\alpha=0.05$, target paired $d_z=0.35$, and 90\% power require 150 phrases per
 cardinality (power 0.901 at $n=150$ and 0.899 at $n=149$). All 15 paired
-two-sided tests used the exact shared phrases. \lossBiCum{} had the lower mean
+two-sided tests used the exact shared phrases. \bicul{} had the lower mean
 in every comparison. After correction, all five LSD comparisons and both
 pitch and onset comparisons at $C\in\{4,6,8\}$ rejected their nulls (11/15);
 pitch and onset at $C\in\{1,2\}$ did not.
@@ -425,7 +427,7 @@ excitation, damping, and waveguide structure. The 4-kHz rate restricts
 bandwidth, Thiran sections approximate ideal propagation delay, the finite
 Fourier onset shift has small periodic pre-ringing, and hard reset is an
 abstraction. The confirmatory inference is restricted to the preregistered
-pairing of \lossBiCum{} and the octave-coordinate transport variant; the
+pairing of \bicul{} and the octave-coordinate transport variant; the
 eight-loss ranks are descriptive.
 Unknown cardinality, real recordings, dynamics, pickup position, decay,
 vibrato, slides, polyphony, and instrument-specific claims remain outside the
@@ -435,9 +437,9 @@ We formulate phrase analysis as direct recovery of event pitch and onset and
 introduce a loss that compares cumulative STFT power in both directions of
 both axes. The signed 6000-fit study provides physical-unit errors and audio
 distributions under one controlled renderer. Its powered paired analysis
-supports canonical \lossBiCum{} over the octave-coordinate transport variant
+supports canonical \bicul{} over the octave-coordinate transport variant
 in 11 of 15 corrected tests, while the log-frequency-quadrature variant of
-\lossBiCum{} improves the descriptive median pitch and onset recovery at four,
+\bicul{} improves the descriptive median pitch and onset recovery at four,
 six, and eight events and remains a hypothesis for independent study.
 
 \bibliographystyle{IEEEtran}
