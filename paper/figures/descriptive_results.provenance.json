@@ -1,205 +1,213 @@
 {
-  "aggregation": "median across phrases of within-phrase Hungarian-matched mean absolute event error",
-  "artifacts": {
-    "lsd_violin_n150_pdf_sha256": "21eb73893479f5918346cd9cee0f896310ea1822fced87250f6c163496c9c76f",
-    "lsd_violin_n150_png_sha256": "e751c4268edd2a386881942131889458405b364db830ff34695726fbc8e79e63",
-    "median_recovery_n150_table_tex_sha256": "6ca5cf83ceb0e402df2ffa1b6928293f8e13db919cfb1b65f5a5377cb5e2e832",
-    "per_phrase_csv_sha256": "429eed66018ef751bec8cd7e950ef36ae0ece14427efe7e6b4c3bc04c22956c6",
-    "tables_pdf_sha256": "409b58bc45c7f1d7a262b08d87427c2c361f6580cf2b64ed2925b63869956b9b",
-    "tables_tex_sha256": "25fa9cd1fefca3714a7db3415e7d8e3506f4b2b75b711c9f5f457632f91b9b3f"
+  "condition_count": 40,
+  "created_utc": "2026-09-14T06:06:35.845198+00:00",
+  "figure4": {
+    "artifacts": {
+      "pdf": "9f855a96bbcd432c2863e88987155dcf71a9760fae87f3caf54fa4b1336a3fb9",
+      "png": "849b3f44262166c91768752b739b7e167614de8108fdfe79421d7042294ae218"
+    },
+    "metric": "complete per-phrase log-spectral-distance distributions"
   },
-  "build_contract_sha256": "861d1dd24a65321e4e165b5f6ddcf20a57a898af6c23a9f6039a91b12cc456ee",
-  "cardinalities": [
-    1,
-    2,
-    4,
-    6,
-    8
-  ],
-  "condition_count": 35,
-  "descriptive_only": true,
-  "fit_count": 5250,
-  "inputs": {
-    "logquad_health_payload_sha256": "6cff7981e977cab75c433013d95b5e0c67f1ce49ad97253557088aa5b372a42f",
-    "logquad_per_phrase_csv_sha256": "504bb4c2b6473710ac376399bcc47824347c7a4dac4269594e93a0444f6eaaaf",
-    "logquad_summary_payload_sha256": "b65bb642344fa3450655aa876316dd312aedfbade96de79c94187cf1e1b6005f",
-    "six_loss_health_payload_sha256": "e316b93efe9b7fa5eb8275f095c2e45ab5042e1ee0aa3e7d08f1ebac1ef9a23d",
-    "six_loss_per_phrase_csv_sha256": "0927026913ffc22010942da9c2bbdcd682f5fe8bd914cc3d12f734ee4e7019f1",
-    "six_loss_summary_payload_sha256": "1d5276efe6daa5b4041768aa0c30dcbcecd3c4efa0703ee9f143fbb572fb55da"
+  "fit_count": 6000,
+  "loss_count": 8,
+  "milestone_n": 150,
+  "payload_sha256": "c768955041490ca49bb988c01c5ec9754eeae2b686598041713d94e706809b66",
+  "schema": "paper-eight-loss-n150-v1",
+  "selection": "target_index < milestone_n within every cardinality",
+  "sources": {
+    "input_reports": {
+      "linear_jtfot_health_payload_sha256": "183645c2bbe19c119b9dbf1118e87abeff913a767bfc2c304857dbe048ef96fa",
+      "linear_jtfot_per_phrase_csv_sha256": "21ce60464a22f2df76bbd514157b16254646045e5b30afbb3bcb919b75a89a8c",
+      "linear_jtfot_summary_payload_sha256": "ff985c1dbf0b7d192af14d5e98ba0146c04d907d4165cfc41f51b9191db3e10c",
+      "logquad_health_payload_sha256": "6cff7981e977cab75c433013d95b5e0c67f1ce49ad97253557088aa5b372a42f",
+      "logquad_per_phrase_csv_sha256": "504bb4c2b6473710ac376399bcc47824347c7a4dac4269594e93a0444f6eaaaf",
+      "logquad_summary_payload_sha256": "b65bb642344fa3450655aa876316dd312aedfbade96de79c94187cf1e1b6005f",
+      "six_loss_health_payload_sha256": "e316b93efe9b7fa5eb8275f095c2e45ab5042e1ee0aa3e7d08f1ebac1ef9a23d",
+      "six_loss_per_phrase_csv_sha256": "0927026913ffc22010942da9c2bbdcd682f5fe8bd914cc3d12f734ee4e7019f1",
+      "six_loss_summary_payload_sha256": "1d5276efe6daa5b4041768aa0c30dcbcecd3c4efa0703ee9f143fbb572fb55da"
+    },
+    "per_phrase_csv": "/data/home/acw794/ICASSP2027-PluckedStringPhrase-eight-loss-report/results/eight-loss-confirmatory/n150/per_phrase.csv",
+    "per_phrase_csv_sha256": "318727534f4a84c1e95e0d84197f679d2ca9093c0416cca541c1904ba602f194",
+    "report": "/data/home/acw794/ICASSP2027-PluckedStringPhrase-eight-loss-report/results/eight-loss-confirmatory/n150/summary.json",
+    "report_payload_sha256": "0110baa95bf36f602be8af5ff4cef1f7f4ec62e372790eaab2c14c94d0a90544",
+    "report_sha256": "3f0d70ba2218d0c05a3cd6dd552957ecf8901ecb65e89cc740f77f4589eb6c93"
   },
-  "loss_count": 7,
-  "losses": [
-    "waveform_l1",
-    "waveform_mse",
-    "smooth_mss",
-    "sot_published_composite",
-    "log_jtfot",
-    "bidirectional_cumulative_energy",
-    "log_quadrature_bicul"
-  ],
-  "medians": {
-    "onset_mae_ms": {
-      "bidirectional_cumulative_energy": {
-        "1": 0.0003357997417352543,
-        "2": 0.00029591494007941144,
-        "4": 26.56297233234683,
-        "6": 90.2909734788446,
-        "8": 103.80193141756942
+  "table": {
+    "aggregation": "median across phrases of within-phrase Hungarian-matched mean absolute error",
+    "medians": {
+      "onset_mae_ms": {
+        "bidirectional_cumulative_energy": {
+          "1": 0.0003357997417352543,
+          "2": 0.00029591494007941144,
+          "4": 26.56297233234683,
+          "6": 90.2909734788446,
+          "8": 103.80193141756942
+        },
+        "linear_jtfot": {
+          "1": 0.3461661453767473,
+          "2": 2.226156561286399,
+          "4": 16.048674161127096,
+          "6": 60.85276709195659,
+          "8": 81.72690664042405
+        },
+        "log_jtfot": {
+          "1": 0.2510552851650305,
+          "2": 6.585437374268269,
+          "4": 93.22797595056974,
+          "6": 109.7666735062879,
+          "8": 136.77056114491728
+        },
+        "log_quadrature_bicul": {
+          "1": 0.0005598605292145287,
+          "2": 0.0009883594631332482,
+          "4": 6.7501180459577235,
+          "6": 83.74930321642717,
+          "8": 92.75472154880828
+        },
+        "smooth_mss": {
+          "1": 186.35401180816382,
+          "2": 220.16389135542897,
+          "4": 203.43633789602998,
+          "6": 154.87424356458632,
+          "8": 158.25524970607665
+        },
+        "sot_published_composite": {
+          "1": 104.14187872045477,
+          "2": 240.89610561994698,
+          "4": 216.17579895565203,
+          "6": 193.85662708675858,
+          "8": 173.1900732526069
+        },
+        "waveform_l1": {
+          "1": 71.62486133412638,
+          "2": 220.1516752602285,
+          "4": 234.59057156603552,
+          "6": 187.60399941277694,
+          "8": 186.00876318710198
+        },
+        "waveform_mse": {
+          "1": 443.4066584817689,
+          "2": 360.3679117834121,
+          "4": 242.14443670585035,
+          "6": 215.16997651959338,
+          "8": 197.92094356748942
+        }
       },
-      "log_jtfot": {
-        "1": 0.2510552851650305,
-        "2": 6.585437374268269,
-        "4": 93.22797595056974,
-        "6": 109.7666735062879,
-        "8": 136.77056114491728
-      },
-      "log_quadrature_bicul": {
-        "1": 0.0005598605292145287,
-        "2": 0.0009883594631332482,
-        "4": 6.7501180459577235,
-        "6": 83.74930321642717,
-        "8": 92.75472154880828
-      },
-      "smooth_mss": {
-        "1": 186.35401180816382,
-        "2": 220.16389135542897,
-        "4": 203.43633789602998,
-        "6": 154.87424356458632,
-        "8": 158.25524970607665
-      },
-      "sot_published_composite": {
-        "1": 104.14187872045477,
-        "2": 240.89610561994698,
-        "4": 216.17579895565203,
-        "6": 193.85662708675858,
-        "8": 173.1900732526069
-      },
-      "waveform_l1": {
-        "1": 71.62486133412638,
-        "2": 220.1516752602285,
-        "4": 234.59057156603552,
-        "6": 187.60399941277694,
-        "8": 186.00876318710198
-      },
-      "waveform_mse": {
-        "1": 443.4066584817689,
-        "2": 360.3679117834121,
-        "4": 242.14443670585035,
-        "6": 215.16997651959338,
-        "8": 197.92094356748942
+      "pitch_mae_cents": {
+        "bidirectional_cumulative_energy": {
+          "1": 0.0007998165724399153,
+          "2": 0.0010227687298077555,
+          "4": 34.235249881025865,
+          "6": 141.63986059585895,
+          "8": 157.85338110700735
+        },
+        "linear_jtfot": {
+          "1": 1.5779946811826226,
+          "2": 11.142783381370624,
+          "4": 120.63207828512415,
+          "6": 233.52234611500643,
+          "8": 252.9473312967011
+        },
+        "log_jtfot": {
+          "1": 0.15572621890151545,
+          "2": 4.477914245453486,
+          "4": 101.39323278433775,
+          "6": 185.69026049504413,
+          "8": 197.2986446307179
+        },
+        "log_quadrature_bicul": {
+          "1": 0.0014818340939549437,
+          "2": 0.002202399266621323,
+          "4": 19.09613835944789,
+          "6": 123.66284652099235,
+          "8": 152.87195358024834
+        },
+        "smooth_mss": {
+          "1": 58.593629376278955,
+          "2": 243.8561650173889,
+          "4": 329.4424581694218,
+          "6": 277.1197392542397,
+          "8": 301.55410001635767
+        },
+        "sot_published_composite": {
+          "1": 871.0617362328762,
+          "2": 877.5303749974664,
+          "4": 874.1671137245778,
+          "6": 826.4279694086542,
+          "8": 766.5937459606232
+        },
+        "waveform_l1": {
+          "1": 1031.7680531360877,
+          "2": 862.5122834074525,
+          "4": 731.7661698279817,
+          "6": 642.0860387573314,
+          "8": 563.6235747602552
+        },
+        "waveform_mse": {
+          "1": 1102.8558124069446,
+          "2": 902.1102960897872,
+          "4": 816.3591917252307,
+          "6": 711.4658939440696,
+          "8": 616.471701264575
+        }
       }
     },
-    "pitch_mae_cents": {
-      "bidirectional_cumulative_energy": {
-        "1": 0.0007998165724399153,
-        "2": 0.0010227687298077555,
-        "4": 34.235249881025865,
-        "6": 141.63986059585895,
-        "8": 157.85338110700735
+    "ranking": {
+      "onset_mae_ms": {
+        "1": {
+          "bidirectional_cumulative_energy": "best",
+          "log_jtfot": "third",
+          "log_quadrature_bicul": "second"
+        },
+        "2": {
+          "bidirectional_cumulative_energy": "best",
+          "linear_jtfot": "third",
+          "log_quadrature_bicul": "second"
+        },
+        "4": {
+          "bidirectional_cumulative_energy": "third",
+          "linear_jtfot": "second",
+          "log_quadrature_bicul": "best"
+        },
+        "6": {
+          "bidirectional_cumulative_energy": "third",
+          "linear_jtfot": "best",
+          "log_quadrature_bicul": "second"
+        },
+        "8": {
+          "bidirectional_cumulative_energy": "third",
+          "linear_jtfot": "best",
+          "log_quadrature_bicul": "second"
+        }
       },
-      "log_jtfot": {
-        "1": 0.15572621890151545,
-        "2": 4.477914245453486,
-        "4": 101.39323278433775,
-        "6": 185.69026049504413,
-        "8": 197.2986446307179
-      },
-      "log_quadrature_bicul": {
-        "1": 0.0014818340939549437,
-        "2": 0.002202399266621323,
-        "4": 19.09613835944789,
-        "6": 123.66284652099235,
-        "8": 152.87195358024834
-      },
-      "smooth_mss": {
-        "1": 58.593629376278955,
-        "2": 243.8561650173889,
-        "4": 329.4424581694218,
-        "6": 277.1197392542397,
-        "8": 301.55410001635767
-      },
-      "sot_published_composite": {
-        "1": 871.0617362328762,
-        "2": 877.5303749974664,
-        "4": 874.1671137245778,
-        "6": 826.4279694086542,
-        "8": 766.5937459606232
-      },
-      "waveform_l1": {
-        "1": 1031.7680531360877,
-        "2": 862.5122834074525,
-        "4": 731.7661698279817,
-        "6": 642.0860387573314,
-        "8": 563.6235747602552
-      },
-      "waveform_mse": {
-        "1": 1102.8558124069446,
-        "2": 902.1102960897872,
-        "4": 816.3591917252307,
-        "6": 711.4658939440696,
-        "8": 616.471701264575
-      }
-    }
-  },
-  "payload_sha256": "9afce4a6d000fd79c4d8601c9d6c69776777831b1d880e5d51b8282f08099008",
-  "phrases_per_condition": 150,
-  "ranking": {
-    "onset_mae_ms": {
-      "1": {
-        "bidirectional_cumulative_energy": "best",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "second"
-      },
-      "2": {
-        "bidirectional_cumulative_energy": "best",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "second"
-      },
-      "4": {
-        "bidirectional_cumulative_energy": "second",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "best"
-      },
-      "6": {
-        "bidirectional_cumulative_energy": "second",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "best"
-      },
-      "8": {
-        "bidirectional_cumulative_energy": "second",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "best"
+      "pitch_mae_cents": {
+        "1": {
+          "bidirectional_cumulative_energy": "best",
+          "log_jtfot": "third",
+          "log_quadrature_bicul": "second"
+        },
+        "2": {
+          "bidirectional_cumulative_energy": "best",
+          "log_jtfot": "third",
+          "log_quadrature_bicul": "second"
+        },
+        "4": {
+          "bidirectional_cumulative_energy": "second",
+          "log_jtfot": "third",
+          "log_quadrature_bicul": "best"
+        },
+        "6": {
+          "bidirectional_cumulative_energy": "second",
+          "log_jtfot": "third",
+          "log_quadrature_bicul": "best"
+        },
+        "8": {
+          "bidirectional_cumulative_energy": "second",
+          "log_jtfot": "third",
+          "log_quadrature_bicul": "best"
+        }
       }
     },
-    "pitch_mae_cents": {
-      "1": {
-        "bidirectional_cumulative_energy": "best",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "second"
-      },
-      "2": {
-        "bidirectional_cumulative_energy": "best",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "second"
-      },
-      "4": {
-        "bidirectional_cumulative_energy": "second",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "best"
-      },
-      "6": {
-        "bidirectional_cumulative_energy": "second",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "best"
-      },
-      "8": {
-        "bidirectional_cumulative_energy": "second",
-        "log_jtfot": "third",
-        "log_quadrature_bicul": "best"
-      }
-    }
-  },
-  "schema": "seven-loss-confirmatory-report-v1",
-  "source_commit": "5a91dff73e08d339da5836fa9e81f30db6f1e32d",
-  "status": "complete"
+    "sha256": "d7a8068d3ed4bb148c58b9198404124ddcb5611642e298886d585e622656843b"
+  }
 }

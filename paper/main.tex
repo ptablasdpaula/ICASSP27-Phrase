@@ -29,7 +29,6 @@ contact@example.invalid}}
 \newcommand{\lossSOT}{SOT}
 \newcommand{\lossTFW}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
 \newcommand{\lossBiCum}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}
-\newcommand{\lossLogQuad}{\ensuremath{\mathrm{LogQ}\text{-}\mathrm{BiCu}\mathcal{L}}}
 \newcommand{\redtodo}[1]{\textcolor{red}{\textbf{TODO:} #1}}
 
 \begin{document}
@@ -43,10 +42,13 @@ two-rail digital waveguide and propose \lossBiCum, a bidirectional
 cumulative-energy loss. \lossBiCum{} compares STFT power after cumulative sums in both directions of
 time and frequency, turning a local energy displacement into an extended
 difference. We compare six preregistered unweighted audio losses on 4500 direct
-analysis-by-synthesis fits spanning five known event cardinalities, plus an
-exploratory log-frequency-quadrature variant on 750 additional fits. Across 15
-paired confirmatory tests, \lossBiCum{} has lower mean error than
-\lossTFW{} in every comparison and survives familywise correction in 11. The
+analysis-by-synthesis fits spanning five known event cardinalities; one is a
+transport variant whose axes equate 1~s with 1~octave. Two exploratory 750-fit
+extensions evaluate the published linear-Hz \lossTFW{} and a log-frequency
+quadrature variant of \lossBiCum. Across 15 paired confirmatory tests,
+\lossBiCum{} has lower mean error than the octave-coordinate transport variant
+in every comparison and
+survives familywise correction in 11. The
 implementation includes signed manifests and fail-fast scientific invariants.
 \end{abstract}
 
@@ -73,11 +75,13 @@ also shows that renderer and loss design jointly determine useful gradients
 
 We isolate these effects with a fixed-cardinality phrase rendered by one
 differentiable digital waveguide. Our contribution is \lossBiCum, a
-bidirectional cumulative-energy objective, compared with waveform \lossLone,
-waveform \lossLtwo, smooth \lossMSS, the published \lossSOT{} composite, and a
-log-frequency time--frequency transport loss \lossTFW. All optimizing and
-evaluation objectives in the registered rerun are unweighted. We additionally
-test \lossLogQuad{}, an exploratory physically weighted variant of \lossBiCum.
+bidirectional cumulative-energy objective. The combined report compares it
+with waveform \lossLone, waveform \lossLtwo, smooth \lossMSS, the published
+\lossSOT{} composite, and the published linear-Hz \lossTFW. The preregistered
+campaign used a variant that instead measures frequency in octaves and equates
+1~s with 1~octave; we additionally evaluate a variant of \lossBiCum{} whose
+final surface RMS uses log-frequency quadrature. No objective uses external
+spectral pre-emphasis.
 
 \section{Differentiable phrase renderer}
 Figure~\ref{fig:waveguide} shows the Waveguide renderer. It is a reciprocal
@@ -135,7 +139,7 @@ placement of the HRC only and the registered order-3/order-1 causal Thiran
 sections for waveguide propagation. We adopt this pairing because it gives the
 most consistently target-directed \lossBiCum{} geometry in
 Table~\ref{tab:interpolation-onset}, while Fig.~\ref{fig:landscapes} verifies
-the resulting gradients for all six losses on the full registered lattice.
+the resulting gradients for all six displayed losses on the full registered lattice.
 There is no dynamics parameter, source filter, output normalisation, or
 in-loop DC blocker.
 
@@ -150,11 +154,14 @@ $\mathcal{L}_2$ distance.
 \lossSOT{} is the full published composite \cite{torres2024sot}: a flat-top
 FFT-512/hop-64 transport term on squared magnitudes with its published
 normalisation and quantile cutoff, plus 0.05 times its Hann-windowed
-linear-magnitude MSS term. \lossTFW{} adapts joint time--frequency sliced
-$W_2$ \cite{fabiani2024jtfot}: a periodic-Hann FFT-256/hop-128 magnitude STFT
-is globally unit-normalised and projected along ten fixed angles. Frequency is
-mapped to $\log_2(\max(f,20)/20)$ with one octave per second time--pitch
-balance; the original method used linear frequency.
+linear-magnitude MSS term. Published \lossTFW{} uses joint time--frequency
+sliced $W_2$ \cite{fabiani2024jtfot}: a periodic-Hann FFT-256/hop-128
+magnitude STFT is globally unit-normalised and projected along ten fixed
+angles. Its coordinates are physical frequency in Hz and
+$\widetilde t=1000t$ in Hz, so 1~s equals 1000~Hz. The registered
+variant changes only this geometry: frequency becomes
+$\log_2(\max(f,20)/20)$ and time is measured in seconds, so its two axes
+equate 1~s with 1~octave.
 
 \subsection{Bidirectional cumulative energy}
 Let $P$ and $\hat P$ be periodic-Hann FFT-256/hop-64 STFT power. For time
@@ -177,12 +184,12 @@ frequency. The implementation extends Sebastian Schlecht's
 \texttt{MatchCumulativeEnergy} in both directions of both axes.
 
 Canonical \lossBiCum{} takes an unweighted RMS over the rectangular STFT-bin
-lattice. The exploratory \lossLogQuad{} instead evaluates that final RMS by
-quadrature in physical coordinates: seconds along time and
+lattice. An exploratory variant instead evaluates that final RMS by quadrature
+in physical coordinates: seconds along time and
 $\log_2[\max(f,20)/20]$ octaves along frequency. For directional surface
 difference $E_{d_t,d_f}=\hat R-R$, it uses
 \begin{equation}
-\ell^{\rm LogQ}_{d_t,d_f}=\left[\frac{\sum_{k,n}
+\ell^{\rm quad}_{d_t,d_f}=\left[\frac{\sum_{k,n}
 w^f_{d_f,k}w^t_{d_t,n}E_{d_t,d_f}(k,n)^2}
 {\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2},
 \end{equation}
@@ -224,10 +231,12 @@ Adam moments are cleared. Optimization stops after 250 further evaluations or
 
 At $n=150$, the preregistered experiment has $150\times6=900$ single-event
 fits and $4\times150\times6=3600$ multi-event fits, for exactly 4500 fits.
-The independently run \lossLogQuad{} extension contributes 750 fits on the
-same frozen targets, giving 5250 fits and 35 conditions in the combined
-descriptive report. It was specified after the six-loss study and is excluded
-from its confirmatory test family. All objectives are unweighted. Hungarian assignment
+The independently run log-frequency-quadrature variant of \lossBiCum{} and
+published \lossTFW{} each contribute 750 fits on the same frozen targets,
+giving 6000 fits and 40 conditions in the combined descriptive report. Both
+were specified after the six-loss study and are excluded from its confirmatory
+test family. No objective uses spectral pre-emphasis; the quadrature variant's
+only weights are its fixed coordinate-integration intervals. Hungarian assignment
 minimises
 \begin{equation}
 d_{ij}=\left[\frac{\log_2(\hat f_i/f_j)}{2}\right]^2+
@@ -244,8 +253,9 @@ dtypes, invalid target spacing, changed initialization, constrained candidate
 coordinates, and non-finite audio, loss, gradient, coordinate, or metric data.
 
 \section{Loss geometry}
-Figure~\ref{fig:landscapes} evaluates the adopted Fourier-onset/Thiran
-renderer for a 160-Hz event at 1.0 s on an exact
+Figure~\ref{fig:landscapes} evaluates \lossLone, \lossLtwo, \lossMSS,
+\lossSOT, the published linear-Hz \lossTFW, and \lossBiCum{} with the adopted
+Fourier-onset/Thiran renderer for a 160-Hz event at 1.0 s on an exact
 25-by-25 lattice: time is linear over a $\pm0.8$-s shift and pitch is
 logarithmic over a $\pm1$-octave shift, with the exact target inserted at the
 centre. Each surface is independently min--max normalised. White arrows show
@@ -254,17 +264,19 @@ the autograd unit-descent direction $-\nabla\mathcal L$ on the registered
 
 \begin{figure}[t]
 \centering
+\setlength{\abovecaptionskip}{0pt}
 \IfFileExists{\PaperRoot/figures/loss_landscapes.pdf}{
   \includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_landscapes.pdf}
 }{\fbox{\parbox[c][58mm][c]{0.94\columnwidth}{\centering
   Loss-direction figure pending checksum-complete generation.}}}
+\vspace{-5.8mm}
 \caption{Loss landscapes and unit descent directions for the six unweighted
 objectives. The cross marks the target.
 A direction is target-directed when its angle to the target displacement is
 $<90^\circ$ in the normalised coordinates. Among the 120 displayed non-target
 gradients per panel, the target-directed percentages are \lossLone{}:
 60.0\%, \lossLtwo{}: 49.2\%, \lossMSS{}: 42.5\%, \lossSOT{}: 51.7\%,
-\lossTFW{}: 78.3\%, and \lossBiCum{}: 100.0\%.}
+\lossTFW{}: 75.8\%, and \lossBiCum{}: 100.0\%.}
 \label{fig:landscapes}
 \end{figure}
 
@@ -275,11 +287,13 @@ event.
 
 \begin{figure*}[t]
 \centering
+\setlength{\abovecaptionskip}{0pt}
 \IfFileExists{\PaperRoot/figures/state_realization.pdf}{
   \includegraphics[width=\textwidth]
   {\PaperRoot/figures/state_realization.pdf}
 }{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
   State-realisation comparison pending checksum-complete generation.}}}
+\vspace{-7.0mm}
 \caption{State policy and recursive realisation for the target phrase
 $(110\,\mathrm{Hz},0.5\,\mathrm{s})$,
 $(160\,\mathrm{Hz},1.0\,\mathrm{s})$,
@@ -355,42 +369,49 @@ order 1 remained unity-bounded.}
 \end{table}
 
 \section{Descriptive results}
-Table~\ref{tab:pilot-compact} reports all 35 loss/event-count conditions using
+Table~\ref{tab:pilot-compact} reports all 40 loss/event-count conditions using
 the adopted Fourier-onset/Thiran-propagation renderer whose local gradient
 geometry is shown in Fig.~\ref{fig:landscapes}. The completed $n=150$ dataset
 contains the unchanged original ten targets plus all 140 appended targets.
-The rank styling is descriptive, particularly for post-hoc \lossLogQuad{}.
+The rank styling is descriptive, particularly for the two post-hoc extensions.
 
-\begin{table}[!t]
+\begin{table*}[!t]
 \centering
 \caption{Event recovery over $n=150$ phrases per cardinality. Each entry is the
 median across phrases of the within-phrase mean absolute $\Delta f_0$ (cents)
 or $\Delta t$ (ms) to the Hungarian-matched target events. The Hungarian
 algorithm pairs predicted and target events one-to-one to minimise the summed
-joint pitch--time cost in the equation above. Within each event count and
+joint pitch--time cost in the equation above. The vertical rule separates the
+frequency and time metric blocks. Within each event count and
 metric, the lowest median is bold, the second-lowest is underlined, and the
-third-lowest is italicised. Lower is better. \lossLogQuad{} was exploratory;
-no inferential test involving it is reported.}
+third-lowest is italicised. Lower is better. A hooked row is a variant of the
+loss immediately above: $1\,\mathrm{s}=1\,\mathrm{oct}$ replaces the linear
+frequency coordinate of \lossTFW{} with log-frequency octaves, while Log-Q uses
+log-frequency quadrature for \lossBiCum. The plain \lossTFW{} row and Log-Q
+row are exploratory; neither enters the confirmatory test family.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
-\end{table}
+\end{table*}
 
 \begin{figure}[!t]
 \centering
+\setlength{\abovecaptionskip}{0pt}
 \IfFileExists{\PaperRoot/figures/lsd_violin.pdf}{
   \includegraphics[width=\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
 }{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
   Figure 4 LSD distributions pending checksum-complete regeneration.}}}
+\vspace{-8.0mm}
 \caption{Per-phrase LSD distributions over the same $n=150$ phrases,
 using FLAMO Fourier onset placement and Thiran waveguide propagation. White
 bars span the interquartile range and outlined white points mark medians;
-lower is better. \lossLogQuad{} is exploratory.}
+lower is better. Hooked legend entries denote the two variants defined in
+Table~\ref{tab:pilot-compact}; both added extension rows are exploratory.}
 \label{fig:lsd}
 \end{figure}
 
 A signed noncentral-$t$ calculation defines the confirmatory family: paired
-\lossBiCum{} versus \lossTFW{} comparisons for cents, onset, and LSD at five
-cardinalities, giving 15 two-sided primary tests. Bonferroni familywise
+\lossBiCum{} versus the octave-coordinate transport variant for cents, onset,
+and LSD at five cardinalities, giving 15 two-sided primary tests. Bonferroni familywise
 $\alpha=0.05$, target paired $d_z=0.35$, and 90\% power require 150 phrases per
 cardinality (power 0.901 at $n=150$ and 0.899 at $n=149$). All 15 paired
 two-sided tests used the exact shared phrases. \lossBiCum{} had the lower mean
@@ -404,18 +425,20 @@ excitation, damping, and waveguide structure. The 4-kHz rate restricts
 bandwidth, Thiran sections approximate ideal propagation delay, the finite
 Fourier onset shift has small periodic pre-ringing, and hard reset is an
 abstraction. The confirmatory inference is restricted to the preregistered
-\lossBiCum{}--\lossTFW{} family; the seven-loss ranks are descriptive.
+pairing of \lossBiCum{} and the octave-coordinate transport variant; the
+eight-loss ranks are descriptive.
 Unknown cardinality, real recordings, dynamics, pickup position, decay,
 vibrato, slides, polyphony, and instrument-specific claims remain outside the
 present evidence.
 
 We formulate phrase analysis as direct recovery of event pitch and onset and
 introduce a loss that compares cumulative STFT power in both directions of
-both axes. The signed 5250-fit study provides physical-unit errors and audio
+both axes. The signed 6000-fit study provides physical-unit errors and audio
 distributions under one controlled renderer. Its powered paired analysis
-supports canonical \lossBiCum{} over \lossTFW{} in 11 of 15 corrected tests,
-while \lossLogQuad{} improves the descriptive median pitch and onset recovery
-at four, six, and eight events and remains a hypothesis for independent study.
+supports canonical \lossBiCum{} over the octave-coordinate transport variant
+in 11 of 15 corrected tests, while the log-frequency-quadrature variant of
+\lossBiCum{} improves the descriptive median pitch and onset recovery at four,
+six, and eight events and remains a hypothesis for independent study.
 
 \bibliographystyle{IEEEtran}
 \bibliography{\PaperRoot/references}
