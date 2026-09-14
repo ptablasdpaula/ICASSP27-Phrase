@@ -37,21 +37,59 @@ contact@example.invalid}}
 \maketitle
 
 \begin{abstract}
-Musical controls such as pluck time and fundamental frequency form a sparse
-event sequence, but their phase-sensitive audio effects make them difficult
-to recover by gradient descent. We study this geometry with a differentiable
-two-rail digital waveguide and propose \bicul, a bidirectional
-cumulative-energy loss. \bicul{} compares STFT power after cumulative sums in both directions of
-time and frequency, turning a local energy displacement into an extended
-difference. We compare six preregistered unweighted audio losses on 4500 direct
-analysis-by-synthesis fits spanning five known event cardinalities; one is a
-transport variant whose axes equate 1~s with 1~octave. Two exploratory 750-fit
-extensions evaluate the published linear-Hz \tfw{} and a log-frequency
-quadrature variant of \bicul. Across 15 paired confirmatory tests,
-\bicul{} has lower mean error than the octave-coordinate transport variant
-in every comparison and
-survives familywise correction in 11. The
-implementation includes signed manifests and fail-fast scientific invariants.
+Differentiable digital signal processing (DDSP) is widely used for sound
+matching and timbre transfer because it combines efficient synthesis with
+interpretable controls and permits label-free analysis by synthesis. However,
+the end-to-end recovery of fundamental frequency remains difficult.
+Conventional waveform losses and pointwise spectral distances compare
+corresponding samples or time--frequency bins without representing the
+direction or extent of a frequency displacement. For oscillatory signals,
+their loss surfaces therefore contain local minima and broad regions whose
+gradients provide little indication of whether a candidate frequency should
+increase or decrease. Consequently, DDSP systems frequently obtain
+fundamental frequency from an external pitch estimator; event timing may
+similarly be fixed by an onset detector or event annotation. The reconstruction
+objective is then unable to revise these variables when different values would
+better explain the target sound.
+
+Independently, existing sound-matching systems commonly occupy one of two
+temporal regimes: linear time-invariant processors with static parameters, or
+time-varying models with densely sampled control trajectories. Dense control
+is appropriate for continuously driven instruments, but many plucked and
+struck instruments are more naturally described as sparse musical events. We
+therefore formulate monophonic phrase matching as the direct recovery of a
+sequence of plucks. Each pluck is represented by a single onset coordinate
+$t_i$ and a fundamental frequency $f_{0,i}$ held for that event, rather than
+by framewise pitch and onset trajectories.
+
+Spectral optimal transport has been proposed to improve frequency estimation
+by measuring the displacement of energy along the frequency axis instead of
+comparing fixed bins, while joint time--frequency optimal transport extends
+this principle across both axes. We evaluate these approaches using a
+differentiable digital waveguide. We choose this renderer because a compact
+feedback-delay structure produces the rich, decaying harmonic response of a
+plucked string while exposing pitch through a physically meaningful
+propagation delay, analogous to string length. Its excitation, filtering,
+delay, and feedback components are also shared with broader families of
+source--filter synthesizers and artificial reverberators, making it a useful
+test case beyond this particular instrument. We introduce \bicul, a
+bidirectional cumulative-energy loss that compares normalised STFT-power
+accumulations in both directions of both time and frequency. \bicul{} is the
+only evaluated loss whose descent direction points towards the target at every
+sampled point in the single-pluck landscape. Across 6000 direct
+analysis-by-synthesis fits, as phrases grow from one to eight plucks, classical
+waveform and spectral losses and framewise spectral optimal transport
+frequently collapse to poor multi-event solutions, whereas \bicul{} recovers
+pluck pitches and onset times more reliably than joint time--frequency optimal
+transport.
+
+Separately, we show that gradient direction within the waveguide depends on
+how continuous pluck placement and fractional delay are implemented. Fourier
+pluck placement combined with causal Thiran fractional-delay sections
+produces stronger and more consistently target-directed gradients than a
+frequency-sampled delay-line realisation. Together, these findings support
+end-to-end differentiable synthesis wherever pitch, event timing, or
+delay-line length must be optimized directly from audio.
 \end{abstract}
 
 \begin{IEEEkeywords}
