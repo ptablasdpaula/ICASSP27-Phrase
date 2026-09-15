@@ -129,6 +129,9 @@ output.
 The signed combined report and the signed 15-test result are retained as
 `paper/figures/descriptive_results.provenance.json` and
 `paper/figures/primary_tests.json`, respectively.
+The post hoc paired comparison of the two TFW2 variants with the two BiCuL
+variants is reproducible with `scripts/analyze_loss_families.py`; its signed
+result is `paper/figures/exploratory_family_tests.json`.
 
 ## Repository scope
 

@@ -59,20 +59,17 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 
 \begin{abstract}
 Differentiable digital signal processing enables interpretable, unsupervised
-analysis by synthesis, but onset and fundamental frequency remain difficult to
-optimise because waveform and pointwise spectral losses do not encode
-displacement direction. External detectors avoid this geometry but prevent the
-loss from correcting their estimates, limiting reconstruction. We propose
-\bicul{}, a cumulative-energy loss that compares STFT power
-accumulated in both directions of time and frequency. We use it to recover the
-onset and fundamental frequency of sparse plucks rendered by a differentiable
-digital waveguide, whose delay length sets pitch. In a single-pluck landscape,
-\bicul{} is the only objective with all 120 displayed descent directions
-target-directed under the fixed Fourier--Thiran renderer. Across 6000 fits of
-phrases containing one to eight plucks, \bicul{} gives more reliable joint
-onset--pitch recovery than waveform, spectral, and optimal-transport objectives.
-These results support unsupervised optimisation of event timing, pitch, and
-delay-line length under the controlled renderer.
+analysis by synthesis, but waveform and pointwise spectral losses do not encode
+onset or fundamental-frequency displacement direction. External detectors
+bypass this geometry yet prevent the reconstruction loss from correcting their
+estimates. We propose \bicul{}, which compares STFT power accumulated in both
+time and frequency directions, to recover onset and pitch for sparse plucks
+rendered by a differentiable digital waveguide. In a single-pluck landscape,
+\bicul{} alone directs all 120 displayed descents towards the target under the
+fixed Fourier--Thiran renderer. Across 6000 one- to eight-pluck phrase fits,
+\bicul{} improves joint onset--pitch recovery over waveform, spectral, and
+optimal-transport objectives, supporting unsupervised optimisation of event
+timing, pitch, and delay-line length under the controlled renderer.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -82,25 +79,23 @@ differentiable digital signal processing, digital waveguide, audio loss, analysi
 \section{Introduction}
 Differentiable digital signal processing (\ddsp) embeds audio processors in
 automatic-differentiation graphs for interpretable analysis by
-synthesis~\cite{engel2020ddsp}; Hayes et al. survey its use in music and speech
-synthesis~\cite{hayes2024review}. Applications include efficient neural
-instrument synthesis through learned waveshaping~\cite{hayes2021waveshaping}, structured
-modulation discovery from synthesizer audio~\cite{mitcheltree2025modulation},
-and direct feedback-delay-network optimisation to reduce reverberation
-coloration~\cite{dalsanto2023diffdn}. Controls are nevertheless typically global
-parameters or dense frame-rate trajectories, suited to static processors and
-continuously driven sounds. Plucked and struck strings are instead naturally
-organised as note events with onset, pitch, duration, and velocity, as in MIR
-and symbolic music~\cite{hawthorne2018onsets}.
+synthesis~\cite{engel2020ddsp}, surveyed for music and speech by Hayes et
+al.~\cite{hayes2024review}. Applications include neural
+waveshaping~\cite{hayes2021waveshaping}, modulation
+discovery~\cite{mitcheltree2025modulation}, and feedback-delay-network
+optimisation~\cite{dalsanto2023diffdn}. Controls are typically global or dense
+frame trajectories, suited to static or continuously driven sounds. Plucked
+and struck strings instead form note events with onset, pitch, duration, and
+velocity in MIR~\cite{hawthorne2018onsets,riley2024gaps}; guitar tablature adds
+string, fret, and playing technique~\cite{loth2025goat,loth2025guitarflow}.
 
-This event representation does not solve loss geometry. Pointwise spectral and
-waveform losses can mislead when displaced energy does not
-overlap~\cite{turian2020loss}; proposed complex surrogates remain
-synthesizer-dependent~\cite{hayes2023sinusoidal}. External $f_0$ detectors or
-synthetic parameter labels bypass this geometry but prevent the reconstruction
-loss from correcting their estimates~\cite{engel2020ddsp,engel2020inverse}.
-Optimal transport (OT) instead measures displacement using support
-geometry~\cite{peyre2019computational}.
+Event structure alone does not solve loss geometry. Pointwise spectral and
+waveform losses can mislead without energy overlap~\cite{turian2020loss}, while
+complex surrogates remain synthesizer-dependent~\cite{hayes2023sinusoidal}.
+External $f_0$ detectors or synthetic labels bypass this geometry but prevent
+the reconstruction loss from correcting estimates~\cite{engel2020ddsp,engel2020inverse}.
+OT traces to Monge's earth-moving problem~\cite{monge1781deblais} and measures
+displacement using support geometry~\cite{peyre2019computational}.
 Scalable entropic regularisation~\cite{cuturi2013sinkhorn} has supported audio
 applications including spectral unmixing for music
 transcription~\cite{flamary2016optimal} and frequency-aware NMF for source
@@ -122,12 +117,11 @@ accumulations towards all four corners. The renderer fixes Fourier-shifted
 excitation and Thiran fractional-delay propagation, with event-wise string-state
 reset for phrase recovery.
 
-Hence our contributions are threefold:
-\begin{itemize}
-    \item We formulate \bicul{} for direct onset--pitch recovery and provide a PyTorch implementation.
-    \item We compare six objectives over the full registered onset--pitch range for one centred pluck; under the fixed renderer, \bicul{} is the only one whose 120 displayed descent directions all point towards the target.
-    \item We benchmark eight loss configurations across 6000 phrase fits and use a three-event diagnostic to show that state reset smooths the plotted multi-pluck DF2 sweeps.
-\end{itemize}
+Our contributions are: (i)~\bicul{} for direct onset--pitch recovery;
+(ii)~a registered single-pluck lattice on which \bicul{} alone directs all 120
+displayed descents towards the target; and (iii)~a comparison of eight loss
+configurations across 6000 phrase fits, with a diagnostic of the multi-event
+effect of state reset.
 
 \section{Bidirectional cumulative-energy loss}
 \label{sec:losses}
@@ -369,13 +363,20 @@ d_{ij}=\left[\frac{\log_2(\hat f_{0,i}/f_{0,j})}{2}\right]^2+
 \end{equation*}
 Hats denote predictions; $\hat f_{0,i},f_{0,j}$ are pitches in Hz;
 $\hat t_i,t_j$ are onsets in seconds; $2$ and $1.6$ are the full ranges in
-octaves and seconds; and $d_{ij}$ is dimensionless. Hungarian assignment finds
-the one-to-one pairing minimising $\sum d_{ij}$. Table~\ref{tab:pilot-compact}
+octaves and seconds; and $d_{ij}$ is dimensionless. The Hungarian
+method~\cite{kuhn1955hungarian} finds the one-to-one pairing minimising
+$\sum d_{ij}$. Table~\ref{tab:pilot-compact}
 reports its errors and Fig.~\ref{fig:lsd} the audio-error distributions.
 
 We report across-phrase medians of within-phrase mean absolute pitch cents and
 onset milliseconds. Periodic-Hann FFT-256/hop-64 log-spectral distance (LSD)
 gives an objective-independent audio metric.
+
+Post hoc, we average each family's two configurations per phrase and metric,
+then apply paired two-sided Wilcoxon signed-rank
+tests~\cite{wilcoxon1945individual}. Holm's procedure adjusts the 15
+event-count--metric $p$-values jointly~\cite{holm1979simple}; variants are never
+selected per target.
 
 \section{Results}
 \subsection{Experiment I: Single-event Gradient Diagnostic}
@@ -394,12 +395,16 @@ A \bicul{} variant also has the lowest median onset error through four events, w
 published linear-Hz \tfw{} has the lowest median onset error at six and eight
 events.
 
+Post hoc, median paired family differences favour \bicul{} in all 15
+comparisons; 14 have $p_{\mathrm{Holm}}\leq0.0069$, with only six-event onset
+above 0.05 ($-10.5$~ms; $p_{\mathrm{Holm}}=0.186$).
+
 \section{Conclusion}
-We introduced \bicul{} for direct pluck-onset and pitch recovery. Under the
-fixed Fourier--Thiran renderer, it gives 120/120 target-directed directions;
-reset smooths the plotted three-event DF2 sweeps. Across 6000 fits, \bicul{}
-gives stronger joint recovery, with Log-Q further improving descriptive
-results. At four events, Log-Q \bicul{}'s median pitch error (19.1 cents) is
+We introduced \bicul{} for pluck-onset and pitch recovery. With fixed
+Fourier--Thiran rendering, it gives 120/120 target-directed descents; reset
+smooths the three-event DF2 sweeps. Across 6000 fits, \bicul{} strengthens joint
+recovery, with Log-Q improving descriptive results. At four events, Log-Q
+\bicul{}'s median pitch error (19.1 cents) is
 comparable to reported JNDs~\cite{holmes2022pitch}, while its onset error
 (6.75 ms) is below reported guitar-context timing JNDs~\cite{camara2026timing};
 from six events, both errors exceed those perceptual scales, with pitch error
@@ -407,7 +412,7 @@ above one semitone. This contextual comparison does not establish perceptual
 equivalence between JND experiments and phrase-level mean absolute errors.
 
 Future work should test reset generality, expressive techniques, higher sample
-rates, and persistent-state optimisation.
+rates, and persistent state.
 
 \clearpage
 \section*{Acknowledgment}
@@ -416,7 +421,7 @@ Artificial Intelligence and Music (grant EP/S022694/1). This research utilised
 Queen Mary's Apocrita HPC facility, supported by QMUL Research-IT
 (\url{https://doi.org/10.5281/zenodo.438045}), using NVIDIA V100 and A100 GPUs.
 
-\IEEEtriggeratref{13}
+\IEEEtriggeratref{16}
 \bibliographystyle{IEEEtran}
 \typeout{ICASSP bibliography database: \PaperRoot/references.bib}
 \bibliography{\PaperRoot/references}
