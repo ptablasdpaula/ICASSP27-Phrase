@@ -9,8 +9,6 @@
     \newcommand{\PaperRoot}{.}%
   }%
 \fi
-% \IEEEoverridecommandlockouts is intentionally disabled: there is no funding
-% footnote in the anonymous submission.
 % IEEE conference template version as of 6/27/2024.
 
 \usepackage{cite}
@@ -34,9 +32,17 @@
 
 \title{Gradient Descent Optimization of Plucked-String Musical Phrases via
 Cumulative Energy Loss}
-\author{\IEEEauthorblockN{Anonymous Authors}
-\IEEEauthorblockA{Institution withheld for double-blind review\\
-contact@example.invalid}}
+\author{\IEEEauthorblockN{Pablo Tablas de Paula\IEEEauthorrefmark{1},
+Sebastian J. Schlecht\IEEEauthorrefmark{2},
+Emmanouil Benetos\IEEEauthorrefmark{1}, and
+Joshua D. Reiss\IEEEauthorrefmark{1}}
+\IEEEauthorblockA{\IEEEauthorrefmark{1}Centre for Digital Music,
+Queen Mary University of London, London, UK}
+\IEEEauthorblockA{\IEEEauthorrefmark{2}Artificial Audio Group,
+Chair of Multimedia Communications and Signal Processing,\\
+Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
+\IEEEauthorblockA{\texttt{p.tablasdepaula@qmul.ac.uk};
+\texttt{sebastian.schlecht@fau.de}}}
 
 % LaTeX control words cannot contain underscores, so the requested
 % \l_one and \l_two source names are represented by \lone and \ltwo.
@@ -334,6 +340,12 @@ We introduced direct recovery of pluck onset and pitch and \bicul{}, a bidirecti
 Future work should address vibrato and other expressive techniques, higher sample rates and techniques that preserve a smooth loss landscape for onset time and $f_0$ without resetting the state of the waveguide. Although outside of the scope of this work, the question of whether a neural network is capable of escaping the local minima introduced in multi-pluck scenarios is open, and now fully testable thanks to this work.
 
 \clearpage
+\section*{Acknowledgment}
+Pablo Tablas de Paula is supported by the UKRI Centre for Doctoral Training in
+Artificial Intelligence and Music (grant EP/S022694/1). This research utilised
+Queen Mary's Apocrita HPC facility, supported by QMUL Research-IT
+(\url{https://doi.org/10.5281/zenodo.438045}), using NVIDIA V100 and A100 GPUs.
+
 \IEEEtriggeratref{9}
 \bibliographystyle{IEEEtran}
 \typeout{ICASSP bibliography database: \PaperRoot/references.bib}
