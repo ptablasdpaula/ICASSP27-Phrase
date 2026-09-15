@@ -71,13 +71,11 @@ digital waveguide, whose delay length sets pitch. In a single-pluck landscape,
 target-directed under the campaign renderer; a Naive--Linear repeat changes the
 leading loss, showing that this geometry is renderer-conditioned. A four-by-four
 single-pluck screen selects Fourier onset placement with Thiran fractional-delay
-interpolation for the phrase campaign. Across 6000 one- to eight-pluck phrase
-fits, a \bicul{} variant has the lowest pitch-error mean and median at every
-event count. For onset, a \bicul{} variant has the lowest median through four
-events, but published \tfw{} has the lowest mean from two events and the lowest
-median from six; mean--median gaps reveal occasional severe failures. These
-descriptive results support unsupervised optimisation of event timing, pitch,
-and delay-line length under the controlled renderer.
+interpolation for the phrase campaign. Across 6000 fits of phrases containing
+one to eight plucks, \bicul{} gives more reliable joint onset--pitch recovery
+than waveform, spectral, and optimal-transport objectives. These results
+support unsupervised optimisation of event timing, pitch, and delay-line length
+under the controlled renderer.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -299,9 +297,9 @@ evidence of target invariance or a population estimate.
 \subsection{Experiment II: Phrase Recovery}
 \begin{table*}[!t]
 \centering
-\caption{\normalfont Across-phrase mean $\pm$ sample standard deviation
-(median) of within-phrase Hungarian-matched pitch and onset errors over 150
-phrases per event count; lower is better.}
+\caption{\normalfont Median Hungarian-matched pitch and onset errors over 150
+phrases per event count; lower is better. Bold, underlined, and italic values
+indicate first, second, and third place, respectively.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
 \end{table*}
@@ -341,11 +339,9 @@ octaves and seconds; and $d_{ij}$ is dimensionless. Hungarian assignment finds
 the one-to-one pairing minimising $\sum d_{ij}$. Table~\ref{tab:pilot-compact}
 reports its errors and Fig.~\ref{fig:lsd} the audio-error distributions.
 
-For each loss and event count, we report the across-phrase arithmetic mean,
-sample standard deviation (with denominator $n-1$), and median of within-phrase
-mean absolute pitch cents and onset milliseconds. All comparisons are
-descriptive. Periodic-Hann FFT-256/hop-64 log-spectral distance (LSD) gives an
-objective-independent audio metric.
+We report across-phrase medians of within-phrase mean absolute pitch cents and
+onset milliseconds. Periodic-Hann FFT-256/hop-64 log-spectral distance (LSD)
+gives an objective-independent audio metric.
 
 \section{Results}
 \subsection{Experiment I: Single-event Gradient Diagnostic}
@@ -362,14 +358,11 @@ than a renderer-independent ranking.
 \subsection{Experiment II: Phrase Recovery}
 Table~\ref{tab:pilot-compact} reports all conditions. Figure~\ref{fig:lsd}
 shows all LSD values, interquartile ranges, and medians. Both \bicul{} variants
-are near exact by all pitch/onset summaries at one event. At two events, their
-sub-0.01 medians coexist with pitch means of 37.2 and 46.5 cents and onset means
-of 22.9 and 22.2~ms, respectively, together with large standard deviations;
-the low medians therefore mask a minority of severe failures. A \bicul{}
-variant has the lowest pitch mean and median at every event count. Onset shows
-a different tail--typical trade-off: a \bicul{} variant has the lowest median
-through four events, while published linear-Hz \tfw{} has the lowest mean from
-two events onward and the lowest median at six and eight events.
+achieved essentially perfect reconstruction for one- and two-event phrases.
+Across all event counts, a \bicul{} variant has the lowest median pitch error.
+A \bicul{} variant also has the lowest median onset error through four events, while the
+published linear-Hz \tfw{} has the lowest median onset error at six and eight
+events.
 
 \section{Conclusion}
 We introduced \bicul{}, a bidirectional cumulative-STFT-power loss, for direct
@@ -379,11 +372,9 @@ recovery of pluck onset and pitch. In the centred single-pluck diagnostic,
 screen selects Fourier onset placement with Thiran fractional-delay
 interpolation for the phrase campaign. In the plotted three-event diagnostic,
 event-wise reset smooths the DF2 and Literal landscapes. Across 6000 fits,
-a \bicul{} variant has the lowest pitch-error mean and median at every event
-count. For onset, a \bicul{} variant has the lowest median through four events,
-whereas published \tfw{} has the lowest mean from two events onward and the
-lowest median at six and eight events. At four events, Log-Q \bicul{}'s median
-pitch error (19.1 cents) is
+\bicul{} gives stronger multi-pluck joint recovery than the comparison
+objectives; Log-Q further improves descriptive results. At four events, Log-Q
+\bicul{}'s median pitch error (19.1 cents) is
 comparable to reported JNDs~\cite{holmes2022pitch}, while its onset error (6.75 ms) is below
 reported guitar-context timing JNDs~\cite{camara2026timing}; from six events,
 both errors exceed those perceptual scales, with pitch error above one

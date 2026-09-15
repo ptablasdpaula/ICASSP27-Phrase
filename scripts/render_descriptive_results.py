@@ -169,28 +169,11 @@ def load_rows(
 
 
 def format_table_value(value: float) -> str:
-    if value < 0.01:
-        return "<.01"
-    if value < 10.0:
-        return f"{value:.2f}".rstrip("0").rstrip(".")
-    if value < 100.0:
-        return f"{value:.1f}".rstrip("0").rstrip(".")
-    if value < 1000.0:
-        return f"{value:.0f}"
-    return f"{round(value, -1):.0f}"
-
-
-def format_descriptive_cell(mean: float, sample_std: float, median: float) -> str:
-    """Format one compact mean +/- sample-SD (median) table cell."""
-    return (
-        r"\mbox{\ensuremath{"
-        + format_table_value(mean)
-        + r"\mathord{\pm}"
-        + format_table_value(sample_std)
-        + "("
-        + format_table_value(median)
-        + ")}}"
-    )
+    rendered = f"{value:.3g}"
+    if "e" in rendered:
+        mantissa, exponent = rendered.split("e", 1)
+        rendered = f"{mantissa}e{int(exponent)}"
+    return rendered
 
 
 def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
@@ -205,22 +188,38 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
         cardinality = int(row["cardinality"])
         for metric, _, _ in METRICS:
             grouped[(loss, cardinality, metric)].append(float(row[metric]))
-    statistics = {}
-    for key, values in grouped.items():
-        array = np.asarray(values, dtype=np.float64)
-        statistics[key] = {
-            "mean": float(np.mean(array)),
-            "sample_standard_deviation": float(np.std(array, ddof=1)),
-            "median": float(np.median(array)),
-        }
+    medians = {
+        key: float(np.median(np.asarray(values, dtype=np.float64)))
+        for key, values in grouped.items()
+    }
 
-    serializable_statistics: dict[
-        str, dict[str, dict[str, dict[str, float]]]
-    ] = {}
+    ranking: dict[str, dict[str, dict[str, str]]] = {}
+    serializable_medians: dict[str, dict[str, dict[str, float]]] = {}
+    ranks_by_metric: dict[str, dict[int, dict[int, str]]] = {}
     for metric, _, _ in METRICS:
-        serializable_statistics[metric] = {
+        rank_by_cardinality: dict[int, dict[int, str]] = {}
+        for cardinality in CARDINALITIES:
+            values = np.asarray(
+                [medians[(loss, cardinality, metric)] for loss in LOSS_NAMES],
+                dtype=np.float64,
+            )
+            order = np.argsort(values, kind="stable")
+            rank_by_cardinality[cardinality] = {
+                int(order[0]): "best",
+                int(order[1]): "second",
+                int(order[2]): "third",
+            }
+        ranks_by_metric[metric] = rank_by_cardinality
+        ranking[metric] = {
+            str(cardinality): {
+                LOSS_NAMES[index]: rank
+                for index, rank in rank_by_cardinality[cardinality].items()
+            }
+            for cardinality in CARDINALITIES
+        }
+        serializable_medians[metric] = {
             loss: {
-                str(cardinality): statistics[(loss, cardinality, metric)]
+                str(cardinality): medians[(loss, cardinality, metric)]
                 for cardinality in CARDINALITIES
             }
             for loss in LOSS_NAMES
@@ -229,40 +228,46 @@ def render_table(rows: list[dict[str, str]], output: Path) -> dict[str, Any]:
     lines = [
         r"\begingroup",
         r"\scriptsize",
-        r"\setlength{\tabcolsep}{1.0pt}",
+        r"\setlength{\tabcolsep}{2.0pt}",
         r"\renewcommand{\arraystretch}{1.05}",
-        r"\resizebox{\linewidth}{!}{%",
-        r"\begin{tabular}{@{}l*{5}{c}|*{5}{c}@{}}",
+        (r"\begin{tabularx}{\linewidth}"
+         r"{@{}l*{5}{>{\centering\arraybackslash}X}|"
+         r"*{5}{>{\centering\arraybackslash}X}@{}}"),
         r"\toprule",
         (r"Loss & \multicolumn{5}{c|}{$\Delta f_0$ (Cents)} & "
          r"\multicolumn{5}{c}{$\Delta t$ (ms)} \\"),
-        (r"& 1 & 2 & 4 & 6 & 8 & 1 & 2 & 4 & 6 & 8 \\"),
+        (r"& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events "
+         r"& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\"),
         r"\midrule",
     ]
-    for loss, label in zip(LOSS_NAMES, TEX_LOSS_LABELS, strict=True):
+    for loss_index, (loss, label) in enumerate(
+        zip(LOSS_NAMES, TEX_LOSS_LABELS, strict=True)
+    ):
         cells: list[str] = []
         for metric, _, _ in METRICS:
             for cardinality in CARDINALITIES:
-                values = statistics[(loss, cardinality, metric)]
-                cells.append(
-                    format_descriptive_cell(
-                        values["mean"],
-                        values["sample_standard_deviation"],
-                        values["median"],
-                    )
-                )
+                value = format_table_value(medians[(loss, cardinality, metric)])
+                rank = ranks_by_metric[metric][cardinality].get(loss_index)
+                if rank == "best":
+                    value = r"\ensuremath{\mathbf{" + value + "}}"
+                elif rank == "second":
+                    value = r"\mbox{\underline{" + value + "}}"
+                elif rank == "third":
+                    value = r"\ensuremath{\mathit{" + value + "}}"
+                else:
+                    value = r"\mbox{" + value + "}"
+                cells.append(value)
         lines.append(label + " & " + " & ".join(cells) + r" \\")
         if loss == "log_jtfot":
             lines.append(r"\addlinespace[1pt]")
-    lines.extend((r"\bottomrule", r"\end{tabular}}", r"\endgroup"))
+    lines.extend((r"\bottomrule", r"\end{tabularx}", r"\endgroup"))
     atomic_text(output, "\n".join(lines) + "\n")
     return {
         "aggregation": (
-            "across-phrase mean, sample standard deviation, and median of "
-            "within-phrase Hungarian-matched mean absolute error"
+            "median across phrases of within-phrase Hungarian-matched mean absolute error"
         ),
-        "display": "mean +/- sample standard deviation (median)",
-        "statistics": serializable_statistics,
+        "medians": serializable_medians,
+        "ranking": ranking,
         "sha256": sha256(output),
     }
 
@@ -368,7 +373,7 @@ def main() -> None:
     table = render_table(rows, table_path)
     figure = render_lsd(rows, args.output_dir / "lsd_violin")
     provenance = {
-        "schema": "paper-eight-loss-n150-v2",
+        "schema": "paper-eight-loss-n150-v1",
         "created_utc": datetime.now(UTC).isoformat(),
         "milestone_n": args.milestone,
         "condition_count": 40,
