@@ -13,6 +13,7 @@
 % footnote in the anonymous submission.
 % IEEE conference template version as of 6/27/2024.
 
+% REVIEW LATEX [latex]: cleveref is not loaded, and 14 references are hard-coded as Fig.~\ref / Table~\ref / Sec.~\ref — when a float changes type the prefix drifts silently and nothing warns you. Add \usepackage[capitalise]{cleveref} after hyperref and switch to \cref. Full list in Checks.md.
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{array}
@@ -34,12 +35,14 @@
 
 \title{Gradient Descent Optimization of Plucked-String Musical Phrases via
 Cumulative Energy Loss}
+% REVIEW P1-23 [latex]: two double-blind leaks outside the PDF but inside what gets uploaded — figures/descriptive_results.provenance.json embeds the cluster path /data/home/acw794/..., and the repository README links github.com/ptablasdpaula/ICASSP27-Phrase, which names the first author. Neither compiles into the PDF, so the risk is low, but it costs one sed to remove and a desk-reject to leave. Strip the path and upload paper/ only, not the full repository.
 \author{\IEEEauthorblockN{Anonymous Authors}
 \IEEEauthorblockA{Institution withheld for double-blind review\\
 contact@example.invalid}}
 
 % LaTeX control words cannot contain underscores, so the requested
 % \l_one and \l_two source names are represented by \lone and \ltwo.
+% REVIEW P1-18 [notation]: the L glyph carries four meanings — \lone/\ltwo as sample-domain losses, \mathcal{L} as the generic audio loss in the pullback (l.170), \ell_q as the per-direction term, and BiCuL itself. Separately, L_1/L_2 conventionally name norms; here they mean mean-absolute and mean-squared sample error (MAE/MSE), which is only stated at l.123, twenty lines after the reader first meets them in the figure. Rename the generic loss or the two baselines, and define MAE/MSE at first use.
 \newcommand{\lone}{\ensuremath{\mathcal{L}_1}}
 \newcommand{\ltwo}{\ensuremath{\mathcal{L}_2}}
 \newcommand{\ddsp}{DDSP}
@@ -47,34 +50,42 @@ contact@example.invalid}}
 \newcommand{\sot}{SOT}
 \newcommand{\tfw}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
 \newcommand{\bicul}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}
+% REVIEW LATEX [latex]: \redtodo is defined and never used. Delete it before submission — a red-text macro left in the preamble reads as a draft.
 \newcommand{\redtodo}[1]{\textcolor{red}{#1}}
-
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
+% REVIEW P1-22 [clarity]: language pass needed before this goes anywhere. In this paragraph: "we find out proposed" -> "our proposed"; "On this work" -> "In this work". Elsewhere: "synth dependant" (l.67), "aggresively" (l.69), "fugure work" (l.332), "collapse to incoherent phrases in most of the time" (l.329), missing comma after "As can be seen" (l.329).
 Differentiable digital signal processing has become a framework adopted by numerous tasks, allowing unsupervised, interpretable, analysis by synthesis. Yet, essential parameters such as fundamental frequency and onset estimation remain difficult to recover. Traditional waveform and pointwise spectral losses do not encode the displacement direction caused by these parameters, prompting the use of external detectors. These bypass the problematic geometry but prevent the loss from correcting their estimates, causing a reconstruction ceiling. On this work, we compare traditional and previously proposed optimal transport based losses, and propose a new efficient loss based on cumulative energy, comparing spectral power accumulations in both directions of time and frequency. We use this loss to optimise a sparse sequence of plucks exciting a differentiable digital waveguide, whose delay length defines the fundamental frequency, to render musical phrases. Firstly, we find out proposed cumulative energy loss is the only objective whose gradients are directed towards the correct onset and fundamental frequency in a single pluck landscape. Secondly, we cross four onset placement methods and four waveguide fractional delay interpolators, and identify Fourier placement with Thiran propagation as the most consistently target directed combination. Lastly, across 6000 fits of musical phrases containing one to eight plucks, we find our proposed cumulative energy loss gives more reliable joint onset--pitch recovery than traditional and optimal transport objectives. These results support unsupervised optimisation of pitch, event timing, and delay-line length.
 \end{abstract}
 
 \begin{IEEEkeywords}
-differentiable digital signal processing, digital waveguide, audio loss, analysis by synthesis, event parameter estimation
+differentiable digital signal processing, digital waveguide, audio loss,
+analysis by synthesis, event parameter estimation
 \end{IEEEkeywords}
 
 \section{Introduction}
+% REVIEW LATEX [latex]: plain space before \cite here and at l.67, 69, 125, 175, 246 — use a tilde so the citation number can never wrap alone onto the next line.
 Differentiable digital signal processing (\ddsp) allows analysis by synthesis of audio processors within automatic differentiation graphs \cite{engel2020ddsp}, triggering its wide adoption in sound matching of multiple synthesizers and audio effects \cite{caspe2022ddx7,carson2026gradient}. However, it usually represents control as either global LTI processors, or dense frame rate trajectories. While the first naturally represent static systems, such as room reverberation \cite{dalsanto2025flamo}, the latter suits continuously driven instruments, such as bowing or singing voice \cite{sudholt2023vocal}. However, a range of instruments are not faithfully represented by either of these approaches; plucked and struck strings are, expressive techniques aside, instinctively performed as a collection of note events with onset, pitch, duration and velocity, as commonly represented in MIR and symbolic music \cite{hawthorne2018onsets}.
 
+% REVIEW P1-10 [citation]: related work is confined to audio DDSP. The same problem — a non-convex misfit whose gradients point the wrong way under displacement, fixed by a cumulative or transport formulation — is solved and heavily cited in seismic full-waveform inversion. Sambridge et al. (2022) build a differentiable Wasserstein misfit from marginalised CDFs and report 77% vs 41% global convergence against L2, which is structurally the same experiment as Fig. 1. Not required for ICASSP, but one sentence makes the contribution look situated rather than local.
 However, as Turian and Henry found, traditional pointwise and waveform-based losses are poor at pitch estimation, as they become misleading when spectral energy is displaced and does not overlap \cite{turian2020loss}. Hayes et al. proposed complex surrogates to sidestep this issue, but remain synth dependant \cite{hayes2023sinusoidal}. A common trick is the use of external $f_0$ detectors or synthetic parameter labels, capping reconstruction and vetoing further end-to-end training \cite{engel2020ddsp, engel2020inverse}. Optimal transport has progressively been introduced to DDSP by Torres et al. and Fabiani et al., as it addresses displacement directly, with STFT frame-wise and joint time-frequency implementations proposed for $f_0$ independently and jointly for time and frequency shifts respectively \cite{torres2024sot, fabiani2024jtfot}.
 
+% REVIEW P1-11 [citation]: tablasdepaula2026karplus is the most load-bearing citation in the paper — it supplies the motivation, the event-based representation and the RT60 claim at l.185 — and I cannot verify it from here. bib_check --online returns SUSPECT, but that is expected for DAFx and is not evidence against it. Confirm the DAFx 2026 pages (306-313) and that its Fig. 3 shows what l.185 attributes to it.
+% REVIEW P1-05 [argument]: this paragraph motivates the work with a real-data failure — synthetic labelling generalising poorly — but every experiment in the paper optimises a candidate against a target rendered by the SAME waveguide, with the same fixed pluck position (0.23) and the same loop filter (g=0.99, a1=0.2). There is no model mismatch anywhere. A loss evaluated only in the exact-match regime has not been shown to address the failure that justifies it. Cheapest honest fix for four pages: state the limitation in the conclusion. Better: one mismatch condition — perturb the target's pluck position or loop filter and report the same metrics.
 Tablas de Paula et al. recently proposed an event-based prediction architecture, jointly estimating the $f_0$, onset time and timbre parameters of events in a plucked-string algorithm \cite{tablasdepaula2026karplus}. They found that synthetic data labelling generalised poorly to real world data, while spectral optimal transport is unreliable at joint onset and pitch optimization, and eventually fell back to external detectors \cite{tablasdepaula2026karplus}. On this work, we adopt a simple digital waveguide \cite{depaula2026waveguides} for musical phrase optimization of plucked-string via a similar event-based representation, but compare it with joint time-frequency optimal transport based losses. Additionally, we propose the use of cumulative energy losses, which compare normalised spectral-power accumulations. Specifically, we use a bidirectional implementation, \bicul{}, which accumulates energy in both directions of both STFT axes. Along the way, we outline the importance of the rendered jacobian, where different sub-sample onset placement method and fractional delay interpolation methods can give similar audio but aggresively different derivatives.
 
 Hence our contributions are threefold:
 \begin{itemize}
+% REVIEW P1-06 [argument]: two claims here with nothing behind them. Nothing in the paper measures cost — no complexity statement, no wall-clock, no per-step comparison against SOT or TFW2 — and the PyTorch library is never mentioned again, with no availability statement anywhere in the manuscript. Efficiency is BiCuL's genuine structural advantage over transport losses (four cumulative sums are O(KN): no plan, no sorting, no projections), so leaving it unmeasured forfeits a real selling point. Add per-step timings for the six losses at a fixed STFT size, and an anonymised code link or an explicit "code will be released" footnote.
     \item We provide an efficient loss, \bicul{}, that recovers onset time and fundamental frequency in rich synthesisers, opening up the task of musical phrase recovery to differentiable digital signal processing, and provide a pytorch library for ease of use.
     \item We find time-domain Thiran interpolation and Frequency Sampling delay and sum for onset placement to provide the jacobian that more consistently point towards the target.
     \item We find phase interference between events to complicate the loss landscape w.r.t $f_0$ and onset time, and propose resetting the waveguide state to make it smoother.
 \end{itemize}
 
+% REVIEW P1-09 [citation]: BiCuL is presented as an alternative TO optimal transport, but comparing normalised cumulative distributions is the defining move of the Cramer / energy-distance family, which is a standard OT surrogate — the L2 distance between CDFs is the Cramer distance, the L1 distance is W1. Stripped of the square root and the four-corner averaging, \ell_q is a 2-D Cramer distance on the time-frequency power surface. Anyone who works on transport losses sees this immediately, and silence reads as not knowing rather than as a deliberate distinction. Claiming it is strictly better: it explains WHY BiCuL has OT-like displacement sensitivity at O(KN), which is exactly the argument P1-06 needs. Add one or two sentences placing BiCuL in the CDF/Cramer family, with a citation, and say what the bidirectional four-corner construction and the sqrt add over the plain 2-D Cramer distance.
 \section{Cumulative energy losses}
 \label{sec:losses}
 The bidirectional cumulative-energy loss, \bicul{}, compares STFT power
@@ -85,6 +96,7 @@ candidate periodic-Hann FFT-256/hop-64 power at frequency bin $k$ and frame $n$.
 For $q=(d_t,d_f)$, $d_t\in\{\rightarrow,\leftarrow\}$ and
 $d_f\in\{\uparrow,\downarrow\}$ select accumulation direction; $C^t_{d_t}$ and
 $C^f_{d_f}$ are the corresponding cumulative sums:
+% REVIEW LATEX [latex]: this numbered equation carries no \label, as do those at l.179, l.191, l.284 and l.310 — each consumes a number nothing can reference. Meanwhile eq:pullback at l.168 is labelled and never referenced. Unnumber the ones you do not cite (equation*).
 \begin{equation}
 \begin{aligned}
 S_q&=C^f_{d_f}(C^t_{d_t}(P)),\\
@@ -100,6 +112,7 @@ $10^{-12}$; and $\ell_q$ is their root-mean-square (RMS) difference over
 $(k,n)$. \bicul{} averages all four $\ell_q$ without event coordinates,
 detectors, or salience weights.
 
+% REVIEW P1-04 [rigor]: Fig. 1's six percentages and all of Table 1 come from a SINGLE target (160 Hz, 1.0 s) on one 25x25 lattice, 120 directions from an 11x11 sublattice. Two of the three contributions rest on n=1. "BiCuL is the only target-directed loss" is a claim about the loss, and one target cannot support it — a different f0 or onset could reorder the table and the reader has no way to know. Seed 2027 already produced 150 one-event targets: recompute over 20 of them and report mean +/- sd of the directedness percentage. This is a compute job, not a redesign, and it turns the paper's opening result from an anecdote into a measurement.
 Figure~\ref{fig:landscapes} compares six losses with Sec.~\ref{sec:renderer}'s
 fixed renderer for a 160-Hz, 1.0-s event on a target-inclusive 25-by-25 lattice
 over $\pm0.8$~s and $\pm1$ octave. Surfaces are independently min--max
@@ -107,6 +120,8 @@ normalised. White arrows show autograd unit descent on an 11-by-11 non-target
 sublattice; directions within $90^\circ$ of the target displacement are
 target-directed.
 
+% REVIEW P1-24 [latex]: this \IfFileExists wrapper (and those at l.146 and l.296) turns a broken figure path into a silent grey box instead of a build failure — in the three figures carrying the results. Fig. 4's fallback also sizes its parbox at 0.96\textwidth inside a single-column figure, which would overflow the column if it ever fired. Delete the wrappers before submission and let a missing figure break the build.
+% REVIEW P1-13 [figure]: the white descent arrows are the point of this figure and are invisible over the bright end of the colormap, which is most of the lower third of every panel — exactly the region where the low-f0 misdirection is happening. Use black arrows with a thin white halo, or a colormap that stays dark at both ends.
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
@@ -120,6 +135,7 @@ and arrows show unit descent.}
 \label{fig:landscapes}
 \end{figure}
 
+% REVIEW P1-13 [figure]: six directedness percentages live in this prose paragraph and the reader has to map them onto six panels by reading order. Put each percentage in its own panel title.
 Reading left-to-right by row, \lone{} is mean absolute and \ltwo{} mean squared
 sample error; 60.0\% and 49.2\% of their 120 directions are target-directed.
 Following Schw\"ar and M\"uller \cite{schwar2023mss}, \mss{} sums squared
@@ -132,6 +148,7 @@ FFT-512/hop-64 flat-top STFT-power transport with their unbalanced quantile
 cutoff and $0.05$ Hann-windowed linear-magnitude MSS; it achieves 51.7\%.
 Finally, Fabiani et al.'s \tfw{} \cite{fabiani2024jtfot} globally normalises a
 periodic-Hann FFT-256/hop-128 magnitude STFT and projects it along ten angles.
+% REVIEW P1-19 [clarity]: this sentence is garbled — it says a time coordinate is in Hz, twice. The intended meaning (TFW2's transport metric treats one second as commensurate with 1000 Hz) is the one thing a reader needs in order to judge whether the TFW2 baseline was configured fairly, and it is the one sentence they cannot parse. Rewrite it as a statement about the transport metric's units, and say why 1000 was chosen — that constant sets the baseline's time/frequency trade-off and therefore its score.
 Its frequency is in Hz and $\widetilde t=1000t$ in Hz, equating 1~s with
 1000~Hz; $t$ is frame time and $\widetilde t$ its transport coordinate. \tfw{}
 achieves 75.8\%, while the final \bicul{} panel achieves 100.0\%.
@@ -139,6 +156,7 @@ achieves 75.8\%, while the final \bicul{} panel achieves 100.0\%.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
+% REVIEW P1-16 [figure]: six-word caption. D_1 and D_2 are never defined here, the blue/red direction coding is unexplained, and the one relation the reader needs — f_0 = f_s / 2(D_1+D_2) — appears nowhere in the paper. The body says only "their length sum sets f_0", which drops the factor of two. A reader who jumps to the architecture figure currently learns nothing from it. Put D_1 (nut side), D_2 (bridge side), the direction coding and the f_0 relation in the caption.
 \caption{Two-rail digital waveguide renderer.}
 \label{fig:waveguide}
 \end{figure}
@@ -152,6 +170,7 @@ achieves 75.8\%, while the final \bicul{} panel achieves 100.0\%.
 }{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
   State-realisation comparison pending checksum-complete generation.}}}
 \vspace{-7.0mm}
+% REVIEW P1-12 [figure]: the caption does not say whether the four loss panels share a normalisation. As drawn the reader cannot tell, and that ambiguity is what makes the Literal-f0 panel unreadable against the claim at l.252. State it.
 \caption{Reset-DF2 target spectrogram and middle-event \bicul{} sweeps for
 collapsed DF2 and Literal waveguides.}
 \label{fig:state-realization}
@@ -197,6 +216,7 @@ e_0(t)=\begin{cases}
 where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its peak, and
 $T_e=10$~ms its duration. Continuous placement uses analytic HRC sampling
 (Naive); a six-tap, fifth-order maximally-flat FIR shift (Lagrange); the FLAMO
+% REVIEW P1-17 [notation]: D carries three meanings in two pages — the onset shift in samples here, the delay argument of the propagation approximation at l.205, and the rail lengths D_1/D_2 in Fig. 2. Three roles for one glyph, in the section where the reader is already tracking four onset methods against four interpolators. Give the rail delays their own symbol.
 response $e^{-j\omega D}$ (Fourier) \cite{dalsanto2025flamo}; or a causal
 first-order all-pass shift (Thiran). Here $D$ is delay in samples, $\omega$
 angular frequency in radians per sample, and $j^2=-1$. Subsequent Fourier onset
@@ -219,6 +239,7 @@ frequencies enforcing Hermitian symmetry.
 
 \begin{table}[!t]
 \centering
+% REVIEW P1-04 [rigor]: see l.103 — this table is 120 directions from one target. Contribution 2 rests on n=1.
 \caption{\normalfont Target-directed \bicul{} descent directions (\%) by onset
 placement (rows) and propagation interpolation (columns); higher is better.}
 \label{tab:interpolation-onset}
@@ -228,12 +249,14 @@ placement (rows) and propagation interpolation (columns); higher is better.}
 
 \begin{table*}[!t]
 \centering
+% REVIEW P1-15 [table]: cells are bolded as "best" at one and two events where the differences are between 0.0008 and 0.00148 cents, and 0.000296 and 0.000988 ms. Four significant figures at 1e-3 cents is below any meaningful resolution — the string is in tune to a part in a million — and bolding one over the other asserts a distinction that neither the numbers nor the paired test in figures/primary_tests.json supports. Floor the cells to "<0.01" and do not rank within the floor. The caption should also state that bold/underline/italic are first/second/third; that convention is currently defined only in the Results prose at l.327.
 \caption{\normalfont Median Hungarian-matched pitch and onset errors over 150
 phrases per event count; lower is better.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
 \end{table*}
 
+% REVIEW P1-03 [rigor]: this is circular. Table 1 selects Fourier placement + Thiran propagation by maximising BiCuL's OWN target-directedness, and Sec. 2's Fig. 1 then compares six losses in exactly that renderer, where BiCuL scores 100%. The renderer is a free variable tuned on the metric the comparison reports, so that 100% is not an independent measurement. Run the six-loss comparison in at least one other renderer cell (Naive/Linear is the natural worst case) and report whether the loss ranking is stable. If it is, one sentence removes the objection permanently. If it is not, that is a much more interesting paper than this one.
 Table~\ref{tab:interpolation-onset} identifies Fourier onset placement with
 Thiran propagation as the only 120/120 result. We therefore adopt this
 Fourier-placement/causal-Thiran pairing for Fig.~\ref{fig:landscapes} and all
@@ -248,6 +271,7 @@ reflections, and bridge termination into one history, whereas Literal retains
 separate physical rail and bridge-filter histories. They are equivalent within
 a constant regime but need not agree across changes.
 
+% REVIEW P1-12 [figure]: the claim below — that persistent DF2 and Literal slopes are "both rugged and repeatedly misdirected", and that reset "makes them agree and restores smooth, target-directed slopes" — is not what the Literal-f0 panel shows. In that panel the persistent (purple) curve is smooth with a clean minimum at the 160 Hz target, while the reset (orange) curve does not visibly minimise at 160 and does not visibly match the DF2 reset curve. This figure is the entire evidence for contribution 3 and one of its four panels appears to contradict the sentence it supports. Check it. If I am reading it right, scope the claim to onset — where both persistent curves ARE clearly rugged — and handle f0 separately. If I am misreading it because the panels are independently normalised, say so in the caption.
 Figure~\ref{fig:state-realization} sweeps the middle event in a three-pluck
 target $(110,0.5),(160,1.0),(280,1.5)$ in Hz and seconds. Persistent DF2 and
 Literal slopes differ, but both are rugged and repeatedly misdirected. Clearing
@@ -290,9 +314,12 @@ where $k,n$ index frequency bins/time frames; $w^f_{d_f,k},w^t_{d_t,n}$ are
 their direction-aligned adjacent widths in octaves/seconds; both sums span
 $(k,n)$; and $\ell^{\rm quad}_q$ denotes this weighted RMS rather than
 $\ell_q$. Other operations are unchanged. With Sec.~\ref{sec:losses}'s six
+% REVIEW P1-20 [clarity]: "150 targets at five event counts across 40 conditions" reads as 150 x 5 x 40 = 30,000. The provenance file gives 8 losses x 5 cardinalities = 40 conditions and 150 x 40 = 6000. The paper's headline scale number does not survive the reader multiplying it out. Write "150 targets x 8 losses x 5 event counts = 6000 fits".
 objectives, the variants yield 6000 fits: 150 targets at five event counts
 across 40 conditions.
 
+% REVIEW P1-14 [figure]: eight categorical series coloured from one sequential (magma-like) ramp, so the pairs that most need distinguishing — L1/L2 and BiCuL/Log-Q — are nearest in hue, and the whole figure collapses in greyscale. A sequential ramp also implies an ordering the losses do not have. Use a categorical palette, or keep the ramp for the four families and distinguish each variant from its parent by hatch or outline.
+% REVIEW LATEX [latex]: this float uses [h] where every other float in the paper uses [t].
 \begin{figure}[h]
 \centering
 \setlength{\abovecaptionskip}{0pt}
@@ -301,6 +328,7 @@ across 40 conditions.
 }{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
   Figure 4 LSD distributions pending checksum-complete regeneration.}}}
 \vspace{-5.0mm}
+% REVIEW P1-14 [figure]: the caption does not say what the white marker and the inner bar are. Median and IQR, presumably, but the reader is guessing.
 \caption{Per-phrase LSD distributions over the same targets; lower is better.}
 \label{fig:lsd}
 \end{figure}
@@ -322,13 +350,19 @@ onset milliseconds. Periodic-Hann FFT-256/hop-64 log-spectral distance (LSD)
 gives an objective-independent audio metric.
 
 \section{Results}
+% REVIEW P1-01 [rigor]: the paper runs a full confirmatory analysis and reports none of it. figures/primary_tests.json holds paired two-sided t-tests, n=150 per cell, Bonferroni familywise alpha 0.05 over 15 tests, 11 rejections, Cohen's d_z and simultaneous CIs — and the Results section reports medians only, then asserts consistency in prose. Reporting the descriptive statistic that flatters most while withholding the inferential test you actually ran is the finding a reviewer will treat most harshly, and it is entirely self-inflicted: the analysis is finished and it supports the paper. It also changes the story. At one event the BiCuL-TFW2 difference is not significant after correction (adjusted p = 0.28 for pitch, 0.058 for onset); at two events neither is (p = 1.0 for both); at four, six and eight events every comparison rejects, with d_z growing from -0.29 to -1.42. So the sub-cent medians the abstract leads with are the cells where the advantage is NOT established, and the real result — BiCuL wins where the problem is hard, and the margin grows with event count — is stronger and is currently unstated. Add the paired-test column (delta, d_z, adjusted p) to Table 2 or as a compact companion table, state the multiplicity control in Sec. 4.4, and move the abstract's emphasis accordingly.
 Table~\ref{tab:pilot-compact} reports all conditions; styles rank medians within
 each metric/event count and hooks mark variants. Figure~\ref{fig:lsd} shows all
 LSD values, interquartile ranges, and medians. The table bolds best metrics per number of events, highlights second best and italicizes third. 
 
+% REVIEW P1-02 [argument]: "one of the two BiCuL variants remains consistently better than the TFW2 competitors" is contradicted by your own Table 2 — at six and eight events TFW2 is bold (best) on Delta-t at 60.9 ms and 81.7 ms, against 83.7 ms and 92.8 ms for Log-Q. A sentence the reader can falsify by looking at the table two centimetres away costs more credibility than the result it was defending. Either scope it ("consistently better on pitch at every event count, and on onset up to four events") or drop "consistently" and give the actual pattern. Note the median/mean split matters here: on MEANS, primary_tests.json has BiCuL ahead on onset at every cardinality — so say which statistic each claim uses, and why.
+% REVIEW P1-08 [rigor]: "likely at very close initializations" — every candidate starts at exactly 160 Hz with equal-cell-centre onsets, so "close initialisation" means "target near 160 Hz", which is a property of the target set and directly checkable in per_phrase.csv. Do not speculate about data you are holding. Check it and state it, or cut the clause. If it holds it is a nice concrete illustration of the basin-width argument the whole paper is making.
 As can be seen 1 and 2 events are recovered by both \bicul{} variants to sub-ms and sub-cents accuracy, while reconstruction gets significantly harder as cardinality increases. We consistently find failure modes in which candidate events reach correct timing but opposite $f_0$ as their target events, and get stuck at a suboptimal local minima. In any case, one of the two \bicul{} variants remains consistently better than the \tfw{} competitors, while traditional losses and frame-wise optimal transport collapse to incoherent phrases in most of the time; as can be seen in the LSD distributions of figure~\ref{fig:lsd}, \mss{} is, although not commonly, capable of reaching accurate reconstructions, likely at very close initializations.
 
 \section{Conclusion}
+% REVIEW P1-07 [rigor]: "stronger than just-noticeable-difference" — no JND value, no citation, and "stronger" is the wrong word for an error being larger than a threshold. This is the only sentence connecting the paper's numbers to perception and it currently connects them to nothing. At four events Log-Q gives 19.1 cents and 6.75 ms, which straddles the usual thresholds: above pitch JND, below onset JND. That asymmetry is worth stating. Cite a JND figure for pitch and one for onset asynchrony, then say which of the two errors clears it and at what event count.
+% REVIEW P1-21 [clarity]: "descriptive results" is internal vocabulary from the analysis pipeline's schema, not a term the paper has defined. Say what improved: median pitch and onset error at four events and above.
+% REVIEW P1-05 [argument]: see l.69 — if no mismatch condition is run, the limitation belongs here, explicitly: every target was rendered by the same waveguide that fits it.
 We introduced direct recovery of pluck onset and pitch and \bicul{}, a bidirectional cumulative-STFT-power loss. Across 6000 fits, \bicul{} gave target-directed single-pluck gradients and stronger multi-pluck joint recovery than the comparison objectives; Log-Q further improved descriptive results. Fourier onset placement with Thiran propagation was the strongest renderer, and event-wise reset corrected persistent DF2 and Literal gradients. Although promising and better than other losses shown here, musical phrase recovery of 4 and more events is stronger than just-noticeable-difference and should be addressed in fugure work. 
 
 Future work should address vibrato and other expressive techniques, higher sample rates and techniques that preserve a smooth loss landscape for onset time and $f_0$ without resetting the state of the waveguide. Although outside of the scope of this work, the question of whether a neural network is capable of escaping the local minima introduced in multi-pluck scenarios is open, and now fully testable thanks to this work.
