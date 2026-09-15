@@ -52,7 +52,6 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \newcommand{\sot}{SOT}
 \newcommand{\tfw}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
 \newcommand{\bicul}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}
-\newcommand{\redtodo}[1]{\textcolor{red}{#1}}
 
 
 \begin{document}
@@ -67,11 +66,11 @@ differentiable digital signal processing, digital waveguide, audio loss, analysi
 \end{IEEEkeywords}
 
 \section{Introduction}
-Differentiable digital signal processing (\ddsp) allows analysis by synthesis of audio processors within automatic differentiation graphs \cite{engel2020ddsp}, triggering its wide adoption in sound matching of multiple synthesizers and audio effects \cite{caspe2022ddx7,carson2026gradient}. However, it usually represents control as either global LTI processors, or dense frame rate trajectories. While the first naturally represent static systems, such as room reverberation \cite{dalsanto2025flamo}, the latter suits continuously driven instruments, such as bowing or singing voice \cite{sudholt2023vocal}. However, a range of instruments are not faithfully represented by either of these approaches; plucked and struck strings are, expressive techniques aside, instinctively performed as a collection of note events with onset, pitch, duration and velocity, as commonly represented in MIR and symbolic music \cite{hawthorne2018onsets}.
+Differentiable digital signal processing (\ddsp) allows analysis by synthesis of audio processors within automatic differentiation graphs~\cite{engel2020ddsp}, triggering its wide adoption in sound matching of multiple synthesizers and audio effects~\cite{caspe2022ddx7,carson2026gradient}. However, it usually represents control as either global LTI processors, or dense frame rate trajectories. While the first naturally represent static systems, such as room reverberation~\cite{dalsanto2025flamo}, the latter suits continuously driven instruments, such as bowing or singing voice~\cite{sudholt2023vocal}. However, a range of instruments are not faithfully represented by either of these approaches; plucked and struck strings are, expressive techniques aside, instinctively performed as a collection of note events with onset, pitch, duration and velocity, as commonly represented in MIR and symbolic music~\cite{hawthorne2018onsets}.
 
-However, as Turian and Henry found, traditional pointwise and waveform-based losses are poor at pitch estimation, as they become misleading when spectral energy is displaced and does not overlap \cite{turian2020loss}. Hayes et al. proposed complex surrogates to sidestep this issue, but remain synth dependant \cite{hayes2023sinusoidal}. A common trick is the use of external $f_0$ detectors or synthetic parameter labels, capping reconstruction and vetoing further end-to-end training \cite{engel2020ddsp, engel2020inverse}. Optimal transport has progressively been introduced to DDSP by Torres et al. and Fabiani et al., as it addresses displacement directly, with STFT frame-wise and joint time-frequency implementations proposed for $f_0$ independently and jointly for time and frequency shifts respectively \cite{torres2024sot, fabiani2024jtfot}.
+However, as Turian and Henry found, traditional pointwise and waveform-based losses are poor at pitch estimation, as they become misleading when spectral energy is displaced and does not overlap~\cite{turian2020loss}. Hayes et al. proposed complex surrogates to sidestep this issue, but remain synth dependant~\cite{hayes2023sinusoidal}. A common trick is the use of external $f_0$ detectors or synthetic parameter labels, capping reconstruction and vetoing further end-to-end training~\cite{engel2020ddsp, engel2020inverse}. Optimal transport has progressively been introduced to DDSP by Torres et al. and Fabiani et al., as it addresses displacement directly, with STFT frame-wise and joint time-frequency implementations proposed for $f_0$ independently and jointly for time and frequency shifts respectively~\cite{torres2024sot, fabiani2024jtfot}.
 
-Tablas de Paula et al. recently proposed an event-based prediction architecture, jointly estimating the $f_0$, onset time and timbre parameters of events in a plucked-string algorithm \cite{tablasdepaula2026karplus}. They found that synthetic data labelling generalised poorly to real world data, while spectral optimal transport is unreliable at joint onset and pitch optimization, and eventually fell back to external detectors \cite{tablasdepaula2026karplus}. On this work, we adopt a simple digital waveguide \cite{depaula2026waveguides} for musical phrase optimization of plucked-string via a similar event-based representation, but compare it with joint time-frequency optimal transport based losses. Additionally, we propose the use of cumulative energy losses, which compare normalised spectral-power accumulations. Specifically, we use a bidirectional implementation, \bicul{}, which accumulates energy in both directions of both STFT axes. Along the way, we outline the importance of the rendered jacobian, where different sub-sample onset placement method and fractional delay interpolation methods can give similar audio but aggresively different derivatives.
+Tablas de Paula et al. recently proposed an event-based prediction architecture, jointly estimating the $f_0$, onset time and timbre parameters of events in a plucked-string algorithm~\cite{tablasdepaula2026karplus}. They found that synthetic data labelling generalised poorly to real world data, while spectral optimal transport is unreliable at joint onset and pitch optimization, and eventually fell back to external detectors~\cite{tablasdepaula2026karplus}. On this work, we adopt a simple digital waveguide~\cite{depaula2026waveguides} for musical phrase optimization of plucked-string via a similar event-based representation, but compare it with joint time-frequency optimal transport based losses. Additionally, we propose the use of cumulative energy losses, which compare normalised spectral-power accumulations. Specifically, we use a bidirectional implementation, \bicul{}, which accumulates energy in both directions of both STFT axes. Along the way, we outline the importance of the rendered jacobian, where different sub-sample onset placement method and fractional delay interpolation methods can give similar audio but aggresively different derivatives.
 
 Hence our contributions are threefold:
 \begin{itemize}
@@ -90,7 +89,7 @@ candidate periodic-Hann FFT-256/hop-64 power at frequency bin $k$ and frame $n$.
 For $q=(d_t,d_f)$, $d_t\in\{\rightarrow,\leftarrow\}$ and
 $d_f\in\{\uparrow,\downarrow\}$ select accumulation direction; $C^t_{d_t}$ and
 $C^f_{d_f}$ are the corresponding cumulative sums:
-\begin{equation}
+\begin{equation*}
 \begin{aligned}
 S_q&=C^f_{d_f}(C^t_{d_t}(P)),\\
 \hat S_q&=C^f_{d_f}(C^t_{d_t}(\hat P)),\\
@@ -98,7 +97,7 @@ m_q&=\max S_q,\qquad R_q=\sqrt{\max(S_q/m_q,10^{-12})},\\
 \hat R_q&=\sqrt{\max(\hat S_q/m_q,10^{-12})},\\
 \ell_q&=\operatorname{RMS}(R_q-\hat R_q).
 \end{aligned}
-\end{equation}
+\end{equation*}
 Here $S_q,\hat S_q$ are the target/candidate cumulative surfaces; $m_q$ is the
 target maximum; $R_q,\hat R_q$ are target-normalised square roots floored at
 $10^{-12}$; and $\ell_q$ is their root-mean-square (RMS) difference over
@@ -115,10 +114,7 @@ target-directed.
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
-\IfFileExists{\PaperRoot/figures/loss_landscapes.pdf}{
-  \includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_landscapes.pdf}
-}{\fbox{\parbox[c][58mm][c]{0.94\columnwidth}{\centering
-  Loss-direction figure pending checksum-complete generation.}}}
+\includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_landscapes.pdf}
 \vspace{-5.8mm}
 \caption{Normalised single-pluck loss landscapes; the cross marks the target
 and arrows show unit descent.}
@@ -127,15 +123,15 @@ and arrows show unit descent.}
 
 Reading left-to-right by row, \lone{} is mean absolute and \ltwo{} mean squared
 sample error; 60.0\% and 49.2\% of their 120 directions are target-directed.
-Following Schw\"ar and M\"uller \cite{schwar2023mss}, \mss{} sums squared
+Following Schw\"ar and M\"uller~\cite{schwar2023mss}, \mss{} sums squared
 \ltwo{} distances between $\log(1+|\operatorname{STFT}|)$ magnitudes. Its
 prime-length flat-top windows $\{17,31,67,127,257,509\}$ and hops
 $\{8,15,33,63,128,254\}$ limit leakage without aligning DFT bins; it achieves
 42.5\%, where $|\cdot|$ is magnitude and $\log$ the natural logarithm. Beside
-it, Torres et al.'s \sot{} \cite{torres2024sot} combines frame-normalised
+it, Torres et al.'s \sot{}~\cite{torres2024sot} combines frame-normalised
 FFT-512/hop-64 flat-top STFT-power transport with their unbalanced quantile
 cutoff and $0.05$ Hann-windowed linear-magnitude MSS; it achieves 51.7\%.
-Finally, Fabiani et al.'s \tfw{} \cite{fabiani2024jtfot} globally normalises a
+Finally, Fabiani et al.'s \tfw{}~\cite{fabiani2024jtfot} globally normalises a
 periodic-Hann FFT-256/hop-128 magnitude STFT and projects it along ten angles.
 Its frequency is in Hz and $\widetilde t=1000t$ in Hz, equating 1~s with
 1000~Hz; $t$ is frame time and $\widetilde t$ its transport coordinate. \tfw{}
@@ -151,11 +147,7 @@ achieves 75.8\%, while the final \bicul{} panel achieves 100.0\%.
 \begin{figure*}[!t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
-\IfFileExists{\PaperRoot/figures/state_realization.pdf}{
-  \includegraphics[width=\textwidth]
-  {\PaperRoot/figures/state_realization.pdf}
-}{\fbox{\parbox[c][95mm][c]{0.96\textwidth}{\centering
-  State-realisation comparison pending checksum-complete generation.}}}
+\includegraphics[width=\textwidth]{\PaperRoot/figures/state_realization.pdf}
 \vspace{-7.0mm}
 \caption{Reset-DF2 target spectrogram and middle-event \bicul{} sweeps for
 collapsed DF2 and Literal waveguides.}
@@ -167,42 +159,41 @@ collapsed DF2 and Literal waveguides.}
 Let $x,\hat x\in\mathbb R^N$ be target and candidate $N$-sample waveforms,
 $\theta$ the onset--pitch vector, $\rho$ a renderer realisation,
 $\hat x=R_\rho(\theta)$ its output, and $\mathcal L$ the audio loss. Then
-\begin{equation}
+\begin{equation*}
 \nabla_\theta\mathcal L(x,R_\rho(\theta))=
 J_{R_\rho}(\theta)^\mathsf{T}\nabla_{\hat x}\mathcal L(x,\hat x).
-\label{eq:pullback}
-\end{equation}
+\end{equation*}
 Here $J_{R_\rho}=\partial\hat x/\partial\theta$ is the renderer Jacobian;
 $\nabla_u$ and $\mathsf T$ denote differentiation in $u$ and transposition.
 
 Figure~\ref{fig:waveguide} shows $R_\rho$: two oppositely travelling rails split
 by the pluck into nut- and bridge-side paths. Their length sum sets $f_0$ and
-their ratio sets pluck position \cite{depaula2026waveguides}, fixed at 0.23
+their ratio sets pluck position~\cite{depaula2026waveguides}, fixed at 0.23
 from the bridge. Nut and bridge reflection gains are $-1$ and $-H_L(z)$,
 respectively, where $H_L$ is the loss-filter transfer, $z$ the transform
 variable, and $z^{-1}$ a one-sample delay:
-\begin{equation}
+\begin{equation*}
 H_L(z)=g\frac{1-a_1}{1-a_1z^{-1}},\qquad g=0.99,\quad a_1=0.2.
-\end{equation}
+\end{equation*}
 $g$ is low-frequency round-trip gain and $a_1$ the one-pole coefficient
 increasing high-frequency attenuation. They produce a complex, $f_0$-dependent
-RT60 \cite[Fig.~3]{tablasdepaula2026karplus}. Output is bridge-incident
+RT60~\cite[Fig.~3]{tablasdepaula2026karplus}. Output is bridge-incident
 travelling velocity. Thus Sec.~\ref{sec:losses} fixes $\rho$ to compare losses;
 the remainder of this section fixes \bicul{} to compare renderer realisations.
 
 \subsection{Differentiable onset placement and interpolation}
 Audio is float64, 2~s long, and sampled at 4~kHz. Each event excites a zero-onset
 half-raised-cosine (HRC)
-\begin{equation}
+\begin{equation*}
 e_0(t)=\begin{cases}
 \dfrac{A_e}{2}[1-\cos(\pi t/T_e)],&0\leq t<T_e,\\
 0,&\text{otherwise,}
 \end{cases}
-\end{equation}
+\end{equation*}
 where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its peak, and
 $T_e=10$~ms its duration. Continuous placement uses analytic HRC sampling
 (Naive); a six-tap, fifth-order maximally-flat FIR shift (Lagrange); the FLAMO
-response $e^{-j\omega D}$ (Fourier) \cite{dalsanto2025flamo}; or a causal
+response $e^{-j\omega D}$ (Fourier)~\cite{dalsanto2025flamo}; or a causal
 first-order all-pass shift (Thiran). Here $D$ is delay in samples, $\omega$
 angular frequency in radians per sample, and $j^2=-1$. Subsequent Fourier onset
 placement uses a 262,144-point transform.
@@ -210,8 +201,8 @@ placement uses a 262,144-point transform.
 For propagation, $\mathcal D_p(D;z)\approx z^{-D}$ approximates $D$ delay
 samples; $p$ denotes propagation. Linear uses order-1 Lagrange sections;
 Lagrange uses orders 5/1 on the long nut/short bridge paths; Fourier samples the
-delay response; and Thiran uses all-pass orders 3/1. The maximally-flat designs
-\cite{laakso1996splitting} retain order 1 where the bridge path is too short for
+delay response; and Thiran uses all-pass orders 3/1. The maximally-flat
+designs~\cite{laakso1996splitting} retain order 1 where the bridge path is too short for
 higher order. Rail tuning includes realised fractional-delay and loop-filter
 phase.
 
@@ -246,9 +237,9 @@ subsequent experiments.
 
 \subsection{Phase interference and string reset}
 Each constant event regime collapses to an exact rational transfer, evaluated
-through PhilTorch's direct-form-II (DF2) interface and TorchLPC backend
-\cite{yu2025philtorch}. Fixed-coefficient-equivalent rearrangements can differ
-after coefficients change \cite{yu2024torchlpc}: collapsed DF2 compresses rails,
+through PhilTorch's direct-form-II (DF2) interface and TorchLPC
+backend~\cite{yu2025philtorch}. Fixed-coefficient-equivalent rearrangements can differ
+after coefficients change~\cite{yu2024torchlpc}: collapsed DF2 compresses rails,
 reflections, and bridge termination into one history, whereas Literal retains
 separate physical rail and bridge-filter histories. They are equivalent within
 a constant regime but need not agree across changes.
@@ -286,11 +277,11 @@ $\log_2[\max(f,20)/20]$ octaves and seconds; $f$ is bin-centre Hz and the
 uniform bins to seconds--log-frequency quadrature. For $q=(d_t,d_f)$, let
 $E_q(k,n)=\hat R_q(k,n)-R_q(k,n)$ be the candidate-minus-target surface error.
 Its weighted directional loss is
-\begin{equation}
+\begin{equation*}
 \ell^{\rm quad}_{q}=\left[\frac{\sum_{k,n}
 w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
 {\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2},
-\end{equation}
+\end{equation*}
 where $k,n$ index frequency bins/time frames; $w^f_{d_f,k},w^t_{d_t,n}$ are
 their direction-aligned adjacent widths in octaves/seconds; both sums span
 $(k,n)$; and $\ell^{\rm quad}_q$ denotes this weighted RMS rather than
@@ -298,13 +289,10 @@ $\ell_q$. Other operations are unchanged. With Sec.~\ref{sec:losses}'s six
 objectives, the variants yield 6000 fits: 150 targets at five event counts
 across 40 conditions.
 
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
-\IfFileExists{\PaperRoot/figures/lsd_violin.pdf}{
-  \includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
-}{\fbox{\parbox[c][45mm][c]{0.96\textwidth}{\centering
-  Figure 4 LSD distributions pending checksum-complete regeneration.}}}
+\includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
 \vspace{-5.0mm}
 \caption{Per-phrase LSD distributions over the same targets; lower is better.}
 \label{fig:lsd}
@@ -312,10 +300,10 @@ across 40 conditions.
 
 \subsection{Evaluation}
 Let $i$ index an unordered prediction and $j$ a target. Their assignment cost is
-\begin{equation}
+\begin{equation*}
 d_{ij}=\left[\frac{\log_2(\hat f_{0,i}/f_{0,j})}{2}\right]^2+
 \left[\frac{\hat t_i-t_j}{1.6}\right]^2.
-\end{equation}
+\end{equation*}
 Hats denote predictions; $\hat f_{0,i},f_{0,j}$ are pitches in Hz;
 $\hat t_i,t_j$ are onsets in seconds; $2$ and $1.6$ are the full ranges in
 octaves and seconds; and $d_{ij}$ is dimensionless. Hungarian assignment finds
