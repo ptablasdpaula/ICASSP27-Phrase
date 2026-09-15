@@ -1,0 +1,206 @@
+{
+  "cell_artifacts": {
+    "fourier__fourier": {
+      "npz_sha256": "8572af28e48c36002d9eda2d31108eba19f7f070113fec4bc5a0dc78403e4804",
+      "payload_sha256": "83e59a839835234efa968fe3d1d08ae613568e0e57dd96c3b886610dd5c25e1c"
+    },
+    "fourier__lagrange": {
+      "npz_sha256": "44c2e25c5c0fbd8485285ca06a62cc71d606c9b2c92f4baf0c117aff453a9d38",
+      "payload_sha256": "89e3c0b82df139b56eb0b76bd195fab1c15aa69694e4633c88ae06509344caa9"
+    },
+    "fourier__linear": {
+      "npz_sha256": "368f15c4fe878cf18535cfe679031cf9d8c9c750ed33d78f0f6d1ad1d8432e99",
+      "payload_sha256": "fef0af0fb3d734c3c0c8e98c674e3d87e506ec6d8b239a4de86a5aee1aa190d9"
+    },
+    "fourier__thiran": {
+      "npz_sha256": "38da6980ad7ac0398bfca2df5f87ff6e657e4b4cf734b9aca03800f8f139e6bc",
+      "payload_sha256": "89cfa2908e870d5ab3ea27c4c5b04d2d9771b4cb4fc2abcf90088d5bf08d1009"
+    },
+    "lagrange__fourier": {
+      "npz_sha256": "c91b4fdc29a06dd7ccdcbf1584c22d3199dbc5965353d13dfff273130a05d78e",
+      "payload_sha256": "ae9c0bb845b8a2b6e435b390ba47238cd045667ef804e19608bcdec4fd250ea9"
+    },
+    "lagrange__lagrange": {
+      "npz_sha256": "7455e93840e7a56209e8b1940b68d6966716e26e3637cb782b4bca8671e30755",
+      "payload_sha256": "e67d6ff2b83e5a7f038269613f3a175617724b2a734d7269a3435e9f5f360c52"
+    },
+    "lagrange__linear": {
+      "npz_sha256": "0af12c63888903954f74a1e5e31c88ab47d9d35eb42851b4036887b664798ea9",
+      "payload_sha256": "7e6b792025d0ce3c94560b7298faa80b613c571d53c31c3691f735a41c3e65f1"
+    },
+    "lagrange__thiran": {
+      "npz_sha256": "3745a7b34d68c35d53c37ddb36a5becf8728c34e6c20b3d6e7d15f41051752d9",
+      "payload_sha256": "608aa2271cda2d7cf819ee65ac02a486552f3888be332fd484880f2bc1a3c7f3"
+    },
+    "naive__fourier": {
+      "npz_sha256": "8e3945f5b989949e041ef5ed26ecc6e8338596d08b8882f9c208f7d6ac7d5ee9",
+      "payload_sha256": "255715f31283e373ba0317954412713d8e771740618299e3a140e94f11871e10"
+    },
+    "naive__lagrange": {
+      "npz_sha256": "d22176e2d5129847c59349023e203a9037ec568c95b881fa66c232b3be893579",
+      "payload_sha256": "3b21c7a49e5b8908dcd936e76fa1cd24f6e4aaabe8aee58b5613b248edec3dcf"
+    },
+    "naive__linear": {
+      "npz_sha256": "9b48628050a682eed856ff792b0331e71fbdbb879dc5d8b0e3715d25158a6468",
+      "payload_sha256": "a415513dc5d229c44e24a355fb78a833d5372af02600ef18d5ee083c938f4571"
+    },
+    "naive__thiran": {
+      "npz_sha256": "a11d78582e72a99ad78a730e4a433d2808ff90672f18ec6e4d52aa0857b1958e",
+      "payload_sha256": "b8a675eb740ad48f52709c67686f2c5b75a0e774f756e0faa57b3bf46ff16178"
+    },
+    "thiran__fourier": {
+      "npz_sha256": "85371646e0a3141d099b2b1cf9bacb59d108a92caa7a75a6f18898f45c63a99d",
+      "payload_sha256": "45fa8398519ef7c626dc3f796b7404b5a5e5f5b3db180611d3997a8bc8bcb461"
+    },
+    "thiran__lagrange": {
+      "npz_sha256": "2dffd1dea94ab5b9d774dfa7d1aef577f815c809d072c054410443a5af1f133b",
+      "payload_sha256": "7163d620a01b31b25f9a14c169988dc90eebe5f2b3a4d2e78ddee16f3b0b0d2b"
+    },
+    "thiran__linear": {
+      "npz_sha256": "cd4fd985950b9f8af0a29a03bb634bad19e3f1b9935a02af927278103cf39d7c",
+      "payload_sha256": "2ed29716c0090ca41d0639b5c9f231006688b3686d7edbd93e89049853769589"
+    },
+    "thiran__thiran": {
+      "npz_sha256": "bad1d86b67960d59f5bcbabedc52222a0f9f1dcdcc54e06cbd8b65a895df5097",
+      "payload_sha256": "4f005785fb6683d6abe895189bac37ed51ddd6500e11d6b16ae33c4d955e8cbe"
+    }
+  },
+  "columns": [
+    {
+      "id": "linear",
+      "label": "Linear"
+    },
+    {
+      "id": "lagrange",
+      "label": "Lagrange-5/1"
+    },
+    {
+      "id": "fourier",
+      "label": "Fourier"
+    },
+    {
+      "id": "thiran",
+      "label": "Thiran-3/1"
+    }
+  ],
+  "losses": [
+    {
+      "bytes": 391717,
+      "id": "waveform_l1",
+      "label": "L_1",
+      "path": "waveform_l1.json",
+      "sha256": "2782a23507e7ccb881d69deb1f26ff7538cfde01ff7ce376ee9b023dab0edde7"
+    },
+    {
+      "bytes": 391611,
+      "id": "waveform_mse",
+      "label": "L_2",
+      "path": "waveform_mse.json",
+      "sha256": "97e320b530366f5e0ff650a70bd668ee9d233fc5b30f393f05354f5020e04ac1"
+    },
+    {
+      "bytes": 391796,
+      "id": "smooth_mss",
+      "label": "MSS",
+      "path": "smooth_mss.json",
+      "sha256": "470ff1e2817b9cd394af2236857cb892256e7fbedcb4770c7d6486375d287e09"
+    },
+    {
+      "bytes": 391394,
+      "id": "sot_published_composite",
+      "label": "SOT",
+      "path": "sot_published_composite.json",
+      "sha256": "c137f1e127c2744ebc5a41277c42ffd18493d8da2f83196315616a07b1b891a2"
+    },
+    {
+      "bytes": 392042,
+      "id": "linear_jtfot",
+      "label": "TFW_2",
+      "path": "linear_jtfot.json",
+      "sha256": "8f8f6f62e3c00dad64fc3c184f13e6a523ac2035161e69cbb30ce841e1a78e28"
+    },
+    {
+      "bytes": 392063,
+      "id": "log_jtfot",
+      "label": "TFW_2 (1s=1oct)",
+      "path": "log_jtfot.json",
+      "sha256": "ec8449cfd7b35861230894a6b7b35bcb02d55cb5233185d74a6d90a33c6bbbf2"
+    },
+    {
+      "bytes": 392200,
+      "id": "bidirectional_cumulative_energy",
+      "label": "BiCuL",
+      "path": "bidirectional_cumulative_energy.json",
+      "sha256": "6c3ef0c5198a4a8977705f6eeb711c86a7de8ca923f968d394e9389063f316df"
+    },
+    {
+      "bytes": 392197,
+      "id": "log_quadrature_bicul",
+      "label": "LogQ_BiCuL",
+      "path": "log_quadrature_bicul.json",
+      "sha256": "c9313560d45b58301152e7361831154c2c3d6e54d193383df28793e0e3d7ad36"
+    }
+  ],
+  "payload_sha256": "81a15970ab9a070f43dd8db4f9ceebb344eef319c5fb9d81fef3bbbef1d26fb1",
+  "protocol": {
+    "directions": {
+      "coordinates": "normalized log-pitch and linear onset",
+      "criterion": "dot(-unit_gradient, target_minus_candidate) > 0",
+      "display_indices": [
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20,
+        22
+      ],
+      "displayed_non_target_gradients": 120
+    },
+    "surface_grid": {
+      "f0_hz": [
+        80.0,
+        320.0
+      ],
+      "normalization": "independent min-max per loss and renderer cell",
+      "onset_coordinate": "(onset-0.2)/1.6",
+      "onset_seconds": [
+        0.2,
+        1.8
+      ],
+      "pitch_coordinate": "log2(f0/80)/2",
+      "shape": [
+        25,
+        25
+      ]
+    },
+    "target": {
+      "f0_hz": 160.0,
+      "onset_seconds": 1.0
+    }
+  },
+  "rows": [
+    {
+      "id": "naive",
+      "label": "Analytic"
+    },
+    {
+      "id": "lagrange",
+      "label": "Lagrange-5"
+    },
+    {
+      "id": "fourier",
+      "label": "Fourier"
+    },
+    {
+      "id": "thiran",
+      "label": "Thiran-1"
+    }
+  ],
+  "schema": "renderer-screen-eight-loss-manifest-v1",
+  "source_commit": "a3ec8dbd28b546e85aceabc0372296063a6bda00"
+}

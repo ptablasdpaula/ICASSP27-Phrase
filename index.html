@@ -6,6 +6,7 @@
   <meta name="description" content="Supplementary renderer diagnostics for Gradient Descent Optimization of Plucked-String Musical Phrases via Cumulative Energy Loss.">
   <title>Supplementary renderer diagnostics · ICASSP27 Phrase</title>
   <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/renderer-screen.js" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -22,15 +23,22 @@
       <p class="section-label">Supplementary Table S1</p>
       <h2 id="renderer-screen-title">Onset-placement and propagation screen</h2>
       <p>
-        Percentage of target-directed <span class="math">BiCuL</span> descent directions in the registered
-        single-event diagnostic (120 non-target points per cell; higher is better). Rows vary onset
-        placement and columns vary fractional-delay propagation. This is an auxiliary, BiCuL-only
-        diagnostic rather than an objective-independent renderer ranking.
+        Percentage of target-directed descent directions for each of the eight paper losses in the
+        registered single-event diagnostic (120 non-target points per cell; higher is better). Rows
+        vary onset placement and columns vary fractional-delay propagation. Choose a loss, then
+        select any table cell to inspect its independently normalised landscape and gradient arrows.
       </p>
 
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable renderer screen table">
-        <table>
-          <caption>Target-directed BiCuL descent directions by onset-placement and propagation method.</caption>
+      <div class="loss-controls" aria-labelledby="loss-selector-label">
+        <p id="loss-selector-label" class="control-label">Loss objective</p>
+        <div id="loss-selector" class="loss-picker" role="radiogroup" aria-labelledby="loss-selector-label"></div>
+      </div>
+
+      <p id="renderer-status" class="renderer-status" role="status" aria-live="polite">Loading precomputed diagnostic data…</p>
+
+      <div class="table-scroll matrix-scroll" tabindex="0" role="region" aria-label="Scrollable renderer screen table">
+        <table id="renderer-matrix">
+          <caption id="renderer-caption">Target-directed descent directions by onset-placement and propagation method.</caption>
           <thead>
             <tr>
               <th scope="col">Onset ↓ / propagation →</th>
@@ -42,62 +50,69 @@
           </thead>
           <tbody>
             <tr>
-              <th scope="row">Naive</th>
-              <td>52.5%</td><td>62.5%</td><td>68.3%</td><td>68.3%</td>
+              <th scope="row">Analytic</th>
+              <td><button type="button" data-cell="0" disabled>…</button></td>
+              <td><button type="button" data-cell="1" disabled>…</button></td>
+              <td><button type="button" data-cell="2" disabled>…</button></td>
+              <td><button type="button" data-cell="3" disabled>…</button></td>
             </tr>
             <tr>
-              <th scope="row">Lagrange</th>
-              <td>49.2%</td><td>62.5%</td><td>70.0%</td><td>63.3%</td>
+              <th scope="row">Lagrange-5</th>
+              <td><button type="button" data-cell="4" disabled>…</button></td>
+              <td><button type="button" data-cell="5" disabled>…</button></td>
+              <td><button type="button" data-cell="6" disabled>…</button></td>
+              <td><button type="button" data-cell="7" disabled>…</button></td>
             </tr>
             <tr>
               <th scope="row">Fourier</th>
-              <td>66.7%</td><td>78.3%</td><td>88.3%</td><td class="best"><strong>100.0%</strong></td>
+              <td><button type="button" data-cell="8" disabled>…</button></td>
+              <td><button type="button" data-cell="9" disabled>…</button></td>
+              <td><button type="button" data-cell="10" disabled>…</button></td>
+              <td><button type="button" data-cell="11" disabled>…</button></td>
             </tr>
             <tr>
-              <th scope="row">Thiran</th>
-              <td>65.8%</td><td>79.2%</td><td>99.2%</td><td>99.2%</td>
+              <th scope="row">Thiran-1</th>
+              <td><button type="button" data-cell="12" disabled>…</button></td>
+              <td><button type="button" data-cell="13" disabled>…</button></td>
+              <td><button type="button" data-cell="14" disabled>…</button></td>
+              <td><button type="button" data-cell="15" disabled>…</button></td>
             </tr>
           </tbody>
         </table>
       </div>
+      <p class="interaction-hint">Select any percentage to load that renderer’s landscape.</p>
+
+      <figure class="landscape-card" aria-labelledby="landscape-title landscape-caption">
+        <div class="landscape-heading">
+          <div>
+            <p class="section-label">Interactive diagnostic</p>
+            <h3 id="landscape-title">Selected loss landscape</h3>
+            <p id="landscape-renderer" class="landscape-renderer">Waiting for data…</p>
+          </div>
+          <p id="landscape-score" class="score-pill" aria-label="Target-directed directions">—</p>
+        </div>
+        <div class="canvas-frame">
+          <canvas id="loss-landscape" width="760" height="820" role="img" aria-label="Selected single-event loss landscape with unit gradient-descent arrows"></canvas>
+        </div>
+        <figcaption id="landscape-caption">
+          The cross marks the centred 160-Hz, 1.0-s target. White arrows are unit
+          descent directions on the same 120-point sublattice used by Fig. 1; the
+          colour scale is independently min–max normalised for each loss and renderer.
+        </figcaption>
+      </figure>
 
       <div class="method-notes">
-        <p><strong>Onset placement (rows).</strong> Naive continuously samples the analytic excitation; Lagrange uses a fifth-order, six-tap maximally flat FIR shift; Fourier applies the FLAMO phase shift; and Thiran uses a first-order causal all-pass shift.</p>
+        <p><strong>Onset placement (rows).</strong> Analytic directly samples the continuous excitation; Lagrange uses a fifth-order, six-tap maximally flat FIR shift; Fourier applies the FLAMO phase shift; and Thiran uses a first-order causal all-pass shift.</p>
         <p><strong>Propagation (columns).</strong> Linear uses first-order interpolation on both rails; Lagrange uses orders 5/1 on the long/short paths; Fourier samples the delay response; and Thiran uses orders 3/1.</p>
       </div>
 
-      <h3>Supplementary Table S2 · Six-loss renderer-sensitivity repeat</h3>
-      <p>
-        Supplementary Table S2 retains the comparison removed from the paper. It repeats the same
-        120-point direction count with Naive onset placement and Linear propagation. The changing
-        leading objective illustrates why these single-target counts should not be interpreted as a
-        renderer-independent ranking.
-      </p>
-      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable renderer sensitivity table">
-        <table>
-          <caption>Target-directed descent directions by loss and renderer.</caption>
-          <thead>
-            <tr>
-              <th scope="col">Loss</th>
-              <th scope="col">Fourier–Thiran</th>
-              <th scope="col">Naive–Linear</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><th scope="row">L1</th><td>60.0%</td><td>42.5%</td></tr>
-            <tr><th scope="row">L2</th><td>49.2%</td><td>44.2%</td></tr>
-            <tr><th scope="row">MSS</th><td>42.5%</td><td>41.7%</td></tr>
-            <tr><th scope="row">SOT</th><td>51.7%</td><td>43.3%</td></tr>
-            <tr><th scope="row">TFW2</th><td>75.8%</td><td class="best"><strong>64.2%</strong></td></tr>
-            <tr><th scope="row">BiCuL</th><td class="best"><strong>100.0%</strong></td><td>52.5%</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <aside class="note" aria-label="Planned extension">
-        <strong>Planned extension.</strong> A future loss selector will load precomputed matrices and update
-        Supplementary Table S1. It will not perform audio rendering in the browser. The present release
-        contains the BiCuL matrix used for that table.
+      <aside class="note" aria-label="Interpretation and provenance">
+        <strong>Interpretation.</strong> This is a sensitivity diagnostic for one registered target,
+        not an objective-independent renderer ranking or evidence of target invariance. Target and
+        candidate use the same renderer within each cell. All waveforms, losses, and gradients are
+        precomputed on GPUs; the browser only switches version-controlled data. See the
+        <a href="assets/renderer-screen/manifest.json">machine-readable manifest</a> for the protocol,
+        source commit, and artifact checksums.
       </aside>
     </section>
 
