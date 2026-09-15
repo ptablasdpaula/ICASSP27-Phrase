@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from scripts.render_loss_landscapes import (
+    LANDSCAPE_FIGURE_STYLE,
     TARGET_INDEX,
     compute_comparison_cache,
     coordinate_grids,
@@ -55,6 +56,19 @@ def test_renderer_comparison_is_fourier_thiran_and_naive_linear() -> None:
         "linear",
     )
     assert campaign.waveguide.state_policy == comparison.waveguide.state_policy == "hard_reset"
+
+
+def test_landscape_figure_restores_registered_white_compact_style() -> None:
+    style = LANDSCAPE_FIGURE_STYLE
+    assert style.arrow_color == style.annotation_color == "white"
+    assert style.arrow_half_length == 0.026
+    assert style.arrow_mutation_scale == 4.2
+    assert style.arrow_linewidth == 0.48
+    assert style.annotation_y == 0.985
+    assert style.horizontal_space == 0.065
+    assert style.horizontal_center == pytest.approx(
+        0.5 * (style.plot_left + style.plot_right)
+    )
 
 
 def test_recursive_comparison_rejects_cpu(tmp_path) -> None:

@@ -84,11 +84,13 @@
     "target_index": 12
   },
   "figure": {
-    "arrows": "black with thin white halo",
+    "arrows": "pure white, no outline; half-length 0.026 axes units, mutation scale 4.2, linewidth 0.48",
+    "endpoint_tick_alignment": "outer plot and colorbar labels pulled inward",
     "layout": "single-column 3x2 independently normalized loss surfaces",
-    "panel_annotation": "target-directed percentage at upper right",
-    "pdf_sha256": "b7cc110ca5b46c834e3e4346a2625fc444e497718234130e99db752d10604b1d",
+    "panel_annotation": "pure-white target-directed percentage at upper right",
+    "pdf_sha256": "3ff90295fd55cb4a9d97cbf4c1dfea9167b5e06b734ddc67f2ec82707b5c4026",
     "renderer": "fourier_thiran",
+    "x_label_alignment": "horizontal center of the plot and colorbar span",
     "y_label_alignment": "vertical center of the MSS axes"
   },
   "losses": [
@@ -99,7 +101,7 @@
     "linear_jtfot",
     "bidirectional_cumulative_energy"
   ],
-  "payload_sha256": "91d3d59f81abb7b92335baf376c4aa2c146ae29564efee51194d3e9a54a0a3dd",
+  "payload_sha256": "f55d3a3dc946f142ff5f68f50c4f30c9adfc72acf5d8a0814be89451e5c8eaba",
   "renderers": {
     "fourier_thiran": {
       "display_name": "Fourier--Thiran",
@@ -163,9 +165,9 @@
     "qualified_source_pdf_sha256": "9e04302234ce776395fdbae07f4861ee1c49106544c7fa76a4a37bd179d038fe"
   },
   "schema": "single-event-two-renderer-gradient-diagnostic-v1",
-  "source_commit": "e82dc21c38fd40ddf99de1d53bfc98c8a3f125e2",
+  "source_commit": "962453275044976f3620398a8e29cf6fca66bc87",
   "source_sha256": {
-    "scripts/render_loss_landscapes.py": "95b1b338e93482f36fe3a68041bd769e18076d02e0217da60f19fb6f2b24cda8",
+    "scripts/render_loss_landscapes.py": "46799d6ad42377019a154c128fde29dea780d0c917c13db00ee2e04fdf72b128",
     "src/config.py": "eda46024c2a833e4272ca7fa5d78c075da4eb9ebf835b38b8f528971c1a99aff",
     "src/exciter.py": "ea65a2e1b047ae9f71946ae067fc9f7cb0322d491168dc679fd4ea4e5471dd7c",
     "src/losses.py": "3087ea3988f99e75eac7bd1a7f58df4f5ace7d9d9e9ff5645f6e60775fcf1976",

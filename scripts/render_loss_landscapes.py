@@ -70,6 +70,35 @@ class RendererSpec:
     waveguide: WaveguideConfig
 
 
+@dataclass(frozen=True)
+class LandscapeFigureStyle:
+    """Registered single-column landscape styling."""
+
+    arrow_color: str = "white"
+    annotation_color: str = "white"
+    arrow_half_length: float = 0.026
+    arrow_mutation_scale: float = 4.2
+    arrow_linewidth: float = 0.48
+    annotation_x: float = 0.965
+    annotation_y: float = 0.985
+    plot_left: float = 0.13
+    plot_right: float = 0.985
+    plot_bottom: float = 0.12
+    plot_top: float = 0.985
+    horizontal_space: float = 0.065
+    vertical_space: float = 0.12
+    colorbar_bottom: float = 0.035
+    colorbar_height: float = 0.016
+
+    @property
+    def horizontal_center(self) -> float:
+        """Centre shared labels on the axes/colorbar span, not the canvas."""
+        return 0.5 * (self.plot_left + self.plot_right)
+
+
+LANDSCAPE_FIGURE_STYLE = LandscapeFigureStyle()
+
+
 def renderer_specs() -> tuple[RendererSpec, RendererSpec]:
     """Return the campaign renderer and the simple sensitivity comparison."""
     return (
@@ -525,13 +554,13 @@ def render_figure(
     import matplotlib
 
     matplotlib.use("Agg")
-    import matplotlib.patheffects as path_effects
     import matplotlib.pyplot as plt
     from matplotlib.patches import FancyArrowPatch
 
     if surfaces_rgb.shape != (6, 180, 180, 3) or directions.shape != (6, 120, 2):
         raise ValueError("qualified landscape cache has unexpected array shapes")
     positions = displayed_coordinates()
+    style = LANDSCAPE_FIGURE_STYLE
     figure, axes = plt.subplots(3, 2, figsize=(4.65, 7.15), sharex=True, sharey=True)
     cmap = plt.get_cmap("magma")
     for panel, (axis, _loss_name, label) in enumerate(
@@ -550,23 +579,17 @@ def render_figure(
             centre = np.asarray([coordinate[1], coordinate[0]])
             display_direction = np.asarray([direction[1], direction[0]])
             arrow = FancyArrowPatch(
-                centre - 0.026 * display_direction,
-                centre + 0.026 * display_direction,
+                centre - style.arrow_half_length * display_direction,
+                centre + style.arrow_half_length * display_direction,
                 transform=axis.transAxes,
                 arrowstyle="-|>",
-                mutation_scale=4.2,
-                linewidth=0.52,
-                color="black",
+                mutation_scale=style.arrow_mutation_scale,
+                linewidth=style.arrow_linewidth,
+                color=style.arrow_color,
                 shrinkA=0.0,
                 shrinkB=0.0,
                 clip_on=True,
                 zorder=4,
-            )
-            arrow.set_path_effects(
-                [
-                    path_effects.Stroke(linewidth=1.35, foreground="white"),
-                    path_effects.Normal(),
-                ]
             )
             axis.add_patch(arrow)
         axis.plot(
@@ -579,34 +602,39 @@ def render_figure(
             zorder=5,
         )
         percentage = 100.0 * int(counts[panel]) / 120.0
-        annotation = axis.text(
-            0.965,
-            0.955,
+        axis.text(
+            style.annotation_x,
+            style.annotation_y,
             f"{percentage:.1f}%",
             transform=axis.transAxes,
             ha="right",
             va="top",
             fontsize=7.2,
-            color="black",
+            color=style.annotation_color,
             zorder=6,
-        )
-        annotation.set_path_effects(
-            [
-                path_effects.Stroke(linewidth=1.8, foreground="white"),
-                path_effects.Normal(),
-            ]
         )
         axis.set_title(label, fontsize=11, pad=2.0)
         axis.set_box_aspect(1)
         axis.set_xticks((-0.8, 0.0, 0.8), (r"$-0.8$", "0", r"$+0.8$"))
+        x_tick_labels = axis.get_xticklabels()
+        if x_tick_labels:
+            x_tick_labels[0].set_horizontalalignment("left")
+            x_tick_labels[-1].set_horizontalalignment("right")
         axis.set_yticks((-1.0, 0.0, 1.0), (r"$-1$", "0", r"$+1$"))
         axis.tick_params(labelsize=8, length=2.2, pad=1.0)
         for spine in axis.spines.values():
             spine.set_linewidth(0.65)
     figure.subplots_adjust(
-        left=0.13, right=0.985, bottom=0.12, top=0.985, hspace=0.12, wspace=0.12
+        left=style.plot_left,
+        right=style.plot_right,
+        bottom=style.plot_bottom,
+        top=style.plot_top,
+        hspace=style.vertical_space,
+        wspace=style.horizontal_space,
     )
-    figure.supxlabel("Time shift (s)", fontsize=10, y=0.065)
+    figure.supxlabel(
+        "Time shift (s)", fontsize=10, x=style.horizontal_center, y=0.065
+    )
     mss_position = axes[1, 0].get_position()
     figure.supylabel(
         r"$f_0$ shift (octaves)",
@@ -614,14 +642,33 @@ def render_figure(
         x=0.035,
         y=0.5 * (mss_position.y0 + mss_position.y1),
     )
-    color_axis = figure.add_axes((0.13, 0.035, 0.855, 0.016))
+    color_axis = figure.add_axes(
+        (
+            style.plot_left,
+            style.colorbar_bottom,
+            style.plot_right - style.plot_left,
+            style.colorbar_height,
+        )
+    )
     colorbar = figure.colorbar(
         plt.cm.ScalarMappable(norm=plt.Normalize(0.0, 1.0), cmap=cmap),
         cax=color_axis,
         orientation="horizontal",
         ticks=(0.0, 0.5, 1.0),
     )
-    colorbar.ax.tick_params(labelsize=7, length=2, pad=1)
+    colorbar.ax.xaxis.set_ticks_position("bottom")
+    colorbar.ax.tick_params(
+        axis="x",
+        which="both",
+        labelsize=7,
+        length=2,
+        pad=1,
+        labeltop=False,
+        labelbottom=True,
+    )
+    color_tick_labels = colorbar.ax.get_xticklabels()
+    color_tick_labels[0].set_horizontalalignment("left")
+    color_tick_labels[-1].set_horizontalalignment("right")
     colorbar.set_label("Loss (normalised)", fontsize=8, labelpad=1)
     _atomic_figure(figure, output)
     plt.close(figure)
@@ -700,8 +747,13 @@ def build_figure(
         "figure": {
             "renderer": campaign.name,
             "layout": "single-column 3x2 independently normalized loss surfaces",
-            "arrows": "black with thin white halo",
-            "panel_annotation": "target-directed percentage at upper right",
+            "arrows": (
+                "pure white, no outline; half-length 0.026 axes units, "
+                "mutation scale 4.2, linewidth 0.48"
+            ),
+            "panel_annotation": "pure-white target-directed percentage at upper right",
+            "x_label_alignment": "horizontal center of the plot and colorbar span",
+            "endpoint_tick_alignment": "outer plot and colorbar labels pulled inward",
             "y_label_alignment": "vertical center of the MSS axes",
             "pdf_sha256": _sha256(figure_path),
         },
