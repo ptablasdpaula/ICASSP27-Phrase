@@ -226,8 +226,7 @@ placement (rows) and propagation interpolation (columns); higher is better.}
 \centering
 \caption{\normalfont Median Hungarian-matched pitch and onset errors over 150
 phrases per event count; lower is better. Bold, underlined, and italic values
-indicate first, second, and third place, respectively; values below $0.01$
-share an unranked display floor.}
+indicate first, second, and third place, respectively.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
 \end{table*}
@@ -317,12 +316,11 @@ onset milliseconds. Periodic-Hann FFT-256/hop-64 log-spectral distance (LSD)
 gives an objective-independent audio metric.
 
 \section{Results}
-Table~\ref{tab:pilot-compact} reports all conditions; hooks mark variants and
-the caption defines the rank styling. Figure~\ref{fig:lsd} shows all LSD values,
-interquartile ranges, and medians. Both \bicul{} variants reach the shared
-below-$0.01$ display floor for pitch and onset at one and two events. Across all
-event counts, a \bicul{} variant has the lowest median pitch error. A \bicul{}
-variant also has the lowest median onset error through four events, while the
+Table~\ref{tab:pilot-compact} reports all conditions. Figure~\ref{fig:lsd}
+shows all LSD values, interquartile ranges, and medians. Both \bicul{} variants
+achieved essentially perfect reconstruction for one- and two-event phrases.
+Across all event counts, a \bicul{} variant has the lowest median pitch error.
+A \bicul{} variant also has the lowest median onset error through four events, while the
 published linear-Hz \tfw{} has the lowest median onset error at six and eight
 events.
 
