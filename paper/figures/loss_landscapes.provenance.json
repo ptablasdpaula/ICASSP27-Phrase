@@ -1,0 +1,195 @@
+{
+  "diagnostics": {
+    "fourier_thiran": {
+      "bidirectional_cumulative_energy": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 120,
+        "target_directed_percentage": 100.0
+      },
+      "linear_jtfot": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 91,
+        "target_directed_percentage": 75.8
+      },
+      "smooth_mss": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 51,
+        "target_directed_percentage": 42.5
+      },
+      "sot_published_composite": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 62,
+        "target_directed_percentage": 51.7
+      },
+      "waveform_l1": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 72,
+        "target_directed_percentage": 60.0
+      },
+      "waveform_mse": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 59,
+        "target_directed_percentage": 49.2
+      }
+    },
+    "naive_linear": {
+      "bidirectional_cumulative_energy": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 63,
+        "target_directed_percentage": 52.5
+      },
+      "linear_jtfot": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 77,
+        "target_directed_percentage": 64.2
+      },
+      "smooth_mss": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 50,
+        "target_directed_percentage": 41.7
+      },
+      "sot_published_composite": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 52,
+        "target_directed_percentage": 43.3
+      },
+      "waveform_l1": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 51,
+        "target_directed_percentage": 42.5
+      },
+      "waveform_mse": {
+        "displayed_non_target_gradients": 120,
+        "target_directed_count": 53,
+        "target_directed_percentage": 44.2
+      }
+    }
+  },
+  "direction_metric": {
+    "criterion": "dot(-unit_gradient, target_minus_candidate) > 0",
+    "display_indices": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20,
+      22
+    ],
+    "displayed_non_target_gradients": 120,
+    "target_index": 12
+  },
+  "figure": {
+    "arrows": "black with thin white halo",
+    "layout": "single-column 3x2 independently normalized loss surfaces",
+    "panel_annotation": "target-directed percentage at upper right",
+    "pdf_sha256": "b7cc110ca5b46c834e3e4346a2625fc444e497718234130e99db752d10604b1d",
+    "renderer": "fourier_thiran",
+    "y_label_alignment": "vertical center of the MSS axes"
+  },
+  "losses": [
+    "waveform_l1",
+    "waveform_mse",
+    "smooth_mss",
+    "sot_published_composite",
+    "linear_jtfot",
+    "bidirectional_cumulative_energy"
+  ],
+  "payload_sha256": "91d3d59f81abb7b92335baf376c4aa2c146ae29564efee51194d3e9a54a0a3dd",
+  "renderers": {
+    "fourier_thiran": {
+      "display_name": "Fourier--Thiran",
+      "exciter": {
+        "amplitude": 0.8,
+        "duration_seconds": 0.01,
+        "fourier_fft_length": 262144,
+        "lagrange_order": 5,
+        "method": "fourier",
+        "sample_count": 8000,
+        "sample_rate": 4000,
+        "thiran_order": 1
+      },
+      "waveguide": {
+        "fourier_fft_length": 262144,
+        "interpolation": "thiran",
+        "loop_gain": 0.99,
+        "loop_pole": 0.2,
+        "phase_correction_iterations": 12,
+        "pluck_position": 0.23,
+        "realization": "df2",
+        "sample_count": 8000,
+        "sample_rate": 4000,
+        "state_policy": "hard_reset"
+      }
+    },
+    "naive_linear": {
+      "display_name": "Naive--Linear",
+      "exciter": {
+        "amplitude": 0.8,
+        "duration_seconds": 0.01,
+        "fourier_fft_length": 262144,
+        "lagrange_order": 5,
+        "method": "naive",
+        "sample_count": 8000,
+        "sample_rate": 4000,
+        "thiran_order": 1
+      },
+      "waveguide": {
+        "fourier_fft_length": 262144,
+        "interpolation": "linear",
+        "loop_gain": 0.99,
+        "loop_pole": 0.2,
+        "phase_correction_iterations": 12,
+        "pluck_position": 0.23,
+        "realization": "df2",
+        "sample_count": 8000,
+        "sample_rate": 4000,
+        "state_policy": "hard_reset"
+      }
+    }
+  },
+  "reuse": {
+    "comparison_cache_sha256": "866985aacc937783fcac808ac5e5508b199459a11fcda867dca7821f6f287e32",
+    "comparison_device": "cuda",
+    "comparison_source_commit": "e82dc21c38fd40ddf99de1d53bfc98c8a3f125e2",
+    "comparison_torch_version": "2.7.1+cu126",
+    "fourier_thiran": "surfaces and arrow directions recovered from the existing qualified PDF; no recursive rerender",
+    "naive_linear": "new direction-only comparison computed on CUDA",
+    "qualified_cache_sha256": "e1570fd06be2900592cb6ab507de39b1c57fa90e63d4be244c3bab71d2d95c3a",
+    "qualified_source_pdf_sha256": "9e04302234ce776395fdbae07f4861ee1c49106544c7fa76a4a37bd179d038fe"
+  },
+  "schema": "single-event-two-renderer-gradient-diagnostic-v1",
+  "source_commit": "e82dc21c38fd40ddf99de1d53bfc98c8a3f125e2",
+  "source_sha256": {
+    "scripts/render_loss_landscapes.py": "95b1b338e93482f36fe3a68041bd769e18076d02e0217da60f19fb6f2b24cda8",
+    "src/config.py": "eda46024c2a833e4272ca7fa5d78c075da4eb9ebf835b38b8f528971c1a99aff",
+    "src/exciter.py": "ea65a2e1b047ae9f71946ae067fc9f7cb0322d491168dc679fd4ea4e5471dd7c",
+    "src/losses.py": "3087ea3988f99e75eac7bd1a7f58df4f5ace7d9d9e9ff5645f6e60775fcf1976",
+    "src/synth.py": "55cc93cdd3a4cd6349d3b602c4066e9d0fe1ac0ff4f9adc04bdf2e9c401902f4",
+    "src/waveguide.py": "7c142f9cd3bce174be1f7e4ab567e1a43bd27b0434a34bb35819db3ad8338de5"
+  },
+  "surface_grid": {
+    "f0_hz": [
+      80.0,
+      320.0
+    ],
+    "onset_coordinate": "(onset-0.2)/1.6",
+    "onset_seconds": [
+      0.2,
+      1.8
+    ],
+    "pitch_coordinate": "log2(f0/80)/2",
+    "shape": [
+      25,
+      25
+    ]
+  },
+  "target": {
+    "f0_hz": 160.0,
+    "onset_seconds": 1.0
+  }
+}
