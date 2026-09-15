@@ -149,14 +149,19 @@ FFT-512/hop-64 flat-top STFT-power transport with their unbalanced quantile
 cutoff and $0.05$ Hann-windowed linear-magnitude MSS; it achieves 51.7\%.
 Finally, Fabiani et al.'s \tfw{}~\cite{fabiani2024jtfot} globally normalises a
 periodic-Hann FFT-256/hop-128 magnitude STFT and projects it along ten angles.
-Its frequency is in Hz and $\widetilde t=1000t$ in Hz, equating 1~s with
-1000~Hz; $t$ is frame time and $\widetilde t$ its transport coordinate. \tfw{}
-achieves 75.8\%, while the final \bicul{} panel achieves 100.0\%.
+We retain their transport scaling $\widetilde t=(10^3\,\mathrm{Hz/s})t$, which
+makes 1~s commensurate with 1000~Hz in the ground cost; Fabiani et al. chose
+this factor to balance the orders of magnitude of the time and frequency axes.
+\tfw{} achieves 75.8\%, while the final \bicul{} panel achieves 100.0\%.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
-\caption{Two-rail digital waveguide renderer.}
+\caption{Two-rail digital waveguide renderer. $D_1$ and $D_2$ are the one-way
+nut- and bridge-side delays; blue and red denote right- and left-travelling
+waves. Ignoring loop-filter phase, the round-trip delay is $2(D_1+D_2)$ samples
+and $f_0=f_s/[2(D_1+D_2)]$; the implementation phase-corrects the segment
+delays for $H_L(z)$.}
 \label{fig:waveguide}
 \end{figure}
 
@@ -302,9 +307,9 @@ w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
 where $k,n$ index frequency bins/time frames; $w^f_{d_f,k},w^t_{d_t,n}$ are
 their direction-aligned adjacent widths in octaves/seconds; both sums span
 $(k,n)$; and $\ell^{\rm quad}_q$ denotes this weighted RMS rather than
-$\ell_q$. Other operations are unchanged. With Sec.~\ref{sec:losses}'s six
-objectives, the variants yield 6000 fits: 150 targets at five event counts
-across 40 conditions.
+$\ell_q$. Other operations are unchanged. With six base objectives plus the
+two variants, the campaign comprises 150 targets per event count $\times$ 8
+losses $\times$ 5 event counts${}={}$6000 fits.
 
 \begin{figure}[t]
 \centering
