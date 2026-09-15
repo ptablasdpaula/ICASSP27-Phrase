@@ -225,7 +225,9 @@ placement (rows) and propagation interpolation (columns); higher is better.}
 \begin{table*}[!t]
 \centering
 \caption{\normalfont Median Hungarian-matched pitch and onset errors over 150
-phrases per event count; lower is better.}
+phrases per event count; lower is better. Bold, underlined, and italic values
+indicate first, second, and third place, respectively; values below $0.01$
+share an unranked display floor.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
 \end{table*}
@@ -315,11 +317,14 @@ onset milliseconds. Periodic-Hann FFT-256/hop-64 log-spectral distance (LSD)
 gives an objective-independent audio metric.
 
 \section{Results}
-Table~\ref{tab:pilot-compact} reports all conditions; styles rank medians within
-each metric/event count and hooks mark variants. Figure~\ref{fig:lsd} shows all
-LSD values, interquartile ranges, and medians. The table bolds best metrics per number of events, highlights second best and italicizes third. 
-
-As can be seen 1 and 2 events are recovered by both \bicul{} variants to sub-ms and sub-cents accuracy, while reconstruction gets significantly harder as cardinality increases. We consistently find failure modes in which candidate events reach correct timing but opposite $f_0$ as their target events, and get stuck at a suboptimal local minima. In any case, one of the two \bicul{} variants remains consistently better than the \tfw{} competitors, while traditional losses and frame-wise optimal transport collapse to incoherent phrases in most of the time; as can be seen in the LSD distributions of figure~\ref{fig:lsd}, \mss{} is, although not commonly, capable of reaching accurate reconstructions, likely at very close initializations.
+Table~\ref{tab:pilot-compact} reports all conditions; hooks mark variants and
+the caption defines the rank styling. Figure~\ref{fig:lsd} shows all LSD values,
+interquartile ranges, and medians. Both \bicul{} variants reach the shared
+below-$0.01$ display floor for pitch and onset at one and two events. Across all
+event counts, a \bicul{} variant has the lowest median pitch error. A \bicul{}
+variant also has the lowest median onset error through four events, while the
+published linear-Hz \tfw{} has the lowest median onset error at six and eight
+events.
 
 \section{Conclusion}
 We introduced direct recovery of pluck onset and pitch and \bicul{}, a bidirectional cumulative-STFT-power loss. Across 6000 fits, \bicul{} gave target-directed single-pluck gradients and stronger multi-pluck joint recovery than the comparison objectives; Log-Q further improved descriptive results. Fourier onset placement with Thiran propagation was the strongest renderer, and event-wise reset corrected persistent DF2 and Literal gradients. Although promising and better than other losses shown here, musical phrase recovery of 4 and more events is stronger than just-noticeable-difference and should be addressed in fugure work. 
