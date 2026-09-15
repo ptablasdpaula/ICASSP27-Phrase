@@ -83,11 +83,47 @@ differentiable digital signal processing, digital waveguide, audio loss, analysi
 \end{IEEEkeywords}
 
 \section{Introduction}
-Differentiable digital signal processing (\ddsp) allows analysis by synthesis of audio processors within automatic differentiation graphs~\cite{engel2020ddsp}, triggering its wide adoption in sound matching of multiple synthesizers and audio effects~\cite{caspe2022ddx7,carson2026gradient}. However, it usually represents control as either global LTI processors, or dense frame rate trajectories. While the first naturally represents static systems, such as room reverberation~\cite{dalsanto2025flamo}, the latter suits continuously driven instruments, such as bowing or singing voice~\cite{sudholt2023vocal}. However, a range of instruments are not faithfully represented by either of these approaches; plucked and struck strings are, expressive techniques aside, instinctively performed as a collection of note events with onset, pitch, duration and velocity, as commonly represented in MIR and symbolic music~\cite{hawthorne2018onsets}.
+Differentiable digital signal processing (\ddsp) embeds audio processors in
+automatic-differentiation graphs for interpretable analysis by
+synthesis~\cite{engel2020ddsp}; Hayes et al. survey its use in music and speech
+synthesis~\cite{hayes2024review}. Applications include efficient neural
+instrument synthesis through learned waveshaping~\cite{hayes2021waveshaping}, structured
+modulation discovery from synthesizer audio~\cite{mitcheltree2025modulation},
+and direct feedback-delay-network optimisation to reduce reverberation
+coloration~\cite{dalsanto2023diffdn}. Controls are nevertheless typically global
+parameters or dense frame-rate trajectories, suited to static processors and
+continuously driven sounds. Plucked and struck strings are instead naturally
+organised as note events with onset, pitch, duration, and velocity, as in MIR
+and symbolic music~\cite{hawthorne2018onsets}.
 
-However, as Turian and Henry found, traditional pointwise and waveform-based losses are poor at pitch estimation, as they become misleading when spectral energy is displaced and does not overlap~\cite{turian2020loss}. Hayes et al. proposed complex surrogates to sidestep this issue, but remain synth dependant~\cite{hayes2023sinusoidal}. A common trick is the use of external $f_0$ detectors or synthetic parameter labels, capping reconstruction and vetoing further end-to-end training~\cite{engel2020ddsp, engel2020inverse}. Optimal transport has progressively been introduced to DDSP by Torres et al. and Fabiani et al., as it addresses displacement directly, with STFT frame-wise and joint time-frequency implementations proposed for $f_0$ independently and jointly for time and frequency shifts respectively~\cite{torres2024sot, fabiani2024jtfot}.
+This event representation does not solve loss geometry. Pointwise spectral and
+waveform losses can mislead when displaced energy does not
+overlap~\cite{turian2020loss}; proposed complex surrogates remain
+synthesizer-dependent~\cite{hayes2023sinusoidal}. External $f_0$ detectors or
+synthetic parameter labels bypass this geometry but prevent the reconstruction
+loss from correcting their estimates~\cite{engel2020ddsp,engel2020inverse}.
+Optimal transport (OT) instead measures displacement using support
+geometry~\cite{peyre2019computational}.
+Scalable entropic regularisation~\cite{cuturi2013sinkhorn} has supported audio
+applications including spectral unmixing for music
+transcription~\cite{flamary2016optimal} and frequency-aware NMF for source
+separation~\cite{rolet2018blind}. Torres et al. brought OT into \ddsp{} as a
+frame-wise spectral $\mathcal{W}_2$ objective for joint $f_0$ and harmonic
+amplitudes, augmented by a pointwise multi-scale term and cumulative-mass
+cutoff~\cite{torres2024sot}; Fabiani et al. subsequently used sliced projections
+for joint time--frequency displacement~\cite{fabiani2024jtfot}.
 
-Tablas de Paula et al. recently proposed an event-based prediction architecture, jointly estimating the $f_0$, onset time and timbre parameters of events in a plucked-string algorithm~\cite{tablasdepaula2026karplus}. They found that synthetic data labelling generalised poorly to real world data, while spectral optimal transport is unreliable at joint onset and pitch optimization, and eventually fell back to external detectors~\cite{tablasdepaula2026karplus}. On this work, we adopt a simple digital waveguide~\cite{depaula2026waveguides} for musical phrase optimization of plucked-string via a similar event-based representation, but compare it with joint time-frequency optimal transport based losses. Additionally, we propose the use of cumulative energy losses, which compare normalised spectral-power accumulations. Specifically, we use a bidirectional implementation, \bicul{}, which accumulates energy in both directions of both STFT axes. Along the way, we show that different sub-sample onset-placement and fractional-delay interpolation methods can give similar audio but aggressively different loss gradients.
+Tablas de Paula et al. used an event-based plucked-string model to jointly
+estimate onset, $f_0$, and timbre, but synthetic supervision transferred poorly
+to real audio and spectral OT was unreliable for joint onset--pitch
+optimisation, leading them back to external
+detectors~\cite{tablasdepaula2026karplus}. We retain their event representation but
+optimise phrases rendered by a simple digital
+waveguide~\cite{smith2010physical,depaula2026waveguides}, comparing joint
+time--frequency OT with
+\bicul{}, which compares normalised STFT-power accumulations towards all four
+corners. We also show that acoustically similar sub-sample onset-placement and
+fractional-delay methods can yield sharply different loss gradients.
 
 Hence our contributions are threefold:
 \begin{itemize}
@@ -120,6 +156,16 @@ target maximum; $R_q,\hat R_q$ are target-normalised square roots floored at
 $10^{-12}$; and $\ell_q$ is their root-mean-square (RMS) difference over
 $(k,n)$. \bicul{} averages all four $\ell_q$ without event coordinates,
 detectors, or salience weights.
+
+\bicul{} is related to CDF-based Cram\'er distances: in one dimension, the
+Cram\'er discrepancy integrates squared CDF
+differences~\cite{szekely2013energy}. With equal-mass unit-normalised power, one
+accumulation direction, and no square-root feature, $\ell_q$ becomes a discrete
+axis-aligned two-dimensional Cram\'er-type discrepancy. Both sense displacement
+without pointwise overlap because a shift changes the intervening cumulative
+region. \bicul{} is not the standard distance: target-only normalisation admits
+unequal candidate energy, square roots compress dominant regions, and four
+orientations avoid privileging one boundary.
 
 Phrase recovery additionally evaluates Log-Q \bicul. It retains the same STFT,
 cumulative surfaces, target-maximum normalisation, and square-root features, but
@@ -248,8 +294,11 @@ Experiment II therefore uses event-wise reset.
 \subsection{Loss Objectives}
 \label{sec:loss-objectives}
 We compare six base objectives. \lone{} is mean absolute and \ltwo{} mean
-squared sample error. Following Schw\"ar and M\"uller~\cite{schwar2023mss},
-\mss{} sums squared \ltwo{} distances between
+squared sample error. Wang et al. introduced multi-resolution spectral
+comparison~\cite{wang2019nsf}; Engel et al. adopted it as \mss{} in
+\ddsp{}~\cite{engel2020ddsp}, and Schw\"ar and M\"uller later revisited its
+design~\cite{schwar2023mss}. Following the latter, \mss{} sums squared \ltwo{}
+distances between
 $\log(1+|\operatorname{STFT}|)$ magnitudes, where $|\cdot|$ is magnitude and
 $\log$ the natural logarithm. Its prime-length flat-top windows
 $\{17,31,67,127,257,509\}$ and hops $\{8,15,33,63,128,254\}$ limit leakage
@@ -397,7 +446,7 @@ Artificial Intelligence and Music (grant EP/S022694/1). This research utilised
 Queen Mary's Apocrita HPC facility, supported by QMUL Research-IT
 (\url{https://doi.org/10.5281/zenodo.438045}), using NVIDIA V100 and A100 GPUs.
 
-\IEEEtriggeratref{9}
+\IEEEtriggeratref{13}
 \bibliographystyle{IEEEtran}
 \typeout{ICASSP bibliography database: \PaperRoot/references.bib}
 \bibliography{\PaperRoot/references}
