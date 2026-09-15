@@ -1,21 +1,22 @@
 \begingroup
 \scriptsize
-\setlength{\tabcolsep}{2.0pt}
+\setlength{\tabcolsep}{1.0pt}
 \renewcommand{\arraystretch}{1.05}
-\begin{tabularx}{\linewidth}{@{}l*{5}{>{\centering\arraybackslash}X}|*{5}{>{\centering\arraybackslash}X}@{}}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{@{}l*{5}{c}|*{5}{c}@{}}
 \toprule
 Loss & \multicolumn{5}{c|}{$\Delta f_0$ (Cents)} & \multicolumn{5}{c}{$\Delta t$ (ms)} \\
-& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\
+& 1 & 2 & 4 & 6 & 8 & 1 & 2 & 4 & 6 & 8 \\
 \midrule
-\lone & \mbox{1030} & \mbox{863} & \mbox{732} & \mbox{642} & \mbox{564} & \mbox{71.6} & \mbox{220} & \mbox{235} & \mbox{188} & \mbox{186} \\
-\ltwo & \mbox{1100} & \mbox{902} & \mbox{816} & \mbox{711} & \mbox{616} & \mbox{443} & \mbox{360} & \mbox{242} & \mbox{215} & \mbox{198} \\
-\mss & \mbox{58.6} & \mbox{244} & \mbox{329} & \mbox{277} & \mbox{302} & \mbox{186} & \mbox{220} & \mbox{203} & \mbox{155} & \mbox{158} \\
-\sot & \mbox{871} & \mbox{878} & \mbox{874} & \mbox{826} & \mbox{767} & \mbox{104} & \mbox{241} & \mbox{216} & \mbox{194} & \mbox{173} \\
-\tfw & \mbox{1.58} & \mbox{11.1} & \mbox{121} & \mbox{234} & \mbox{253} & \mbox{0.346} & \ensuremath{\mathit{2.23}} & \mbox{\underline{16}} & \ensuremath{\mathbf{60.9}} & \ensuremath{\mathbf{81.7}} \\
-$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$ & \ensuremath{\mathit{0.156}} & \ensuremath{\mathit{4.48}} & \ensuremath{\mathit{101}} & \ensuremath{\mathit{186}} & \ensuremath{\mathit{197}} & \ensuremath{\mathit{0.251}} & \mbox{6.59} & \mbox{93.2} & \mbox{110} & \mbox{137} \\
+\lone & \mbox{\ensuremath{950\mathord{\pm}687(1030)}} & \mbox{\ensuremath{865\mathord{\pm}432(863)}} & \mbox{\ensuremath{745\mathord{\pm}322(732)}} & \mbox{\ensuremath{650\mathord{\pm}235(642)}} & \mbox{\ensuremath{586\mathord{\pm}214(564)}} & \mbox{\ensuremath{230\mathord{\pm}332(71.6)}} & \mbox{\ensuremath{253\mathord{\pm}196(220)}} & \mbox{\ensuremath{235\mathord{\pm}102(235)}} & \mbox{\ensuremath{205\mathord{\pm}81.3(188)}} & \mbox{\ensuremath{192\mathord{\pm}73.6(186)}} \\
+\ltwo & \mbox{\ensuremath{1010\mathord{\pm}704(1100)}} & \mbox{\ensuremath{952\mathord{\pm}467(902)}} & \mbox{\ensuremath{845\mathord{\pm}328(816)}} & \mbox{\ensuremath{718\mathord{\pm}283(711)}} & \mbox{\ensuremath{640\mathord{\pm}238(616)}} & \mbox{\ensuremath{535\mathord{\pm}437(443)}} & \mbox{\ensuremath{362\mathord{\pm}194(360)}} & \mbox{\ensuremath{260\mathord{\pm}110(242)}} & \mbox{\ensuremath{225\mathord{\pm}74.2(215)}} & \mbox{\ensuremath{205\mathord{\pm}64.2(198)}} \\
+\mss & \mbox{\ensuremath{450\mathord{\pm}623(58.6)}} & \mbox{\ensuremath{328\mathord{\pm}336(244)}} & \mbox{\ensuremath{353\mathord{\pm}218(329)}} & \mbox{\ensuremath{283\mathord{\pm}157(277)}} & \mbox{\ensuremath{308\mathord{\pm}135(302)}} & \mbox{\ensuremath{282\mathord{\pm}298(186)}} & \mbox{\ensuremath{250\mathord{\pm}212(220)}} & \mbox{\ensuremath{212\mathord{\pm}121(203)}} & \mbox{\ensuremath{168\mathord{\pm}94.2(155)}} & \mbox{\ensuremath{168\mathord{\pm}70.7(158)}} \\
+\sot & \mbox{\ensuremath{859\mathord{\pm}582(871)}} & \mbox{\ensuremath{874\mathord{\pm}431(878)}} & \mbox{\ensuremath{874\mathord{\pm}287(874)}} & \mbox{\ensuremath{846\mathord{\pm}231(826)}} & \mbox{\ensuremath{776\mathord{\pm}207(767)}} & \mbox{\ensuremath{226\mathord{\pm}257(104)}} & \mbox{\ensuremath{272\mathord{\pm}198(241)}} & \mbox{\ensuremath{226\mathord{\pm}105(216)}} & \mbox{\ensuremath{210\mathord{\pm}82.6(194)}} & \mbox{\ensuremath{181\mathord{\pm}66.7(173)}} \\
+\tfw & \mbox{\ensuremath{14.1\mathord{\pm}43.4(1.58)}} & \mbox{\ensuremath{53.6\mathord{\pm}116(11.1)}} & \mbox{\ensuremath{166\mathord{\pm}161(121)}} & \mbox{\ensuremath{239\mathord{\pm}155(234)}} & \mbox{\ensuremath{260\mathord{\pm}110(253)}} & \mbox{\ensuremath{1.61\mathord{\pm}4.3(0.35)}} & \mbox{\ensuremath{10.4\mathord{\pm}25.9(2.23)}} & \mbox{\ensuremath{52.7\mathord{\pm}68.3(16)}} & \mbox{\ensuremath{80.3\mathord{\pm}70.1(60.9)}} & \mbox{\ensuremath{91.4\mathord{\pm}58(81.7)}} \\
+$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$ & \mbox{\ensuremath{3.16\mathord{\pm}16.1(0.16)}} & \mbox{\ensuremath{55.2\mathord{\pm}174(4.48)}} & \mbox{\ensuremath{173\mathord{\pm}175(101)}} & \mbox{\ensuremath{192\mathord{\pm}140(186)}} & \mbox{\ensuremath{207\mathord{\pm}105(197)}} & \mbox{\ensuremath{2.47\mathord{\pm}10.3(0.25)}} & \mbox{\ensuremath{27\mathord{\pm}60.6(6.59)}} & \mbox{\ensuremath{114\mathord{\pm}101(93.2)}} & \mbox{\ensuremath{122\mathord{\pm}77.8(110)}} & \mbox{\ensuremath{142\mathord{\pm}63.5(137)}} \\
 \addlinespace[1pt]
-\bicul & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \mbox{\underline{34.2}} & \mbox{\underline{142}} & \mbox{\underline{158}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\mathit{26.6}} & \ensuremath{\mathit{90.3}} & \ensuremath{\mathit{104}} \\
-$\hookrightarrow$ Log-Q & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\mathbf{19.1}} & \ensuremath{\mathbf{124}} & \ensuremath{\mathbf{153}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\mathbf{6.75}} & \mbox{\underline{83.7}} & \mbox{\underline{92.8}} \\
+\bicul & \mbox{\ensuremath{0.04\mathord{\pm}0.08(<.01)}} & \mbox{\ensuremath{37.2\mathord{\pm}144(<.01)}} & \mbox{\ensuremath{124\mathord{\pm}164(34.2)}} & \mbox{\ensuremath{144\mathord{\pm}111(142)}} & \mbox{\ensuremath{170\mathord{\pm}105(158)}} & \mbox{\ensuremath{0.02\mathord{\pm}0.04(<.01)}} & \mbox{\ensuremath{22.9\mathord{\pm}73.4(<.01)}} & \mbox{\ensuremath{73.5\mathord{\pm}90.9(26.6)}} & \mbox{\ensuremath{91.7\mathord{\pm}73.8(90.3)}} & \mbox{\ensuremath{105\mathord{\pm}62.1(104)}} \\
+$\hookrightarrow$ Log-Q & \mbox{\ensuremath{0.03\mathord{\pm}0.07(<.01)}} & \mbox{\ensuremath{46.5\mathord{\pm}157(<.01)}} & \mbox{\ensuremath{97.2\mathord{\pm}146(19.1)}} & \mbox{\ensuremath{139\mathord{\pm}116(124)}} & \mbox{\ensuremath{152\mathord{\pm}102(153)}} & \mbox{\ensuremath{<.01\mathord{\pm}0.02(<.01)}} & \mbox{\ensuremath{22.2\mathord{\pm}68.3(<.01)}} & \mbox{\ensuremath{61.6\mathord{\pm}85.4(6.75)}} & \mbox{\ensuremath{92.8\mathord{\pm}73.8(83.7)}} & \mbox{\ensuremath{98\mathord{\pm}61(92.8)}} \\
 \bottomrule
-\end{tabularx}
+\end{tabular}}
 \endgroup
