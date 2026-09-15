@@ -58,7 +58,23 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \maketitle
 
 \begin{abstract}
-Differentiable digital signal processing has become a framework adopted by numerous tasks, allowing unsupervised, interpretable, analysis by synthesis. Yet, essential parameters such as fundamental frequency and onset estimation remain difficult to recover. Traditional waveform and pointwise spectral losses do not encode the displacement direction caused by these parameters, prompting the use of external detectors. These bypass the problematic geometry but prevent the loss from correcting their estimates, causing a reconstruction ceiling. On this work, we compare traditional and previously proposed optimal transport based losses, and propose a new efficient loss based on cumulative energy, comparing spectral power accumulations in both directions of time and frequency. We use this loss to optimise a sparse sequence of plucks exciting a differentiable digital waveguide, whose delay length defines the fundamental frequency, to render musical phrases. Firstly, we find out proposed cumulative energy loss is the only objective whose gradients are directed towards the correct onset and fundamental frequency in a single pluck landscape. Secondly, we cross four onset placement methods and four waveguide fractional delay interpolators, and identify Fourier placement with Thiran propagation as the most consistently target directed combination. Lastly, across 6000 fits of musical phrases containing one to eight plucks, we find our proposed cumulative energy loss gives more reliable joint onset--pitch recovery than traditional and optimal transport objectives. These results support unsupervised optimisation of pitch, event timing, and delay-line length.
+Differentiable digital signal processing enables interpretable, unsupervised
+analysis by synthesis, but onset and fundamental frequency remain difficult to
+optimise because waveform and pointwise spectral losses do not encode
+displacement direction. External detectors avoid this geometry but prevent the
+loss from correcting their estimates, limiting reconstruction. We propose
+\bicul{}, an efficient cumulative-energy loss that compares STFT power
+accumulated in both directions of time and frequency. We use it to recover the
+onset and fundamental frequency of sparse plucks rendered by a differentiable
+digital waveguide, whose delay length sets pitch. In a single-pluck landscape,
+\bicul{} is the only objective tested whose gradients point towards both target
+parameters. Crossing four onset-placement methods with four fractional-delay
+interpolators identifies Fourier placement with Thiran propagation as the most
+consistently target-directed renderer. Across 6000 fits of phrases containing
+one to eight plucks, \bicul{} gives more reliable joint onset--pitch recovery
+than waveform, spectral, and optimal-transport objectives. These results
+support unsupervised optimisation of event timing, pitch, and delay-line
+length.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -325,9 +341,24 @@ published linear-Hz \tfw{} has the lowest median onset error at six and eight
 events.
 
 \section{Conclusion}
-We introduced direct recovery of pluck onset and pitch and \bicul{}, a bidirectional cumulative-STFT-power loss. Across 6000 fits, \bicul{} gave target-directed single-pluck gradients and stronger multi-pluck joint recovery than the comparison objectives; Log-Q further improved descriptive results. Fourier onset placement with Thiran propagation was the strongest renderer, and event-wise reset corrected persistent DF2 and Literal gradients. Although promising and better than other losses shown here, musical phrase recovery of 4 and more events is stronger than just-noticeable-difference and should be addressed in fugure work. 
+We introduced \bicul{}, a bidirectional cumulative-STFT-power loss, for direct
+recovery of pluck onset and pitch. Across 6000 fits, \bicul{} gave
+target-directed single-pluck gradients and stronger multi-pluck joint recovery
+than the comparison objectives; Log-Q further improved descriptive results.
+Fourier onset placement with Thiran propagation was the strongest renderer,
+and event-wise reset corrected persistent DF2 and Literal gradients. At four
+events, Log-Q \bicul{}'s median pitch error (19.1 cents) is comparable to
+reported JNDs~\cite{holmes2022pitch}, while its onset error (6.75 ms) is below
+reported guitar-context timing JNDs~\cite{camara2026timing}; from six events,
+both errors exceed those perceptual scales, with pitch error above one
+semitone. This contextual comparison does not establish perceptual equivalence
+between JND experiments and phrase-level mean absolute errors.
 
-Future work should address vibrato and other expressive techniques, higher sample rates and techniques that preserve a smooth loss landscape for onset time and $f_0$ without resetting the state of the waveguide. Although outside of the scope of this work, the question of whether a neural network is capable of escaping the local minima introduced in multi-pluck scenarios is open, and now fully testable thanks to this work.
+Future work should address vibrato and other expressive techniques, higher
+sample rates, and methods that preserve a smooth loss landscape for onset time
+and $f_0$ without resetting the waveguide state. Although outside the scope of
+this work, whether a neural network can escape the local minima introduced in
+multi-pluck scenarios remains open and is now directly testable.
 
 \clearpage
 \section*{Acknowledgment}
