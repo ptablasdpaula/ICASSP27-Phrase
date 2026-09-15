@@ -361,22 +361,19 @@ Let $i$ index an unordered prediction and $j$ a target. Their assignment cost is
 d_{ij}=\left[\frac{\log_2(\hat f_{0,i}/f_{0,j})}{2}\right]^2+
 \left[\frac{\hat t_i-t_j}{1.6}\right]^2.
 \end{equation*}
-Hats denote predictions; $\hat f_{0,i},f_{0,j}$ are pitches in Hz;
-$\hat t_i,t_j$ are onsets in seconds; $2$ and $1.6$ are the full ranges in
-octaves and seconds; and $d_{ij}$ is dimensionless. The Hungarian
+Hats mark predictions; $f_0$ is in Hz and $t$ in seconds; 2 octaves and 1.6~s
+are the full ranges, making $d_{ij}$ dimensionless. The Hungarian
 method~\cite{kuhn1955hungarian} finds the one-to-one pairing minimising
-$\sum d_{ij}$. Table~\ref{tab:pilot-compact}
-reports its errors and Fig.~\ref{fig:lsd} the audio-error distributions.
+$\sum d_{ij}$. Table~\ref{tab:pilot-compact} reports its errors and
+Fig.~\ref{fig:lsd} the audio-error distributions.
 
-We report across-phrase medians of within-phrase mean absolute pitch cents and
-onset milliseconds. Periodic-Hann FFT-256/hop-64 log-spectral distance (LSD)
-gives an objective-independent audio metric.
+Across phrases, we report medians of within-phrase pitch MAE (cents) and onset
+MAE (ms). Periodic-Hann FFT-256/hop-64 LSD is objective-independent.
 
-Post hoc, we average each family's two configurations per phrase and metric,
-then apply paired two-sided Wilcoxon signed-rank
-tests~\cite{wilcoxon1945individual}. Holm's procedure adjusts the 15
-event-count--metric $p$-values jointly~\cite{holm1979simple}; variants are never
-selected per target.
+Post hoc, $5$ event counts $\times$ the 3 metrics above yield 15 paired
+two-sided Wilcoxon tests, each over 150 phrases~\cite{wilcoxon1945individual}.
+Each family score averages both variants without target-wise selection; Holm
+adjusts the 15 $p$-values jointly~\cite{holm1979simple}.
 
 \section{Results}
 \subsection{Experiment I: Single-event Gradient Diagnostic}
@@ -395,9 +392,9 @@ A \bicul{} variant also has the lowest median onset error through four events, w
 published linear-Hz \tfw{} has the lowest median onset error at six and eight
 events.
 
-Post hoc, median paired family differences favour \bicul{} in all 15
-comparisons; 14 have $p_{\mathrm{Holm}}\leq0.0069$, with only six-event onset
-above 0.05 ($-10.5$~ms; $p_{\mathrm{Holm}}=0.186$).
+Across these 15 tests, median paired family differences favour \bicul{}; 14
+have $p_{\mathrm{Holm}}\leq0.0069$, with only six-event onset above 0.05
+($-10.5$~ms; $p_{\mathrm{Holm}}=0.186$).
 
 \section{Conclusion}
 We introduced \bicul{} for pluck-onset and pitch recovery. With fixed
