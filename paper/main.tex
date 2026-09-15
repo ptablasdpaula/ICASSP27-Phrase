@@ -339,13 +339,12 @@ four, six, and eight events. Pitches are log-mapped to 80--320~Hz; onsets span
 All candidate pitches start at 160~Hz and onsets at equal-cell centres over
 0.2--1.8~s; independent logits bound coordinates to those same onset and pitch
 ranges. Adam uses learning rate 0.05, default moments/epsilon, and no weight
-decay; initial-loss division equalises numerical scale but not reported values.
-A relative raw-loss decrease of $10^{-4}$ resets patience. At patience 100 and
-200, we restore the strict best, multiply learning rate by 0.3 (floor
-$10^{-5}$), and clear optimiser state. We stop at patience 250 or 3000 updates,
-retaining the best iterate.
-With six base objectives plus two variants, the campaign comprises 150 targets
-per event count $\times$ 8 losses $\times$ 5 event counts${}={}$6000 fits.
+decay. Initial-loss division conditions step scale only; reported values remain
+raw. A relative raw-loss decrease of $10^{-4}$ resets patience. At patience 100
+and 200, we restore the strict best, multiply the learning rate by 0.3 (floor
+$10^{-5}$), and clear optimiser state; we stop at patience 250 or 3000 updates
+and retain the best. Thus 150 targets $\times$ 8 losses $\times$ 5 event
+counts${}={}$6000 fits.
 
 \begin{figure}[t]
 \centering
@@ -370,10 +369,13 @@ Fig.~\ref{fig:lsd} the audio-error distributions.
 Across phrases, we report medians of within-phrase pitch MAE (cents) and onset
 MAE (ms). Periodic-Hann FFT-256/hop-64 LSD is objective-independent.
 
-Post hoc, $5$ event counts $\times$ the 3 metrics above yield 15 paired
-two-sided Wilcoxon tests, each over 150 phrases~\cite{wilcoxon1945individual}.
-Each family score averages both variants without target-wise selection; Holm
-adjusts the 15 $p$-values jointly~\cite{holm1979simple}.
+Post hoc, each phrase's \bicul-family score averages \bicul{} and Log-Q; its
+\tfw-family score averages canonical \tfw{} and the $1\,\mathrm{s}=1\,\mathrm{oct}$
+variant. For each count--metric cell, the paired two-sided Wilcoxon signed-rank
+test ranks the magnitudes of the 150 family-score differences and compares
+positive with negative rank sums to assess whether the differences are centred
+at zero~\cite{wilcoxon1945individual}. Five counts $\times$ three metrics give 15
+$p$-values, jointly adjusted by Holm's procedure~\cite{holm1979simple}.
 
 \section{Results}
 \subsection{Experiment I: Single-event Gradient Diagnostic}
@@ -384,13 +386,11 @@ target-directed descent, respectively. Thus \bicul{} is the only objective with
 case; Fig.~\ref{fig:landscapes} does not imply a renderer-independent ranking.
 
 \subsection{Experiment II: Phrase Recovery}
-Table~\ref{tab:pilot-compact} reports all conditions. Figure~\ref{fig:lsd}
-shows all LSD values, interquartile ranges, and medians. Both \bicul{} variants
-achieved essentially perfect reconstruction for one- and two-event phrases.
-Across all event counts, a \bicul{} variant has the lowest median pitch error.
-A \bicul{} variant also has the lowest median onset error through four events, while the
-published linear-Hz \tfw{} has the lowest median onset error at six and eight
-events.
+Table~\ref{tab:pilot-compact} and Fig.~\ref{fig:lsd} report all conditions and
+LSD distributions. Both \bicul{} variants are essentially exact at one and two
+events. A \bicul{} variant has the lowest median pitch error at every count and
+onset error through four; published linear-Hz \tfw{} has the lowest onset error
+at six and eight.
 
 Across these 15 tests, median paired family differences favour \bicul{}; 14
 have $p_{\mathrm{Holm}}\leq0.0069$, with only six-event onset above 0.05
