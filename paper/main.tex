@@ -69,7 +69,7 @@ onset and fundamental frequency of sparse plucks rendered by a differentiable
 digital waveguide, whose delay length sets pitch. In a single-pluck landscape,
 \bicul{} is the only objective tested whose gradients point towards both target
 parameters. Crossing four onset-placement methods with four fractional-delay
-interpolators identifies Fourier placement with Thiran propagation as the most
+interpolators identifies Fourier placement with Thiran interpolation as the most
 consistently target-directed renderer. Across 6000 fits of phrases containing
 one to eight plucks, \bicul{} gives more reliable joint onset--pitch recovery
 than waveform, spectral, and optimal-transport objectives. These results
@@ -86,12 +86,12 @@ Differentiable digital signal processing (\ddsp) allows analysis by synthesis of
 
 However, as Turian and Henry found, traditional pointwise and waveform-based losses are poor at pitch estimation, as they become misleading when spectral energy is displaced and does not overlap~\cite{turian2020loss}. Hayes et al. proposed complex surrogates to sidestep this issue, but remain synth dependant~\cite{hayes2023sinusoidal}. A common trick is the use of external $f_0$ detectors or synthetic parameter labels, capping reconstruction and vetoing further end-to-end training~\cite{engel2020ddsp, engel2020inverse}. Optimal transport has progressively been introduced to DDSP by Torres et al. and Fabiani et al., as it addresses displacement directly, with STFT frame-wise and joint time-frequency implementations proposed for $f_0$ independently and jointly for time and frequency shifts respectively~\cite{torres2024sot, fabiani2024jtfot}.
 
-Tablas de Paula et al. recently proposed an event-based prediction architecture, jointly estimating the $f_0$, onset time and timbre parameters of events in a plucked-string algorithm~\cite{tablasdepaula2026karplus}. They found that synthetic data labelling generalised poorly to real world data, while spectral optimal transport is unreliable at joint onset and pitch optimization, and eventually fell back to external detectors~\cite{tablasdepaula2026karplus}. On this work, we adopt a simple digital waveguide~\cite{depaula2026waveguides} for musical phrase optimization of plucked-string via a similar event-based representation, but compare it with joint time-frequency optimal transport based losses. Additionally, we propose the use of cumulative energy losses, which compare normalised spectral-power accumulations. Specifically, we use a bidirectional implementation, \bicul{}, which accumulates energy in both directions of both STFT axes. Along the way, we outline the importance of the rendered jacobian, where different sub-sample onset placement method and fractional delay interpolation methods can give similar audio but aggresively different derivatives.
+Tablas de Paula et al. recently proposed an event-based prediction architecture, jointly estimating the $f_0$, onset time and timbre parameters of events in a plucked-string algorithm~\cite{tablasdepaula2026karplus}. They found that synthetic data labelling generalised poorly to real world data, while spectral optimal transport is unreliable at joint onset and pitch optimization, and eventually fell back to external detectors~\cite{tablasdepaula2026karplus}. On this work, we adopt a simple digital waveguide~\cite{depaula2026waveguides} for musical phrase optimization of plucked-string via a similar event-based representation, but compare it with joint time-frequency optimal transport based losses. Additionally, we propose the use of cumulative energy losses, which compare normalised spectral-power accumulations. Specifically, we use a bidirectional implementation, \bicul{}, which accumulates energy in both directions of both STFT axes. Along the way, we outline the importance of the rendered jacobian, where different sub-sample onset placement method and fractional-delay interpolation methods can give similar audio but aggresively different derivatives.
 
 Hence our contributions are threefold:
 \begin{itemize}
     \item We provide an efficient loss, \bicul{}, that recovers onset time and fundamental frequency in rich synthesisers, opening up the task of musical phrase recovery to differentiable digital signal processing, and provide a pytorch library for ease of use.
-    \item We find time-domain Thiran interpolation and Frequency Sampling delay and sum for onset placement to provide the jacobian that more consistently point towards the target.
+    \item We identify Fourier onset placement with Thiran fractional-delay interpolation as the renderer whose Jacobian most consistently points towards the target.
     \item We find phase interference between events to complicate the loss landscape w.r.t $f_0$ and onset time, and propose resetting the waveguide state to make it smoother.
 \end{itemize}
 
@@ -202,7 +202,7 @@ RT60~\cite[Fig.~3]{tablasdepaula2026karplus}. Output is bridge-incident
 travelling velocity. Thus Sec.~\ref{sec:losses} fixes $\rho$ to compare losses;
 the remainder of this section fixes \bicul{} to compare renderer realisations.
 
-\subsection{Differentiable onset placement and interpolation}
+\subsection{Differentiable onset placement and fractional-delay interpolation}
 Audio is float64, 2~s long, and sampled at 4~kHz. Each event excites a zero-onset
 half-raised-cosine (HRC)
 \begin{equation*}
@@ -214,30 +214,33 @@ e_0(t)=\begin{cases}
 where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its peak, and
 $T_e=10$~ms its duration. Continuous placement uses analytic HRC sampling
 (Naive); a six-tap, fifth-order maximally-flat FIR shift (Lagrange); the FLAMO
-response $e^{-j\omega D}$ (Fourier)~\cite{dalsanto2025flamo}; or a causal
-first-order all-pass shift (Thiran). Here $D$ is delay in samples, $\omega$
-angular frequency in radians per sample, and $j^2=-1$. Subsequent Fourier onset
-placement uses a 262,144-point transform.
+response $e^{-j\omega\delta_o}$ (Fourier)~\cite{dalsanto2025flamo}; or a causal
+first-order all-pass shift (Thiran). Here $\delta_o$ is the onset shift in
+samples, $\omega$ angular frequency in radians per sample, and $j^2=-1$.
+Subsequent Fourier onset placement uses a 262,144-point transform.
 
-For propagation, $\mathcal D_p(D;z)\approx z^{-D}$ approximates $D$ delay
-samples; $p$ denotes propagation. Linear uses order-1 Lagrange sections;
-Lagrange uses orders 5/1 on the long nut/short bridge paths; Fourier samples the
-delay response; and Thiran uses all-pass orders 3/1. The maximally-flat
-designs~\cite{laakso1996splitting} retain order 1 where the bridge path is too short for
-higher order. Rail tuning includes realised fractional-delay and loop-filter
-phase.
+Continuous $f_0$ requires real-valued rail delays $D_1,D_2$; integer-only lines
+quantise pitch and provide no useful $f_0$ gradient. We therefore use
+differentiable fractional-delay interpolation,
+$\mathcal D_m(D_i;z)\approx z^{-D_i}$ for $i\in\{1,2\}$, where $m$ indexes the
+method. Linear is order-1 Lagrange; Lagrange uses orders 5/1 on the long
+nut/short bridge paths; Fourier samples the delay response; and Thiran uses
+all-pass orders 3/1. The maximally-flat designs~\cite{laakso1996splitting}
+retain order 1 where the bridge path is too short for higher order. Rail tuning
+accounts for interpolator and loop-filter phase.
 
 Table~\ref{tab:interpolation-onset} fixes \bicul{} while target and candidate
-share each onset/propagation method on Fig.~\ref{fig:landscapes}'s lattice,
-isolating derivative geometry from renderer mismatch. Its FLAMO Fourier
-waveguide uses a 65,536-point transform---8.192 times the 8000-sample horizon---
-to suppress time aliasing, with real DC/Nyquist bins and conjugate negative
-frequencies enforcing Hermitian symmetry.
+share each onset-placement/fractional-delay interpolation pair on
+Fig.~\ref{fig:landscapes}'s lattice, isolating derivative geometry from renderer
+mismatch. Its FLAMO Fourier waveguide uses a 65,536-point transform---8.192
+times the 8000-sample horizon---to suppress time aliasing, with real DC/Nyquist
+bins and conjugate negative frequencies enforcing Hermitian symmetry.
 
 \begin{table}[!t]
 \centering
 \caption{\normalfont Target-directed \bicul{} descent directions (\%) by onset
-placement (rows) and propagation interpolation (columns); higher is better.}
+placement (rows) and fractional-delay interpolation (columns); higher is
+better.}
 \label{tab:interpolation-onset}
 \resizebox{\columnwidth}{!}{%
 \input{\PaperRoot/figures/interpolation_gradient_table.tex}}
@@ -253,9 +256,9 @@ indicate first, second, and third place, respectively.}
 \end{table*}
 
 Table~\ref{tab:interpolation-onset} identifies Fourier onset placement with
-Thiran propagation as the only 120/120 result. We therefore adopt this
-Fourier-placement/causal-Thiran pairing for Fig.~\ref{fig:landscapes} and all
-subsequent experiments.
+Thiran fractional-delay interpolation as the only 120/120 result. We therefore
+adopt this Fourier-placement/causal-Thiran pairing for
+Fig.~\ref{fig:landscapes} and all subsequent experiments.
 
 \subsection{Phase interference and string reset}
 Each constant event regime collapses to an exact rational transfer, evaluated
@@ -350,10 +353,10 @@ We introduced \bicul{}, a bidirectional cumulative-STFT-power loss, for direct
 recovery of pluck onset and pitch. Across 6000 fits, \bicul{} gave
 target-directed single-pluck gradients and stronger multi-pluck joint recovery
 than the comparison objectives; Log-Q further improved descriptive results.
-Fourier onset placement with Thiran propagation was the strongest renderer,
-and event-wise reset corrected persistent DF2 and Literal gradients. At four
-events, Log-Q \bicul{}'s median pitch error (19.1 cents) is comparable to
-reported JNDs~\cite{holmes2022pitch}, while its onset error (6.75 ms) is below
+Fourier onset placement with Thiran fractional-delay interpolation was the
+strongest renderer, and event-wise reset corrected persistent DF2 and Literal
+gradients. At four events, Log-Q \bicul{}'s median pitch error (19.1 cents) is
+comparable to reported JNDs~\cite{holmes2022pitch}, while its onset error (6.75 ms) is below
 reported guitar-context timing JNDs~\cite{camara2026timing}; from six events,
 both errors exceed those perceptual scales, with pitch error above one
 semitone. This contextual comparison does not establish perceptual equivalence
