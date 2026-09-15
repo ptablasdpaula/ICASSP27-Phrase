@@ -17,8 +17,8 @@ paper/*.synctex.gz
 checkpoints/
 results/
 wandb/
+logs/
 *.ckpt
 *.pt
 *.pth
 *.wav
-
