@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Supplementary renderer diagnostics for Gradient Descent Optimization of Plucked-String Musical Phrases via Cumulative Energy Loss.">
+  <title>Supplementary renderer diagnostics · ICASSP27 Phrase</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <p class="eyebrow">Accompanying material</p>
+      <h1>Supplementary renderer diagnostics</h1>
+      <p class="lede"><cite>Gradient Descent Optimization of Plucked-String Musical Phrases via Cumulative Energy Loss</cite></p>
+      <a class="repo-link" href="https://github.com/ptablasdpaula/ICASSP27-Phrase">Source repository</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="renderer-screen" aria-labelledby="renderer-screen-title">
+      <p class="section-label">Supplementary Table S1</p>
+      <h2 id="renderer-screen-title">Onset-placement and propagation screen</h2>
+      <p>
+        Percentage of target-directed <span class="math">BiCuL</span> descent directions in the registered
+        single-event diagnostic (120 non-target points per cell; higher is better). Rows vary onset
+        placement and columns vary fractional-delay propagation. This is an auxiliary, BiCuL-only
+        diagnostic rather than an objective-independent renderer ranking.
+      </p>
+
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable renderer screen table">
+        <table>
+          <caption>Target-directed BiCuL descent directions by onset-placement and propagation method.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Onset ↓ / propagation →</th>
+              <th scope="col">Linear</th>
+              <th scope="col">Lagrange</th>
+              <th scope="col">Fourier</th>
+              <th scope="col">Thiran</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Naive</th>
+              <td>52.5%</td><td>62.5%</td><td>68.3%</td><td>68.3%</td>
+            </tr>
+            <tr>
+              <th scope="row">Lagrange</th>
+              <td>49.2%</td><td>62.5%</td><td>70.0%</td><td>63.3%</td>
+            </tr>
+            <tr>
+              <th scope="row">Fourier</th>
+              <td>66.7%</td><td>78.3%</td><td>88.3%</td><td class="best"><strong>100.0%</strong></td>
+            </tr>
+            <tr>
+              <th scope="row">Thiran</th>
+              <td>65.8%</td><td>79.2%</td><td>99.2%</td><td>99.2%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="method-notes">
+        <p><strong>Onset placement (rows).</strong> Naive continuously samples the analytic excitation; Lagrange uses a fifth-order, six-tap maximally flat FIR shift; Fourier applies the FLAMO phase shift; and Thiran uses a first-order causal all-pass shift.</p>
+        <p><strong>Propagation (columns).</strong> Linear uses first-order interpolation on both rails; Lagrange uses orders 5/1 on the long/short paths; Fourier samples the delay response; and Thiran uses orders 3/1.</p>
+      </div>
+
+      <aside class="note" aria-label="Planned extension">
+        <strong>Planned extension.</strong> A future loss selector will load precomputed matrices and replace
+        the values in this same table. It will not perform audio rendering in the browser. The present
+        release contains the BiCuL matrix used for Supplementary Table S1.
+      </aside>
+    </section>
+
+    <section id="state-realisation" aria-labelledby="state-realisation-title">
+      <p class="section-label">Supplementary Figure S1</p>
+      <h2 id="state-realisation-title">Persistent and reset state realisations</h2>
+      <p>
+        Full comparison retained outside the paper: a reset-DF2 target spectrogram followed by
+        middle-event BiCuL onset and frequency sweeps for the collapsed DF2 and Literal waveguide
+        realisations. Purple solid curves retain state and yellow dashed curves reset it. In this
+        diagnostic, reset smooths the sweeps and the DF2 and Literal reset curves appear coincident;
+        this contextual observation does not establish equivalence beyond the plotted case.
+      </p>
+
+      <figure>
+        <a href="assets/state-realisation-full.pdf" aria-label="Open Supplementary Figure S1 as a vector PDF">
+          <img src="assets/state-realisation-full.png" alt="Target spectrogram and four loss sweeps comparing persistent and reset string state for DF2 and Literal waveguide realisations.">
+        </a>
+        <figcaption>
+          Three-pluck target at (110 Hz, 0.5 s), (160 Hz, 1.0 s), and (280 Hz, 1.5 s).
+          Red dashed lines identify the varied middle event and cyan dashed lines the other events;
+          every curve is independently min–max normalised.
+        </figcaption>
+      </figure>
+
+      <p class="downloads"><a href="assets/state-realisation-full.pdf" download>Download vector PDF</a> <span aria-hidden="true">·</span> <a href="assets/state-realisation-full.png" download>Download PNG</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">ICASSP 2027 supplementary material · Static, version-controlled artefacts</div>
+  </footer>
+</body>
+</html>
