@@ -39,13 +39,24 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("variant", choices=["all_four", "frequency_only", "diagonal_control",
                                                     "interpolating", "eight_directions"])
+    parser.add_argument("--case-index", type=int)
     args = parser.parse_args()
     assert [orthogonal_weight(s, "interpolating") for s in (0, 200, 400, 600, 800)] == [
         0.0, 0.5, 1.0, 0.5, 0.0]
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
-    ROOT.mkdir(parents=True, exist_ok=True)
-    path = ROOT / f"{args.variant}.json"
+    root = ROOT
+    baseline_path = Path("docs/amplitude-pilot/baseline.json")
+    cardinality, target_number = 4, 6
+    case = None
+    if args.case_index is not None:
+        case = json.loads(Path("docs/takeover-validation/cases.json").read_text())[args.case_index]
+        cardinality, target_number = case["events"], case["target"]
+        root = Path("results/orthogonal-validation/raw") / case["target_id"]
+        baseline_path = (Path("results/takeover-validation/raw") / case["target_id"]
+                         / "baseline.json")
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / f"{args.variant}.json"
     if path.exists():
         raise FileExistsError(path)
     # Verify axis isolation and inclusive reverse sums with an asymmetric toy grid.
@@ -53,10 +64,13 @@ def main():
     expected = torch.tensor([[[1, 2, 3], [5, 7, 9]], [[5, 7, 9], [4, 5, 6]],
                              [[1, 3, 6], [4, 9, 15]], [[6, 5, 3], [15, 11, 6]]])
     assert torch.equal(surfaces(toy), expected)
-    baseline = json.loads(Path("docs/amplitude-pilot/baseline.json").read_text())
+    baseline = json.loads(baseline_path.read_text())
+    if case is not None:
+        assert baseline["stopped_by"] == "patience"
+        assert baseline["trajectory"][-1]["patience"] >= 250
     initial = EventPhrase(*(torch.tensor(baseline["best_phrase"][key], dtype=torch.float64)
                             for key in ["f0_hz", "onset_seconds"]))
-    metadata, target = load_target(4, 6)
+    metadata, target = load_target(cardinality, target_number)
     synth = PhraseSynth()
     with torch.no_grad():
         audio = synth.render(target)
@@ -115,14 +129,15 @@ def main():
         assert bool(torch.isfinite(raw.grad).all())
         opt.step()
     f, t = decode_coordinates(best_raw)
-    polish = fit(audio, 4, "bidirectional_cumulative_energy", synth=synth,
+    polish = fit(audio, cardinality, "bidirectional_cumulative_energy", synth=synth,
                  initial=EventPhrase(f.detach(), t.detach()), free_amplitudes=False)
     out = asdict(polish)
     out["best_phrase"] = dict(f0_hz=polish.best_phrase.f0_hz.tolist(),
                               onset_seconds=polish.best_phrase.onset_seconds.tolist())
     out["metrics"] = metrics(polish.best_phrase.f0_hz.numpy(),
                               polish.best_phrase.onset_seconds.numpy(), metadata)
-    result = dict(variant=args.variant, target=asdict(metadata), renderer=synth.provenance(),
+    result = dict(case=case, baseline_path=str(baseline_path), variant=args.variant,
+                  target=asdict(metadata), renderer=synth.provenance(),
                   source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"],
                                                          text=True).strip(),
                   initial_objective_scale=scale, target_mass=float(mass),
