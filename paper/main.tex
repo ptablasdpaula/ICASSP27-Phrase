@@ -33,7 +33,7 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \title{Gradient Descent Optimization of Plucked-String Musical Phrases via
-Cumulative Energy Loss}
+Cumulative Energy Losses}
 \author{\IEEEauthorblockN{Pablo Tablas de Paula\IEEEauthorrefmark{1},
 Sebastian J. Schlecht\IEEEauthorrefmark{2},
 Emmanouil Benetos\IEEEauthorrefmark{1}, and
@@ -211,15 +211,7 @@ normalisation, feature transformation, and directional average.
 
 \section{Differentiable Plucked-String Musical Phrases}
 \label{sec:renderer}
-\Glspl{dwg} are a common choice for modelling plucked strings
-\cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely
-travelling rails, each split at the excitation point into nut-side and
-bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in
-Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations,
-$f_0=f_s/[2(D_1+D_2)]$, where $f_s$ is the sample rate; the implemented
-model also compensates for interpolation and loss-filter phase. The relative
-pluck position is $D_2/(D_1+D_2)=0.23$ from the bridge. We synthesise
-two-second signals at $f_s=4$~kHz.
+We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings \cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$, where $f_s$ is the sample rate; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position arises as $D_2/(D_1+D_2)=0.23$ from the bridge. We synthesise two-second signals at $f_s=4$~kHz.
 
 \begin{figure}[!b]
 \centering
@@ -249,16 +241,7 @@ e_0(t)=\begin{cases}
 0,&\text{otherwise,}
 \end{cases}
 \end{equation*}
-where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its amplitude
-scale, and $T_e=10$~ms its duration. We choose Fourier phase-ramp delay for
-onset placement, using FLAMO~\cite{dalsanto2025flamo}. To place an onset by
-$\delta_o$ samples, we multiply the spectrum of $e_0$ by
-$e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per
-sample and $j^2=-1$. The excitation is zero-padded to an FFT length
-approximately $32.8$ times the full signal length to reduce circular
-wrap-around~\cite[Ch.~7]{smith2007dft}. We constrain the DC and Nyquist
-bins to be real to preserve Hermitian symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before one inverse
-FFT, retaining the first two seconds as the summed excitation.
+where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its amplitude scale, and $T_e=10$~ms its duration. As a differentiable onset placement method, we use a Fourier phase-ramp delay for, using FLAMO~\cite{dalsanto2025flamo}. To place an onset by $\delta_o$ samples, we multiply the spectrum of $e_0$ by $e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per sample and $j^2=-1$. The excitation is zero-padded to an FFT length approximately $32.8$ times the full signal length to reduce circular wrap-around~\cite[Ch.~7]{smith2007dft}. We constrain the DC and Nyquist bins to be real to preserve Hermitian symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before one inverse FFT, retaining the first two seconds as the summed excitation.
 
 For gradient-based $f_0$ optimisation, we use real-valued delays with Thiran
 all-pass interpolation.
@@ -280,11 +263,8 @@ sample boundary and detached from differentiation. Resetting smooths the
 multi-pluck loss landscapes in our diagnostic; we hypothesise that removing
 interference with residual string vibration contributes to this effect\footnote{Supplementary
 loss landscapes at
-\url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#renderer-screen}
-document onset placement and delay interpolation choices. The state-reset
-diagnostic and comparison of direct form II and literal waveguide
-implementations are at
-\url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#state-realisation}.}.
+\url{https://ptablasdpaula.github.io/ICASSP27-Phrase} document onset placement, delay interpolation choices and the state-reset
+diagnostic and comparison of direct form II and literal waveguide implementations.}.
 
 \section{Experiments and Methodology}
 \subsection{Loss Objectives}
