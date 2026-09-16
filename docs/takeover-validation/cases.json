@@ -1,0 +1,50 @@
+[
+  {
+    "target_id": "C04-T0003",
+    "events": 4,
+    "target": 4,
+    "stratum": "lower_pitch_error",
+    "historical_pitch_mae_cents": 45.66811111283838,
+    "historical_onset_mae_ms": 101.11570649577122
+  },
+  {
+    "target_id": "C04-T0007",
+    "events": 4,
+    "target": 8,
+    "stratum": "largest_onset_error",
+    "historical_pitch_mae_cents": 492.89598519461526,
+    "historical_onset_mae_ms": 210.84926573077342
+  },
+  {
+    "target_id": "C06-T0000",
+    "events": 6,
+    "target": 1,
+    "stratum": "lower_pitch_error",
+    "historical_pitch_mae_cents": 6.77997330761069,
+    "historical_onset_mae_ms": 45.472977252525965
+  },
+  {
+    "target_id": "C06-T0008",
+    "events": 6,
+    "target": 9,
+    "stratum": "largest_onset_error",
+    "historical_pitch_mae_cents": 257.6551142432151,
+    "historical_onset_mae_ms": 347.6521569148838
+  },
+  {
+    "target_id": "C08-T0000",
+    "events": 8,
+    "target": 1,
+    "stratum": "lower_pitch_error",
+    "historical_pitch_mae_cents": 90.06201112150598,
+    "historical_onset_mae_ms": 104.00963641450684
+  },
+  {
+    "target_id": "C08-T0004",
+    "events": 8,
+    "target": 5,
+    "stratum": "largest_onset_error",
+    "historical_pitch_mae_cents": 216.09482155190804,
+    "historical_onset_mae_ms": 265.76540266851873
+  }
+]
