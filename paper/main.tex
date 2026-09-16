@@ -156,7 +156,18 @@ S_q=C^f_{d_f}(C^t_{d_t}(P)),\qquad
 \end{equation*}
 Each surface is a two-dimensional image used to compute the loss. Its value
 at $(k,n)$ contains the power in the rectangle from the chosen starting
-corner to that bin inclusive, as shown in Fig.~XXX.
+corner to that bin inclusive, as shown in Fig.~\ref{fig:cumulative-surfaces}.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
+\caption{STFT power of a 160-Hz pluck at 1.0~s, followed by cumulative-power
+surfaces in the up-right, down-right, up-left, and down-left directions.
+The spectrogram is shown in dB relative to its peak; all cumulative surfaces
+share the total-target-power normalisation $S_q/m$. Diagonal arrows indicate
+each starting corner and accumulation direction.}
+\label{fig:cumulative-surfaces}
+\end{figure*}
 
 To compare these images, we divide both by the nonzero total target power
 $m=\sum_{k,n}P_{k,n}=\max S_q$ and apply a pointwise feature transformation

@@ -1,0 +1,90 @@
+{
+  "artifacts": {
+    "pdf": "3c00b5d909abee81387d90cac11789789eb01ebf05daad0e1dba5dac0e72700f",
+    "png": "e445c60284013171ab148f7d93d4a0b0e5019a4ba6f1cc34222718506e03f038"
+  },
+  "device": "cpu",
+  "display": {
+    "direction_order": [
+      "Up-right",
+      "Down-right",
+      "Up-left",
+      "Down-left"
+    ],
+    "spectrogram": "peak-relative power dB, [-80,0]",
+    "surfaces": "raw cumulative power / shared total target power, [0,1]"
+  },
+  "power_sha256": "c31aaf8fac63b0b78744583116521e716d0018097470d1794937a2888a63a768",
+  "renderer": {
+    "architecture": [
+      "Exciter",
+      "Waveguide",
+      "PhraseSynth"
+    ],
+    "candidate_coordinates": "independent elementwise bounded logits; no ordering, spacing, canonicalization, or Magic Clamp",
+    "dtype": "float64/complex128",
+    "exciter": {
+      "amplitude": 0.8,
+      "duration_seconds": 0.01,
+      "fourier_fft_length": 262144,
+      "lagrange_order": 5,
+      "method": "fourier",
+      "sample_count": 8000,
+      "sample_rate": 4000,
+      "thiran_order": 1
+    },
+    "schema": "icassp27-phrase-renderer-v1",
+    "waveguide": {
+      "fourier_fft_length": 262144,
+      "interpolation": "thiran",
+      "loop_gain": 0.99,
+      "loop_pole": 0.2,
+      "phase_correction_iterations": 12,
+      "pluck_position": 0.23,
+      "realization": "df2",
+      "sample_count": 8000,
+      "sample_rate": 4000,
+      "state_policy": "hard_reset"
+    }
+  },
+  "schema": "cumulative-surfaces-figure-v1",
+  "script_sha256": "d6a8209a9afba8a81e5041fadb16514f667cc98711e3707c8151534c3e85674b",
+  "stft": {
+    "center": false,
+    "hop": 64,
+    "n_fft": 256,
+    "shape": [
+      129,
+      122
+    ],
+    "window": "periodic Hann"
+  },
+  "target": {
+    "f0_hz": 160.0,
+    "onset_seconds": 1.0
+  },
+  "target_audio_sha256": "1fe534e431282ed143976668ddd6337ccdc8cf0cd67e85b2fd59b471bc9e74b4",
+  "torch_version": "2.7.1+cu126",
+  "validation": [
+    {
+      "direction": "Up-right",
+      "maximum_reference_feature_error": 3.3306690738754696e-16,
+      "surface_sha256": "af067a6f399106bc8db04d2fb5a6bbf361f4c38753f20034ad4fcc3ea1a4fae0"
+    },
+    {
+      "direction": "Down-right",
+      "maximum_reference_feature_error": 2.220446049250313e-16,
+      "surface_sha256": "e1f6465e8f996450a9b3a03df045c843e1478e9e25751c04a7802a00e14565da"
+    },
+    {
+      "direction": "Up-left",
+      "maximum_reference_feature_error": 3.3306690738754696e-16,
+      "surface_sha256": "222f30f5b18bdce9f021437a6b26d72cf0ba82ff906ae3062d659680c30e9f18"
+    },
+    {
+      "direction": "Down-left",
+      "maximum_reference_feature_error": 2.220446049250313e-16,
+      "surface_sha256": "5b33fbcb16d39f54455297f4acc5c13512c1af137b876076c6bdc09e609e23a4"
+    }
+  ]
+}
