@@ -132,56 +132,67 @@ Hence, our contributions are twofold:
 %configurations across 6000 phrase fits, with a diagnostic of the multi-event
 %effect of state reset.
 
-\section{Bidirectional cumulative-energy loss}
+\section{Cumulative Energy Losses}
 \label{sec:losses}
-The \gls{bicul} compares \gls{stft} power
-accumulated towards all four time--frequency corners. Displacement alters values
-between the energy and each boundary, exposing early/late and low/high direction
-without favouring a boundary. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and
-candidate periodic-Hann \gls{fft}-256/hop-64 power at frequency bin $k$ and frame $n$.
-For $q=(d_t,d_f)$, $d_t\in\{\rightarrow,\leftarrow\}$ and
-$d_f\in\{\uparrow,\downarrow\}$ select accumulation direction; $C^t_{d_t}$ and
-$C^f_{d_f}$ are the corresponding cumulative sums:
+\Glspl{cel} compare accumulated spectral power, exposing displacement through changes
+between the original and shifted energy even without spectral overlap. The
+family varies accumulation directions, feature transformations, and comparison
+norms. We evaluate a bidirectional variant and its Log-Weighing extension.
+
+Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate \gls{stft} power
+at frequency bin $k$ and frame $n$, using a periodic Hann window, a 256-point
+\gls{fft}, and a 64-sample hop. For $q=(d_t,d_f)$,
+$d_t\in\{\rightarrow,\leftarrow\}$ and $d_f\in\{\uparrow,\downarrow\}$
+select increasing or decreasing index order. The cumulative sums
+\begin{equation*}
+S_q=C^f_{d_f}(C^t_{d_t}(P)),\qquad
+\hat S_q=C^f_{d_f}(C^t_{d_t}(\hat P))
+\end{equation*}
+include the current bin, so each value contains the power in a rectangle
+between one spectrogram corner and $(k,n)$. For nonzero target mass
+$m=\sum_{k,n}P_{k,n}=\max S_q$, define
 \begin{equation*}
 \begin{aligned}
-S_q&=C^f_{d_f}(C^t_{d_t}(P)),\\
-\hat S_q&=C^f_{d_f}(C^t_{d_t}(\hat P)),\\
-m_q&=\max S_q,\qquad R_q=\sqrt{\max(S_q/m_q,10^{-12})},\\
-\hat R_q&=\sqrt{\max(\hat S_q/m_q,10^{-12})},\\
-\ell_q&=\operatorname{RMS}(R_q-\hat R_q).
+E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
+\mathcal{L}_{\mathcal Q}&=\frac{1}{|\mathcal Q|}\sum_{q\in\mathcal Q}\ell_q,
+\qquad\ell_q=\operatorname{RMS}(E_q).
 \end{aligned}
 \end{equation*}
-Here $S_q,\hat S_q$ are the target/candidate cumulative surfaces; $m_q$ is the
-target maximum; $R_q,\hat R_q$ are target-normalised square roots floored at
-$10^{-12}$; and $\ell_q$ is their \gls{rms} difference over
-$(k,n)$. \gls{bicul} averages all four $\ell_q$ without event coordinates,
-detectors, or salience weights.
+The \gls{rms} spans $(k,n)$. The bidirectional variant selects all four
+directions for $\mathcal Q$, treating both ends of each axis symmetrically,
+and uses $\phi(u)=\sqrt{\max(u,10^{-12})}$ to compress dominant
+values. Shared target normalisation preserves sensitivity to candidate energy.
 
-\gls{bicul} is related to \gls{cdf}-based Cram\'er distances: in one dimension, the
-Cram\'er discrepancy integrates squared \gls{cdf}
-differences~\cite{szekely2013energy}. With equal-mass unit-normalised power, one
-accumulation direction, and no square-root feature, $\ell_q$ becomes a discrete
-axis-aligned two-dimensional Cram\'er-type discrepancy. Both sense displacement
-without pointwise overlap because a shift changes the intervening cumulative
-region. \gls{bicul} is not the standard distance: target-only normalisation admits
-unequal candidate energy, square roots compress dominant regions, and four
-orientations avoid privileging one boundary.
-
-Phrase recovery additionally evaluates \gls{logq} \gls{bicul}. It retains the same \gls{stft},
-cumulative surfaces, target-maximum normalisation, and square-root features, but
-replaces the final uniform-bin \gls{rms}. For
-$E_q(k,n)=\hat R_q(k,n)-R_q(k,n)$, the candidate-minus-target surface error,
-the directional loss becomes
+The family includes an exact Cram\'er case. For one-dimensional, unit-mass
+distributions $p_j,\hat p_j$ on ordered coordinates $x_1<\cdots<x_J$,
+increasing-index accumulation with $\phi(u)=u$ gives their \glspl{cdf},
+$F_j,\hat F_j$. Their unnormalised, spacing-weighted $L_2$ comparison satisfies
 \begin{equation*}
-\ell^{\rm quad}_{q}=\left[\frac{\sum_{k,n}
+D_{\rm C}^2=\int_{\mathbb R}[F(x)-\hat F(x)]^2\,dx
+=\sum_{j=1}^{J-1}(x_{j+1}-x_j)(F_j-\hat F_j)^2.
+\end{equation*}
+The equality follows from constant \glspl{cdf} between support points, with
+energy distance $2D_{\rm C}^2$ in one dimension~\cite{szekely2013energy}.
+Uniform-grid \gls{rms} differs only by a fixed scale factor. Two-axis
+accumulation extends the comparison to joint \gls{cdf} surfaces on a bounded
+rectangle; the square-root features and unequal-mass comparisons used here
+extend beyond the exact Cram\'er case.
+
+\emph{Log-Weighing} weights errors by intervals in octaves and seconds,
+whereas uniform-bin \gls{rms} gives higher octaves more terms. Set
+$u_k=\log_2[\max(f_k,20)/20]$, where $f_k$ is bin-centre Hz, and let $t_n$
+be frame time in seconds. Replace $\ell_q$ by
+\begin{equation*}
+\ell^{\rm LW}_q=\left[\frac{\sum_{k,n}
 w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
 {\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2}.
 \end{equation*}
-Here $w^f_{d_f,k}$ and $w^t_{d_t,n}$ are direction-aligned adjacent-bin widths
-in octaves and seconds, respectively; the frequency coordinate is
-$\log_2[\max(f,20)/20]$, whose 20-Hz floor gives a finite origin. \acrshort{logq} denotes
-\acrlong{logq}, not a constant-Q transform. Both sums span $(k,n)$,
-$\ell^{\rm quad}_q$ replaces $\ell_q$, and all other operations are unchanged.
+Increasing-index accumulation uses forward widths $u_{k+1}-u_k$ and
+$t_{n+1}-t_n$; decreasing-index accumulation uses backward widths
+$u_k-u_{k-1}$ and $t_n-t_{n-1}$. Endpoints without neighbours have zero weight.
+The 20-Hz floor gives a finite origin. This quadrature gives equal logarithmic
+spans equal total weight. The \gls{stft}, cumulative sums, target normalisation,
+square-root features, and directional average remain unchanged.
 
 \begin{figure}[!t]
 \centering
