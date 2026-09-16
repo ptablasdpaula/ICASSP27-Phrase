@@ -400,6 +400,72 @@ class BidirectionalCumulativeEnergyDistance(BoundLoss):
         return _restore(value, squeezed)
 
 
+CEL_DIRECTIONS: Final = ("right_up", "right_down", "left_up", "left_down")
+CEL_NAMES: Final = tuple(
+    f"cel_{mask:02d}{'_lw' if weighted else ''}"
+    for weighted in (False, True) for mask in range(1, 16)
+)
+
+
+class CumulativeEnergyDistance(BidirectionalCumulativeEnergyDistance):
+    """Any nonempty direction subset, with optional Log-Weighing.
+
+    Direction order is (right/up, right/down, left/up, left/down).
+    The feature remains sqrt(max(normalised power, 1e-12)). Legacy classes
+    remain available for reproducing archived experiments.
+    """
+
+    def __init__(self, target: Tensor, *, directions: tuple[str, ...] = CEL_DIRECTIONS,
+                 log_weighing: bool = False, sample_rate: int = 4_000):
+        if (not directions or len(set(directions)) != len(directions)
+                or any(d not in CEL_DIRECTIONS for d in directions)):
+            raise ValueError("select distinct, nonempty CeL directions")
+        super().__init__(target, sample_rate=sample_rate)
+        self.directions = tuple(d for d in CEL_DIRECTIONS if d in directions)
+        self.indices = tuple(CEL_DIRECTIONS.index(d) for d in self.directions)
+        self.log_weighing = log_weighing
+        shape = self.references[0][0].shape
+        f = torch.arange(shape[0], dtype=target.dtype, device=target.device)
+        f = torch.log2((f * sample_rate / self.n_fft).clamp_min(20) / 20)
+        t = torch.arange(shape[1], dtype=target.dtype, device=target.device)
+        t = t * self.hop / sample_rate
+        weights = []
+        for tr in (False, True):
+            for fr in (False, True):
+                widths = []
+                for axis, reverse in ((f, fr), (t, tr)):
+                    gap = torch.diff(axis)
+                    zero = axis.new_zeros(1)
+                    widths.append(torch.cat((zero, gap) if reverse else (gap, zero)))
+                weight = widths[0][:, None] * widths[1][None, :]
+                if not bool(weight.sum() > 0):
+                    raise ValueError("Log-Weighing requires positive grid area")
+                weights.append(torch.sqrt(weight / weight.sum()))
+        self.sqrt_weights = torch.stack(weights)
+
+    def directional_distances(self, candidate: Tensor) -> Tensor:
+        """Return [...,2,4] elementary RMSs: uniform, then Log-Weighed."""
+        rows, squeezed = _batch(candidate)
+        power = self._power(rows)
+        ordinary, weighted = [], []
+        for index, (tr, fr) in enumerate(
+                 (tr, fr) for tr in (False, True) for fr in (False, True)):
+            surface = reverse_cumsum(power, 2) if tr else power.cumsum(2)
+            surface = reverse_cumsum(surface, 1) if fr else surface.cumsum(1)
+            reference, mass = self.references[index]
+            error = torch.sqrt((surface / mass).clamp_min(self.sqrt_floor)) - reference
+            ordinary.append(torch.linalg.vector_norm(error.flatten(1), dim=1)
+                            / math.sqrt(error.shape[1] * error.shape[2]))
+            weighted.append(torch.linalg.vector_norm(
+                (error * self.sqrt_weights[index]).flatten(1), dim=1))
+        values = torch.stack((torch.stack(ordinary, -1), torch.stack(weighted, -1)), -2)
+        return _restore(values, squeezed)
+
+    def distances(self, candidate: Tensor) -> Tensor:
+        return self.directional_distances(candidate)[..., int(self.log_weighing),
+                                                       self.indices].mean(-1)
+
+
 class LogQuadratureBiCumulativeEnergyDistance(BoundLoss):
     """BiCuL with its final RMS integrated over seconds and octaves.
 
@@ -510,13 +576,19 @@ class LogQuadratureBiCumulativeEnergyDistance(BoundLoss):
 
 @dataclass(frozen=True)
 class LossRegistry:
-    schema: str = "loss-registry-v2"
-    names: tuple[str, ...] = LOSS_NAMES
+    schema: str = "loss-registry-v3"
+    names: tuple[str, ...] = LOSS_NAMES + CEL_NAMES
 
     def build(self, name: str, target: Tensor) -> BoundLoss:
         name = canonical_loss_name(name)
         if name not in self.names:
             raise ValueError(f"unknown loss {name!r}")
+        if name in CEL_NAMES:
+            mask = int(name.split("_")[1])
+            return CumulativeEnergyDistance(
+                target, directions=tuple(d for i, d in enumerate(CEL_DIRECTIONS)
+                                         if mask & (1 << i)),
+                log_weighing=name.endswith("_lw"))
         if name == "waveform_l1":
             return WaveformDistance(target, p=1)
         if name == "waveform_mse":
@@ -562,7 +634,7 @@ def canonical_loss_name(name: str) -> str:
         "logqbicul": "log_quadrature_bicul",
         "logquadraturebicul": "log_quadrature_bicul",
     }
-    if name in LOSS_NAMES:
+    if name in LOSS_NAMES or name in CEL_NAMES:
         return name
     try:
         return aliases[normalized]
@@ -576,6 +648,9 @@ def build_loss(name: str, target: Tensor) -> BoundLoss:
 
 
 __all__ = [
+    "CEL_DIRECTIONS",
+    "CEL_NAMES",
+    "CumulativeEnergyDistance",
     "BidirectionalCumulativeEnergyDistance",
     "FABIANI_TIME_SCALE_HZ_PER_SECOND",
     "LOSS_LABELS",

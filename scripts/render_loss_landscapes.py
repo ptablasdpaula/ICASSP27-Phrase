@@ -105,7 +105,7 @@ def renderer_specs() -> tuple[RendererSpec, RendererSpec]:
         RendererSpec(
             name="fourier_thiran",
             display_name="Fourier--Thiran",
-            exciter=ExciterConfig(method="fourier"),
+            exciter=ExciterConfig(method="fourier", fourier_fft_length=262_144),
             waveguide=WaveguideConfig(
                 interpolation="thiran", realization="df2", state_policy="hard_reset"
             ),
@@ -549,6 +549,7 @@ def render_figure(
     directions: np.ndarray,
     counts: np.ndarray,
     output: Path,
+    labels: tuple[str, ...] = PAPER_LOSS_LABELS,
 ) -> None:
     """Restyle the already-computed Fourier--Thiran six-panel figure."""
     import matplotlib
@@ -564,7 +565,7 @@ def render_figure(
     figure, axes = plt.subplots(3, 2, figsize=(4.65, 7.15), sharex=True, sharey=True)
     cmap = plt.get_cmap("magma")
     for panel, (axis, _loss_name, label) in enumerate(
-        zip(axes.reshape(-1), BASE_LOSS_NAMES, PAPER_LOSS_LABELS, strict=True)
+        zip(axes.reshape(-1), BASE_LOSS_NAMES, labels, strict=True)
     ):
         axis.imshow(
             surfaces_rgb[panel],

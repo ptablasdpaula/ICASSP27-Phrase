@@ -9,7 +9,14 @@ from .config import (
     initial_candidate,
 )
 from .exciter import Exciter
-from .losses import LOSS_LABELS, PAPER_LOSSES, build_loss
+from .losses import (
+    CEL_DIRECTIONS,
+    CEL_NAMES,
+    LOSS_LABELS,
+    PAPER_LOSSES,
+    CumulativeEnergyDistance,
+    build_loss,
+)
 from .optimization import FitResult, FitSnapshot, fit
 from .runtime import configure_reproducibility, require_df2_backend
 from .synth import PhraseSynth
@@ -18,6 +25,9 @@ from .waveguide import Waveguide, WaveguideTransfer
 
 __all__ = [
     "CARDINALITIES",
+    "CEL_DIRECTIONS",
+    "CEL_NAMES",
+    "CumulativeEnergyDistance",
     "EventPhrase",
     "Exciter",
     "ExciterConfig",

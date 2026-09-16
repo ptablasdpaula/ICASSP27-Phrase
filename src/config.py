@@ -72,7 +72,7 @@ class ExciterConfig:
     duration_seconds: float = 0.010
     lagrange_order: int = 5
     thiran_order: int = 1
-    fourier_fft_length: int = 262_144
+    fourier_fft_length: int = 16_384
 
     def __post_init__(self) -> None:
         if self.method not in ("naive", "lagrange", "fourier", "thiran"):
