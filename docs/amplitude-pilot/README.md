@@ -122,3 +122,10 @@ with `python scripts/report_amplitude_pilot.py`.
 
 This pilot does not replace the outstanding full recovery rerun at 2.048 padding.
 
+
+## Follow-up: cumulative timing with fixed amplitudes
+
+The [ordered-time pilot](../ordered-time-pilot/README.md) tests cumulative positive
+onset gaps on this same case, with amplitudes fixed at 0.8. Neither restarting
+the swapped fit nor starting afresh resolves it; matched onset error remains
+approximately 70 ms.
