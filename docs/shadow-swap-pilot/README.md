@@ -30,3 +30,27 @@ that earlier, separately normalised run to beat the baseline. Scores here use
 a common loss scale across trial branches, so the new diagnostic is authoritative
 for this formulation. Run `python scripts/test_shadow_swaps.py` with the project
 environment. No production fitter or paper changes.
+
+## Cyclic assignment-only pilot
+
+Use 300 real updates cycling proposals 1↔2, 2↔3, 3↔4, then repeat. From the
+same pre-update state, compute the normal real Adam step and the swapped trial
+Adam step. Score both resulting waveforms. Softmax over their two negative
+losses (temperature = baseline loss) compares complete permutations; hard
+argmax selects keep or swap. There is no independent softmax per event, pitch
+averaging, stochastic sampling, or persistent learned assignment-logit table.
+This is a minimal deterministic test of the proposed lookahead mechanism.
+
+Commit only the normal real Adam parameter/moment update and the selected
+permutation. Discard the trial update even on acceptance. Measure the actual
+post-assignment loss, which may differ from the trial score. Preserve the best
+actual canonical checkpoint and polish with the registered fitter. Compare
+against 300 identical ordinary Adam steps with no proposals, followed by the
+same polish. The exploratory LR is .05 without rollback; both branches use
+identical pre-step moments and fixed baseline loss conditioning. All amplitudes
+remain .8. This pilot starts from the failed fit, not from target initialisation.
+
+The real update doubles as the equally refined unswapped comparator, so each
+proposal adds one backward pass plus its scored forward render. Exact state
+checks ensure trial backward cannot alter the real state. A valid permutation
+is checked at every iteration. Run `python scripts/test_cyclic_shadow.py`.
