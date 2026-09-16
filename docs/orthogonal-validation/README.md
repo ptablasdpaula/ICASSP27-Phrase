@@ -1,7 +1,7 @@
 # Switching stalled diagonal CeL fits to axis-only accumulation
 
 Prespecified follow-up to the successful [four-event development case](../orthogonal-escape-pilot/README.md).
-Reuse the **same six held-out failed phrases** selected for the
+Reuse the **same six additional failed phrases** selected for the
 [takeover experiment](../takeover-validation/cases.json): two each with 4, 6,
 and 8 events. These are selected failures, not a representative success-rate
 sample. Do not replace any case based on its switch outcome.
@@ -48,4 +48,52 @@ Implementation: `scripts/test_orthogonal_directions.py --case-index INDEX VARIAN
 and `scripts/validate_orthogonal_cases.py --index INDEX`. Six indices are 0–5 in
 the previously frozen case list. Production fitting code and paper are unchanged.
 
-Results pending.
+## Results
+
+Frequency-only switching produces **one strict recovery and one partial gain**
+among the six additional selected failures. Four-orthogonal switching produces
+no strict recovery. Both variants have a median joint-error improvement of 0%
+relative to the diagonal control.
+
+- **C04-T0003:** frequency-only reduces pitch/onset MAE from 42.875 cents /
+  101.271 ms to **0.246 cents / 0.089 ms**. The equal-budget diagonal control
+  remains at the baseline. Joint event error falls 99.83% versus control.
+- **C08-T0004:** frequency-only reduces errors from 178.123 cents / 159.583 ms
+  to **124.953 cents / 141.262 ms**. The control reaches 215.378 cents /
+  175.182 ms. Joint error falls 25.25% versus control, but the phrase remains
+  substantially wrong. Four orthogonals finish at 204.918 cents / 169.301 ms:
+  worse than baseline on both MAEs, although joint error is 9.62% below control.
+- **C04-T0007:** both switches retain the baseline (489.887 cents / 216.169 ms),
+  while ordinary diagonal continuation improves to 441.778 cents / 178.089 ms.
+  Switch joint error is 13.71% higher than control.
+- **C06-T0000, C06-T0008, C08-T0000:** both switches and control retain the same
+  stalled solution. Neither six-event phrase improves.
+
+Thus frequency-only switching helps some additional failures, but the original
+successful development case did not establish a reliable general rescue rule.
+Do not interpret these selected cases as a population success rate. There is
+no evidence here for preferring four orthogonals over frequency-only. Also,
+retaining a lower canonical loss does not guarantee better pitch/onset errors;
+C08-T0004 explicitly demonstrates that distinction.
+
+All runs use 1848 extra updates except C08-T0004: 2215 for four orthogonals and
+3819 for frequency-only and its shared control. Thus the frequency-only results
+are exactly matched in backward-update count to control on all six cases;
+four orthogonals receive fewer updates on the final case. These counts exclude
+the shared baseline fitting cost. Controls and both variants keep amplitudes
+fixed and use no target-coordinate-based checkpoint selection.
+
+[Full pitch/onset table](table.md), [exact metrics CSV](summary.csv),
+[update budgets](costs.md), [aggregate comparison](aggregate.json),
+[all raw trajectories and baseline provenance](raw-results.zip).
+
+![Baseline, two switches, and budget-matched control](comparison.png)
+
+Validation passed for all twelve switch runs: 1601 finite exploration records,
+correct strict-best canonical checkpoints, fixed amplitudes, starting-loss
+reproduction within 1e-12, and control budgets at least as large as each switch.
+Axis isolation and self-distance checks run in every switch process. Ruff passes
+for the three experiment/report scripts. All six cases completed locally;
+the pending Slurm array was cancelled without running. Recreate the report with
+`python scripts/report_orthogonal_validation.py`.
+
