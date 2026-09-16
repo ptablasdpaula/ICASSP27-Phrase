@@ -105,3 +105,29 @@ checkpoints, including the initial state, and apply the same diagonal refinement
 as before. Ground-truth errors never select checkpoints. Validate the triangular
 schedule at endpoints and midpoints and reconstruct each saved mixed loss from
 its component losses to tolerance 1e-12. Run the two variants concurrently.
+
+### Interpolation and eight-direction results
+
+Neither new variant improves the original diagonal CeL at **any** of its 1600
+exploration updates. Both therefore select the unchanged initial checkpoint;
+248 diagonal refinement updates leave it at CeL 0.0078786668, pitch MAE
+5.480767 cents and onset MAE 70.452117 ms, exactly matching diagonal-only control.
+This checkpoint rule permits uphill exploratory steps; it does not roll back
+the evolving exploration state. The raw final exploratory iterates are worse:
+12.580 cents / 72.760 ms (interpolation) and 52.466 cents / 113.443 ms (all eight).
+
+This contrasts with the abrupt switch to pure axis-only objectives above. On
+this case, including diagonal terms continuously, or traversing the pure
+orthogonal endpoint without dwelling there, fails to reproduce that escape.
+The two tests cannot distinguish whether time spent near pure orthogonal loss,
+optimiser history, cycle length, or another detail is responsible. One cycle
+schedule and one selected phrase do not establish that interpolation generally
+fails. No additional schedules were searched.
+
+Both new runs use 1848 total updates, matching the original diagonal control
+and abrupt all-four orthogonal run. Starting D=0.00787867 and O=0.01042365 are
+of similar numerical magnitude, but their parameter gradients need not be.
+All 1601 saved mixed losses per run reconstruct from their saved coefficients
+and component losses within 1e-12. The updated comparison plot and table include
+all five runs. Full new trajectories: [interpolation](interpolating.json) and
+[eight directions](eight_directions.json).
