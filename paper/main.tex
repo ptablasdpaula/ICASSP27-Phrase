@@ -176,7 +176,14 @@ $m=\sum_{k,n}P_{k,n}=\max S_q$ and apply a pointwise feature transformation
 $\phi$. For each direction pair, let $E_q(k,n)$ be the candidate-minus-target
 feature error and $\ell_q$ its \gls{rms} over all bins and frames. For a selected
 set of direction pairs $\mathcal Q$, the scalar loss $\mathcal{L}_{\mathcal Q}$
-averages these directional errors; $|\mathcal Q|$ is the number of pairs:
+averages these directional errors\footnote{Although a full mathematical
+ equivalence is outside the scope of this work, we note that for 1D unit-mass
+ distributions on a uniform grid, our CeL with a single accumulation direction
+ and $\phi(u)=u$ yields the Cram\'er distance up to fixed grid and RMS
+ normalisation. This distance uses $L_2$ on \glspl{cdf}~\cite{szekely2013energy}
+ and is related to the $1$-Wasserstein distance in \gls{ot}, which uses $L_1$
+ on the same CDFs~\cite[Remark~2.30]{peyre2019computational}.};
+$|\mathcal Q|$ is the number of pairs:
 \begin{equation*}
 \begin{aligned}
 E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
@@ -184,13 +191,7 @@ E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
 \qquad\ell_q=\operatorname{RMS}(E_q).
 \end{aligned}
 \end{equation*}
-Although a full analysis is outside the scope of this paper, we note that
-for unit-mass distributions on a one-dimensional uniform grid, a single
-accumulation direction and $\phi(u)=u$ give the Cram\'er distance up to the
-fixed grid and \gls{rms} normalisation~\cite{szekely2013energy}. This is the $L_2$ distance between
-\glspl{cdf}~\cite{szekely2013energy}. Its connection to \gls{ot} is through
-the one-dimensional $1$-Wasserstein distance, which compares the same
-\glspl{cdf} using $L_1$~\cite[Remark~2.30]{peyre2019computational}.
+
 
 Additionally, we apply a perceptually motivated \emph{Log-Weighing} by
 measuring frequency intervals in octaves. For bin-centre frequency $f_k$ in Hz,
