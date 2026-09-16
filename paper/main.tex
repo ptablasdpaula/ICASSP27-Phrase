@@ -156,10 +156,7 @@ S_q=C^f_{d_f}(C^t_{d_t}(P)),\qquad
 \end{equation*}
 Each surface is a two-dimensional image used to compute the loss. Its value
 at $(k,n)$ contains the power in the rectangle from the chosen starting
-corner to that bin, including both boundaries. For example, accumulating
-forwards in time and upwards in frequency gives
-$S_{(\rightarrow,\uparrow)}(k,n)=\sum_{i\leq k}\sum_{j\leq n}P_{i,j}$,
-where $i$ and $j$ run over frequency bins and time frames.
+corner to that bin inclusive, as shown in Fig.~XXX.
 
 To compare these images, we divide both by the nonzero total target power
 $m=\sum_{k,n}P_{k,n}=\max S_q$ and apply a pointwise feature transformation
@@ -174,48 +171,28 @@ E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
 \qquad\ell_q=\operatorname{RMS}(E_q).
 \end{aligned}
 \end{equation*}
-The bidirectional variant includes all four pairs in $\mathcal Q$, treating
-both ends of each axis symmetrically, and uses
-$\phi(u)=\sqrt{\max(u,10^{-12})}$ to compress dominant normalised values $u$.
-Shared target normalisation preserves sensitivity to candidate energy.
+Although a full analysis is outside the scope of this paper, we note that
+for unit-mass distributions on a one-dimensional uniform grid, a single
+accumulation direction and $\phi(u)=u$ give the Cram\'er distance up to the
+fixed grid and \gls{rms} normalisation. This is the $L_2$ distance between
+\glspl{cdf}~\cite{szekely2013energy}. Its connection to \gls{ot} is through
+the one-dimensional $1$-Wasserstein distance, which compares the same
+\glspl{cdf} using $L_1$~\cite[Remark~2.30]{peyre2019computational}.
 
-The family includes an exact Cram\'er case. For one-dimensional, unit-mass
-distributions with target and candidate masses $p_j,\hat p_j$ on $J$ ordered
-coordinates $x_1<\cdots<x_J$, increasing-index accumulation with $\phi(u)=u$
-gives their \glspl{cdf}, $F$ and $\hat F$. At coordinate $x_j$, their values
-are $F_j=\sum_{i\leq j}p_i$ and $\hat F_j=\sum_{i\leq j}\hat p_i$.
-The Cram\'er distance $D_{\rm C}$ is their unnormalised, spacing-weighted
-$L_2$ comparison:
-\begin{equation*}
-D_{\rm C}^2=\int_{\mathbb R}[F(x)-\hat F(x)]^2\,dx
-=\sum_{j=1}^{J-1}(x_{j+1}-x_j)(F_j-\hat F_j)^2.
-\end{equation*}
-The equality follows from constant \glspl{cdf} between support points, with
-energy distance $2D_{\rm C}^2$ in one dimension~\cite{szekely2013energy}.
-Uniform-grid \gls{rms} differs only by a fixed scale factor. Two-axis
-accumulation extends the comparison to joint \gls{cdf} surfaces on a bounded
-rectangle; the square-root features and unequal-mass comparisons used here
-extend beyond the exact Cram\'er case.
-
-\emph{Log-Weighing} weights errors by intervals in octaves and seconds,
-whereas uniform-bin \gls{rms} gives higher octaves more terms. Set
-$u_k=\log_2[\max(f_k,20)/20]$, where $f_k$ is bin-centre Hz, and let $t_n$
-be frame time in seconds. For each direction pair, let $w^f_{d_f,k}$ be
-the frequency-interval width at bin $k$ in direction $d_f$, and $w^t_{d_t,n}$
-the time-interval width at frame $n$ in direction $d_t$. Their product weights
-the squared error at $(k,n)$. The weighted directional error $\ell^{\rm LW}_q$
-replaces $\ell_q$:
+Additionally, we apply a perceptually motivated \emph{Log-Weighing} by
+measuring frequency intervals in octaves. For bin-centre frequency $f_k$ in Hz,
+set $u_k=\log_2[\max(f_k,20)/20]$, with the 20-Hz floor providing a finite
+origin. Let $w^f_{d_f,k}$ and $w^t_{d_t,n}$ be adjacent widths in octaves and
+seconds, respectively, following the accumulation directions. We replace the
+uniform-bin error by the weighted \gls{rms}
 \begin{equation*}
 \ell^{\rm LW}_q=\left[\frac{\sum_{k,n}
 w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
 {\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2}.
 \end{equation*}
-Increasing-index accumulation uses forward widths $u_{k+1}-u_k$ and
-$t_{n+1}-t_n$; decreasing-index accumulation uses backward widths
-$u_k-u_{k-1}$ and $t_n-t_{n-1}$. Endpoints without neighbours have zero weight.
-The 20-Hz floor gives a finite origin. This quadrature gives equal logarithmic
-spans equal total weight. The \gls{stft}, cumulative sums, target normalisation,
-square-root features, and directional average remain unchanged.
+Endpoints without a neighbouring interval have zero weight. This gives equal
+octave spans equal total weight while preserving the cumulative surfaces,
+normalisation, feature transformation, and directional average.
 
 \begin{figure}[!t]
 \centering
