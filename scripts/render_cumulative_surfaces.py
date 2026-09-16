@@ -132,21 +132,22 @@ def main() -> None:
     for axis in axes:
         axis.set_box_aspect(1)
         axis.set_yscale("log")
-        axis.set_ylim(20, synth.sample_rate / 2)
+        axis.set_ylim(50, synth.sample_rate / 2)
         axis.set_xticks([0.5, 1, 1.5], ["0.5", "1", "1.5"])
         axis.set_xlim(time_edges[0], time_edges[-1])
-        axis.set_yticks([20, 100, 1000, 2000], ["20", "100", "1000", "2000"])
+        axis.set_yticks([100, 1000], [r"$10^2$", r"$10^3$"])
         axis.minorticks_off()
-        axis.set_xlabel("Time (s)", labelpad=1.5)
         axis.tick_params(length=2, width=0.5, pad=1.5)
     figure.canvas.draw()
     bounds = axes[-1].get_position()
+    figure.supxlabel("Time (s)", x=(axes[0].get_position().x0 + bounds.x1) / 2,
+                    y=0.06, fontsize=7)
     bar_axis = figure.add_axes([bounds.x1 + 0.014, bounds.y0, 0.012, bounds.height])
     colorbar = figure.colorbar(
         spectral_image, cax=bar_axis, orientation="vertical", ticks=[-80, -60, -40, -20, 0],
     )
     colorbar.ax.tick_params(length=1.5, width=0.5, pad=1, labelsize=6)
-    colorbar.set_label("Power (dB)", fontsize=7, labelpad=3)
+    colorbar.set_label("Power (dB)", fontsize=7, labelpad=9, rotation=270)
     colorbar.outline.set_linewidth(0.5)
 
     args.output_stem.parent.mkdir(parents=True, exist_ok=True)
@@ -167,7 +168,7 @@ def main() -> None:
                  "window": "periodic Hann", "shape": list(power.shape)},
         "display": {"spectrogram": "peak-relative power dB, [-80,0]",
                     "surfaces": "10*log10(S_q/m), shared [-80,0] dB display scale",
-                    "frequency_axis": "logarithmic, 20-2000 Hz; sums retain all STFT bins",
+                    "frequency_axis": "logarithmic, 50-2000 Hz; decade ticks; sums use all bins",
                     "colorbar": "one vertical shared dB scale; distinct reference powers",
                     "arrows": "landscape style, 4x length/head size, original shaft width",
                     "direction_order": [item[0] for item in DIRECTIONS]},
