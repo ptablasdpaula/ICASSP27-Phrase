@@ -54,3 +54,44 @@ The real update doubles as the equally refined unswapped comparator, so each
 proposal adds one backward pass plus its scored forward render. Exact state
 checks ensure trial backward cannot alter the real state. A valid permutation
 is checked at every iteration. Run `python scripts/test_cyclic_shadow.py`.
+
+## Results
+
+The 300-step cyclic one-step pilot accepted **zero swaps**. Its entire sequence
+of 300 actual losses and matched event metrics agrees exactly with the no-probe
+control, confirming that discarded trial computations do not affect the real
+updates in this run. Both preserve the baseline canonical CeL 0.0078786668 and,
+after canonical polish, matched errors 5.480767 cents / 70.452117 ms.
+
+At the original plateau, the useful swap 2↔3 scores:
+
+| Trial depth | Keep after trial | Swap after trial | Swap probability |
+|---|---:|---:|---:|
+| 1 | 0.01333594 | 0.02146034 | 0.26285 |
+| 20 | 0.00871950 | 0.00784032 | 0.52787 |
+
+The unchanged pre-trial fit scores 0.00787867. The ordinary first Adam step
+with freshly reset LR .05 overshoots this plateau, which is why the one-step
+keep score is worse than the starting fit. All alternatives use identical
+pre-trial optimiser state. The 20-step swapped score beats both the equally
+refined keep trial and the pre-trial real state. This diagnostic does **not**
+test whether committing only that assignment after a 20-step trial would
+recover during a live cyclic run. Its temporary refined controls were discarded.
+
+Improvement relative to a swapped trial's own bad starting score is insufficient:
+swap 3↔4 also improves its own score after one step without becoming competitive
+with keeping the assignment. Scores should account for the alternative rather
+than reward any downhill step. A softmax based on these scores changes confidence,
+but cannot supply the missing longer-horizon evidence.
+
+**Interpretation:** the isolation mechanism is valid and demonstrably harmless
+to the real gradients/state. This minimal one-step hard-choice version does not
+resolve the failure. The deeper diagnostic motivates longer isolated rollouts,
+but does not establish an improved full algorithm. A persistent learned
+assignment policy or stochastic sampling of permutations has not been tested.
+
+![Real optimisation and assignment probabilities](cyclic.png)
+
+Artifacts: [probe scores and isolation checks](probes.json),
+[cyclic run](cyclic_one_step.json), [control](no_probe_control.json),
+[table](table.md). Recreate the report with `python scripts/report_shadow_swaps.py`.
