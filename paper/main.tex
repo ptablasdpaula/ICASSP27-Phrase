@@ -137,9 +137,7 @@ Hence, our contributions are twofold:
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
-\caption{STFT power of a constant-amplitude sinusoid whose instantaneous
-frequency increases logarithmically from 20 to 1000~Hz over two seconds,
-and cumulative-power surfaces for the labelled direction pairs $(d_t,d_f)$.
+\caption{STFT power of a constant amplitude logarithmic 20-to-1000~Hz sine sweep over two seconds, and cumulative surfaces for the direction pairs $(d_t,d_f)$.
 The shared linear colour scale runs from 0 to 1, with power normalised by peak
 power for the spectrogram and total target power ($S_q/m$) for the
 cumulative-power surfaces. Logarithmic frequency axes are used for display
@@ -189,7 +187,7 @@ E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
 Although a full analysis is outside the scope of this paper, we note that
 for unit-mass distributions on a one-dimensional uniform grid, a single
 accumulation direction and $\phi(u)=u$ give the Cram\'er distance up to the
-fixed grid and \gls{rms} normalisation. This is the $L_2$ distance between
+fixed grid and \gls{rms} normalisation~\cite{szekely2013energy}. This is the $L_2$ distance between
 \glspl{cdf}~\cite{szekely2013energy}. Its connection to \gls{ot} is through
 the one-dimensional $1$-Wasserstein distance, which compares the same
 \glspl{cdf} using $L_1$~\cite[Remark~2.30]{peyre2019computational}.
