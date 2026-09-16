@@ -63,7 +63,7 @@ def qualify(output: Path):
     print(json.dumps(results), flush=True)
 
 
-def report(root: Path, output: Path):
+def report(root: Path, output: Path, qualification: Path | None = None):
     output.mkdir(parents=True, exist_ok=True)
     groups = {}
     quality = {"candidates": 0, "ambiguous_assignments": 0, "nonfinite_variant_candidates": 0}
@@ -74,7 +74,11 @@ def report(root: Path, output: Path):
             data = dict(archive)
         if str(data["source_hash"]) != source_hash():
             raise ValueError(f"stale shard {path}")
-        grad = np.einsum("ve,beij->bvij", subset_matrix(), data["elementary_gradients"])
+        # An unrelated nonfinite direction must not contaminate a subset via 0*NaN.
+        grad = np.stack(
+            [data["elementary_gradients"][:, row > 0].mean(axis=1) for row in subset_matrix()],
+            axis=1,
+        )
         delta = data["target"][data["assignments"]] - data["candidates"]
         scores = score(grad, delta)
         tied = data["tied"]
@@ -134,6 +138,9 @@ def report(root: Path, output: Path):
     provenance = {
         "schema": SCHEMA,
         "source_hash": source_hash(),
+        "numpy_version": np.__version__,
+        "report_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "devices": sorted({item["device"] for item in metadata}),
         "seed": 2028,
         "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         "directions": CEL_DIRECTIONS,
@@ -148,6 +155,13 @@ def report(root: Path, output: Path):
         "tie_tolerance": 1e-12,
         "correct_coordinate_tolerance": 1e-12,
     }
+    if qualification is not None:
+        check = json.loads(qualification.read_text())
+        if not check["passed"] or check["source_hash"] != source_hash():
+            raise ValueError("qualification failed or is stale")
+        provenance["cpu_gpu_qualification"] = check
+    else:
+        provenance["cpu_gpu_qualification"] = "not supplied; see per-shard execution devices"
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     with zipfile.ZipFile(output / "raw-results.zip", "w", compression=zipfile.ZIP_STORED) as z:
         for target in design():
@@ -231,7 +245,7 @@ def write_report(rows, quality, output):
         "The complete CSV also includes sample standard deviations, medians, cosine alignment, "
         "whole-phrase alignment, zero gradients and drift of already-correct coordinates.",
         "",
-        "| Variant | 1 event | 2 events | 4 events | 6 events | 8 events |",
+        "| Directions | 1 event | 2 events | 4 events | 6 events | 8 events |",
         "|---|---:|---:|---:|---:|---:|",
     ]
     for name in CEL_NAMES:
@@ -242,7 +256,11 @@ def write_report(rows, quality, output):
                 for metric in ("pitch_directed", "onset_directed", "joint_directed")
             ]
             cells.append(" / ".join(f"{100 * v:.1f}" for v in vals))
-        text.append("| " + name + " | " + " | ".join(cells) + " |")
+        mask = int(name.split("_")[1])
+        label = " ".join(a for i, a in enumerate(("↗", "↘", "↖", "↙")) if mask & (1 << i))
+        if name.endswith("_lw"):
+            label += " + LW"
+        text.append("| " + label + " | " + " | ".join(cells) + " |")
     text.extend(
         [
             "",
@@ -293,7 +311,7 @@ def main():
     if args.command == "qualify":
         qualify(args.output)
     elif args.command == "report":
-        report(args.input, args.output)
+        report(args.input, args.output, args.qualification)
     else:
         require_df2_backend(args.device)
         if args.device.startswith("cuda"):

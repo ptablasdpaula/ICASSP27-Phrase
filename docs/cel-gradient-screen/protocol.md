@@ -70,7 +70,7 @@ OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 .pixi/envs/default/bin/python \
 ```
 
 `jobs/cel_gradient_screen.sh` accepts repository path, output directory and
-`qualify`, `compute`, or `figure`. Submit qualification first; launch the
+`qualify`, `compute`, `cpu`, or `figure`. Submit qualification first; launch the
 173-element compute array only after it succeeds. Limit concurrency to four
 GPU jobs. Shards are atomic and resumable only for the same source hash/backend.
 CPU execution is also supported and is always explicitly labelled.
@@ -79,3 +79,9 @@ The new Figure 3 script recomputes all six surfaces and directions without
 reusing archived values. Historical caches retain their original padding.
 Existing Table I/Figure 4 recovery results are not updated or relabelled by this
 screen; final 150-target reruns follow review of the gradient comparison.
+
+For a CPU-only allocation, submit the same job script in `cpu` mode with four
+CPUs and 16 GB RAM. This runs four independent workers with batch size four.
+Set `PYTHONHOME` to the project environment for direct commands if interpreter
+startup searches unavailable parent filesystem paths; the job script sets this
+automatically. CPU and GPU outputs are explicitly distinguished in provenance.

@@ -126,6 +126,8 @@ def test_report_weights_targets_equally(tmp_path, monkeypatch):
     raw = tmp_path / "raw"
     raw.mkdir()
     for target, signs in zip(targets, ([1, -1], [-1]), strict=True):
+        gradients = np.array(signs)[:, None, None, None] * np.ones((len(signs), 8, 1, 2))
+        gradients[:, 7] = np.nan  # Only subsets selecting this term should fail.
         np.savez(
             raw / f"{target.name}.npz",
             source_hash=source_hash(),
@@ -133,8 +135,7 @@ def test_report_weights_targets_equally(tmp_path, monkeypatch):
             target=target.coordinates,
             candidates=np.full((len(signs), 1, 2), 0.2),
             assignments=np.zeros((len(signs), 1), dtype=int),
-            elementary_gradients=np.array(signs)[:, None, None, None]
-            * np.ones((len(signs), 8, 1, 2)),
+            elementary_gradients=gradients,
             tied=np.zeros(len(signs), dtype=bool),
             kinds=np.array(["simultaneous"] * len(signs)),
         )
@@ -148,3 +149,7 @@ def test_report_weights_targets_equally(tmp_path, monkeypatch):
     assert int(row["phrases"]) == 2
     assert float(row["mean"]) == 0.75
     assert float(row["median"]) == 0.75
+    import json
+
+    metadata = json.loads((tmp_path / "report/provenance.json").read_text())
+    assert metadata["quality"]["nonfinite_variant_candidates"] == 24
