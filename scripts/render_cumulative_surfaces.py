@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Show the landscape target and the four cumulative-power images in Section II."""
+"""Show a logarithmic sinusoidal sweep and its four cumulative-power images."""
 
 from __future__ import annotations
 
@@ -16,16 +16,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from icassp27_phrase.losses import BidirectionalCumulativeEnergyDistance, reverse_cumsum
 from icassp27_phrase.runtime import configure_reproducibility
-from icassp27_phrase.synth import PhraseSynth
 from matplotlib.patches import FancyArrowPatch
-from render_loss_landscapes import (
-    LANDSCAPE_FIGURE_STYLE,
-    TARGET_F0_HZ,
-    TARGET_ONSET_SECONDS,
-    renderer_specs,
-)
+from render_loss_landscapes import LANDSCAPE_FIGURE_STYLE
 
 ROOT = Path(__file__).resolve().parents[1]
+SAMPLE_RATE = 4000
+DURATION_SECONDS = 2.0
+START_HZ = 20.0
+END_HZ = 1000.0
 DIRECTIONS = (
     ("Up-right", False, False, (0.055, 0.055), (0.23, 0.23)),
     ("Down-right", False, True, (0.055, 0.945), (0.23, 0.77)),
@@ -48,16 +46,14 @@ def main() -> None:
     args = parser.parse_args()
     configure_reproducibility()
     torch.set_num_threads(1)
-    configuration = renderer_specs()[0]
-    synth = PhraseSynth(
-        exciter_config=configuration.exciter,
-        waveguide_config=configuration.waveguide,
-    ).to(args.device)
     with torch.no_grad():
-        pitches = torch.tensor([[TARGET_F0_HZ]], dtype=torch.float64, device=args.device)
-        onsets = torch.tensor([[TARGET_ONSET_SECONDS]], dtype=torch.float64, device=args.device)
-        target = synth(pitches, onsets)[0]
-        loss = BidirectionalCumulativeEnergyDistance(target, sample_rate=synth.sample_rate)
+        times = torch.arange(int(SAMPLE_RATE * DURATION_SECONDS),
+                             dtype=torch.float64, device=args.device) / SAMPLE_RATE
+        rate = np.log(END_HZ / START_HZ) / DURATION_SECONDS
+        # Integrate instantaneous frequency before taking the sine.
+        phase = (2 * np.pi * START_HZ / rate) * torch.expm1(rate * times)
+        target = torch.sin(phase)
+        loss = BidirectionalCumulativeEnergyDistance(target, sample_rate=SAMPLE_RATE)
         # Use the actual loss preprocessing, including its uncentred STFT.
         power = loss._power(target[None])[0]
         total_power = power.sum()
@@ -92,8 +88,8 @@ def main() -> None:
     spectrogram_db = 10 * np.log10(np.maximum(power_array / power_array.max(), 1e-8))
     # STFT coordinates are window centres, rather than artificially shifted onsets.
     time_edges = (np.arange(power.shape[1] + 1) * loss.hop
-                  + loss.n_fft / 2 - loss.hop / 2) / synth.sample_rate
-    frequency_edges = (np.arange(power.shape[0] + 1) - 0.5) * synth.sample_rate / loss.n_fft
+                  + loss.n_fft / 2 - loss.hop / 2) / SAMPLE_RATE
+    frequency_edges = (np.arange(power.shape[0] + 1) - 0.5) * SAMPLE_RATE / loss.n_fft
     frequency_edges[0] = 1e-3  # Positive plotting edge for DC on a log axis.
     plt.rcParams.update({
         "font.family": "DejaVu Sans",
@@ -132,7 +128,7 @@ def main() -> None:
     for axis in axes:
         axis.set_box_aspect(1)
         axis.set_yscale("log")
-        axis.set_ylim(50, synth.sample_rate / 2)
+        axis.set_ylim(START_HZ, END_HZ)
         axis.set_xticks([0.5, 1, 1.5], ["0.5", "1", "1.5"])
         axis.set_xlim(time_edges[0], time_edges[-1])
         axis.set_yticks([100, 1000], [r"$10^2$", r"$10^3$"])
@@ -159,16 +155,20 @@ def main() -> None:
         artifacts[suffix] = digest(output.read_bytes())
     plt.close(figure)
     provenance = {
-        "schema": "cumulative-surfaces-figure-v1",
-        "target": {"f0_hz": TARGET_F0_HZ, "onset_seconds": TARGET_ONSET_SECONDS},
-        "renderer": synth.provenance(),
+        "schema": "cumulative-surfaces-figure-v2",
+        "target": {"type": "constant-amplitude logarithmic sinusoidal sweep",
+                   "start_hz": START_HZ, "end_hz": END_HZ,
+                   "duration_seconds": DURATION_SECONDS, "sample_rate": SAMPLE_RATE,
+                   "amplitude": 1.0, "initial_phase_radians": 0.0,
+                   "instantaneous_frequency": "f(t)=20*50**(t/2)",
+                   "phase": "2*pi*20*(exp(a*t)-1)/a, a=log(50)/2"},
         "device": args.device,
         "torch_version": torch.__version__,
         "stft": {"n_fft": loss.n_fft, "hop": loss.hop, "center": False,
                  "window": "periodic Hann", "shape": list(power.shape)},
         "display": {"spectrogram": "peak-relative power dB, [-80,0]",
                     "surfaces": "10*log10(S_q/m), shared [-80,0] dB display scale",
-                    "frequency_axis": "logarithmic, 50-2000 Hz; decade ticks; sums use all bins",
+                    "frequency_axis": "logarithmic, 20-1000 Hz; decade ticks; sums use all bins",
                     "colorbar": "one vertical shared dB scale; distinct reference powers",
                     "arrows": "landscape style, 4x length/head size, original shaft width",
                     "direction_order": [item[0] for item in DIRECTIONS]},

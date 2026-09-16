@@ -1,7 +1,7 @@
 {
   "artifacts": {
-    "pdf": "63a6c1a067c7c3b60c85111e0730ebb94dafde15ae826af96ce1e9c0629835bf",
-    "png": "4bac49536ec29bf8ecec24453997dfb366855f5becd5bf009420e6477c6e273d"
+    "pdf": "92c908f55232ddb1b1f6f4791471fb79793eb2fa7df38fda90a44f1d4c1ac6c0",
+    "png": "59f6c94360c77d5dcfef61dab9c080f180be427385d6b5ed7e2f33b224d2826e"
   },
   "device": "cpu",
   "display": {
@@ -13,45 +13,13 @@
       "Up-left",
       "Down-left"
     ],
-    "frequency_axis": "logarithmic, 50-2000 Hz; decade ticks; sums use all bins",
+    "frequency_axis": "logarithmic, 20-1000 Hz; decade ticks; sums use all bins",
     "spectrogram": "peak-relative power dB, [-80,0]",
     "surfaces": "10*log10(S_q/m), shared [-80,0] dB display scale"
   },
-  "power_sha256": "c31aaf8fac63b0b78744583116521e716d0018097470d1794937a2888a63a768",
-  "renderer": {
-    "architecture": [
-      "Exciter",
-      "Waveguide",
-      "PhraseSynth"
-    ],
-    "candidate_coordinates": "independent elementwise bounded logits; no ordering, spacing, canonicalization, or Magic Clamp",
-    "dtype": "float64/complex128",
-    "exciter": {
-      "amplitude": 0.8,
-      "duration_seconds": 0.01,
-      "fourier_fft_length": 262144,
-      "lagrange_order": 5,
-      "method": "fourier",
-      "sample_count": 8000,
-      "sample_rate": 4000,
-      "thiran_order": 1
-    },
-    "schema": "icassp27-phrase-renderer-v1",
-    "waveguide": {
-      "fourier_fft_length": 262144,
-      "interpolation": "thiran",
-      "loop_gain": 0.99,
-      "loop_pole": 0.2,
-      "phase_correction_iterations": 12,
-      "pluck_position": 0.23,
-      "realization": "df2",
-      "sample_count": 8000,
-      "sample_rate": 4000,
-      "state_policy": "hard_reset"
-    }
-  },
-  "schema": "cumulative-surfaces-figure-v1",
-  "script_sha256": "da8ea4ab1b2d96930ee266e3e6d8b919991788fe3026af5365c0030cfd21b01b",
+  "power_sha256": "a7714cbdb2a8bec6ad6c485cf454f9df5bc8f9abd19179cf9bd681b4f4714665",
+  "schema": "cumulative-surfaces-figure-v2",
+  "script_sha256": "ef623a7c1aec76a34c8b69916e2034080bde3be37f5955258a000fe7c6f20aea",
   "stft": {
     "center": false,
     "hop": 64,
@@ -63,31 +31,38 @@
     "window": "periodic Hann"
   },
   "target": {
-    "f0_hz": 160.0,
-    "onset_seconds": 1.0
+    "amplitude": 1.0,
+    "duration_seconds": 2.0,
+    "end_hz": 1000.0,
+    "initial_phase_radians": 0.0,
+    "instantaneous_frequency": "f(t)=20*50**(t/2)",
+    "phase": "2*pi*20*(exp(a*t)-1)/a, a=log(50)/2",
+    "sample_rate": 4000,
+    "start_hz": 20.0,
+    "type": "constant-amplitude logarithmic sinusoidal sweep"
   },
-  "target_audio_sha256": "1fe534e431282ed143976668ddd6337ccdc8cf0cd67e85b2fd59b471bc9e74b4",
+  "target_audio_sha256": "14e7fb20827e176715cfa29d61328c19a19c3749f976f30f827dfc47b560f8c6",
   "torch_version": "2.7.1+cu126",
   "validation": [
     {
       "direction": "Up-right",
-      "maximum_reference_feature_error": 3.3306690738754696e-16,
-      "surface_sha256": "af067a6f399106bc8db04d2fb5a6bbf361f4c38753f20034ad4fcc3ea1a4fae0"
+      "maximum_reference_feature_error": 2.220446049250313e-16,
+      "surface_sha256": "eeb6c421399014525de32fbaf162c7f1ef625cb0c03986d999ef22c6c11eebe7"
     },
     {
       "direction": "Down-right",
       "maximum_reference_feature_error": 2.220446049250313e-16,
-      "surface_sha256": "e1f6465e8f996450a9b3a03df045c843e1478e9e25751c04a7802a00e14565da"
+      "surface_sha256": "b89853ae8810abcea547237c5fc960b4e17163cc2d6347341072e9904268f3f0"
     },
     {
       "direction": "Up-left",
-      "maximum_reference_feature_error": 3.3306690738754696e-16,
-      "surface_sha256": "222f30f5b18bdce9f021437a6b26d72cf0ba82ff906ae3062d659680c30e9f18"
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "de4181626cce902702117e7c61c07e481e6bda86e377a7b5932abc55e81ee055"
     },
     {
       "direction": "Down-left",
-      "maximum_reference_feature_error": 2.220446049250313e-16,
-      "surface_sha256": "5b33fbcb16d39f54455297f4acc5c13512c1af137b876076c6bdc09e609e23a4"
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "18563689e3df90bda935eec07f4acecdb672fc032c42bbc988bb3e9ee729ca9e"
     }
   ]
 }
