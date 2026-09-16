@@ -74,6 +74,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \newacronym{logq}{Log-Q}{log-frequency quadrature}
 \newacronym{hpc}{HPC}{high-performance computing}
 \newacronym{jnd}{JND}{just-noticeable difference}
+\newacronym{dwg}{DWG}{Digital Waveguide}
 
 
 \begin{document}
@@ -178,11 +179,9 @@ feature error and $\ell_q$ its \gls{rms} over all bins and frames. For a selecte
 set of direction pairs $\mathcal Q$, the scalar loss $\mathcal{L}_{\mathcal Q}$
 averages these directional errors\footnote{Although a full mathematical
  equivalence is outside the scope of this work, we note that for 1D unit-mass
- distributions on a uniform grid, our CeL with a single accumulation direction
- and $\phi(u)=u$ yields the Cram\'er distance up to fixed grid and RMS
- normalisation. The Cram\'er distance and the related $1$-Wasserstein distance
- in \gls{ot} use $L_2$ and $L_1$ on \glspl{cdf}, respectively
- \cite{szekely2013energy}\cite[Remark~2.30]{peyre2019computational}.};
+ distributions on a uniform grid, our \Glspl{cel} with a single accumulation direction
+ and $\phi(u)=u$ yield the Cram\'er distance up to fixed grid and RMS
+ normalisation. In turn, this relates \Glspl{cel} to the $1$-Wasserstein distance, which uses $L_1$ on Cumulative Distribution Functions, instead of Cram\'er's L2 \cite{szekely2013energy}\cite[Remark~2.30]{peyre2019computational}.};
 $|\mathcal Q|$ is the number of pairs:
 \begin{equation*}
 \begin{aligned}
@@ -219,21 +218,14 @@ percentage of 120 non-target directions pointing towards the target.}
 \label{fig:landscapes}
 \end{figure}
 
-\section{Differentiable phrase renderer}
+\section{Differentiable Plucked-String Musical Phrases}
 \label{sec:renderer}
-The phrase renderer is the reciprocal two-rail digital waveguide in
-Fig.~\ref{fig:waveguide}. Each pluck launches oppositely travelling waves into
-nut- and bridge-side paths. Their delay-length sum sets $f_0$, while their ratio
-sets pluck position~\cite{depaula2026waveguides}, fixed at 0.23 from the bridge.
+\Glspl{dwg} are a common choice for the modelling of plucked-strings \cite{smith2010physical, depaula2026waveguides}. Our \gls{dwg}, consists of two bidirectional delay lines of length $D_1$ and $D_2$ respectively, as depicted in Fig.~\ref{fig:waveguide}, where each pluck excites oppositely travelling waves into nut and bridge side paths. Importantly, the sum of their delay line length sum sets $f_0$ via $f_0=f_s/(2(D_1+D_2))$ and pluck position comes out of the ratio w.r.t. $D_1+D_2$, here fixed at 0.23 from the bridge.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
-\caption{Two-rail digital waveguide renderer. $D_1$ and $D_2$ are the one-way
-nut- and bridge-side delays; blue and red denote right- and left-travelling
-waves. Ignoring loop-filter phase, the round-trip delay is $2(D_1+D_2)$ samples
-and $f_0=f_s/[2(D_1+D_2)]$; the implementation phase-corrects the segment
-delays for $H_L(z)$.}
+\caption{A simple Digital Waveguide model for plucked-strings.}
 \label{fig:waveguide}
 \end{figure}
 
@@ -243,14 +235,11 @@ one-sample delay:
 \begin{equation*}
 H_L(z)=g\frac{1-a_1}{1-a_1z^{-1}},\qquad g=0.99,\quad a_1=0.2.
 \end{equation*}
-$g$ is low-frequency round-trip gain and $a_1$ the one-pole coefficient
-increasing high-frequency attenuation. They produce a complex, $f_0$-dependent
-RT60~\cite[Fig.~3]{tablasdepaula2026karplus}. Output is bridge-incident
-travelling velocity. All experiments use the fixed configuration described
-below for both target and candidate.
+$g$ is DC-frequency gain and $a_1$ the one-pole coefficient
+increasing high-frequency attenuation, akin to \textit{decay} and \textit{damping} respectively. This formulation produces physically realistic $f_0$-dependent RT60s, as shown in~\cite[Fig.~3]{tablasdepaula2026karplus}. Output is bridge-incident
+travelling velocity.
 
-Audio is float64, 2~s long, and sampled at 4~kHz. Each event excites a zero-onset
-\gls{hrc}
+Each new event excites a \gls{hrc}
 \begin{equation*}
 e_0(t)=\begin{cases}
 \dfrac{A_e}{2}[1-\cos(\pi t/T_e)],&0\leq t<T_e,\\
@@ -259,58 +248,48 @@ e_0(t)=\begin{cases}
 \end{equation*}
 where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its peak, and
 $T_e=10$~ms its duration. To place an onset by $\delta_o$ samples, we multiply
-the 262,144-point spectrum of $e_0$ by FLAMO's phase response
-$e^{-j\omega\delta_o}$~\cite{dalsanto2025flamo}, where $\omega$ is angular
-frequency in radians per sample and $j^2=-1$. Event spectra are accumulated,
-the \gls{dc} and Nyquist bins are constrained to be real so the implied negative
-frequencies preserve Hermitian symmetry, and one inverse \gls{fft} produces the
-summed excitation; its first 8000 samples form the rendered interval.
+a 262,144-point (\textcolor{red}{here I'd like "times" the total length instead of a number that does not mean anything}) spectrum to preserve the Hermitian Symmetry and avoid circular aliasing, of $e_0$ by the phase response $e^{-j\omega\delta_o}$~\cite{dalsanto2025flamo}, where $\omega$ is angular frequency in radians per sample and $j^2=-1$, using the FLAMO library \cite{dalsanto2025flamo}. We synthesise and shift each event separately, and eventually accumulate them to produce the summed excitation.
 
-Continuous $f_0$ likewise requires real-valued rail delays: integer-only lines
-quantise pitch and provide no useful $f_0$ gradient. We split the phase-corrected
-one-way string delay at the fixed pluck position into a long nut-side path and a
-short bridge-side path, then approximate them with maximally-flat Thiran
-all-pass delays~\cite{laakso1996splitting}. Their respective orders are 3 and 1.
-A causal, stable order-$M$ Thiran section requires delay greater than $M-1$;
-over 80--320~Hz, the shortest bridge-side delay falls below the order-3 limit,
-whereas order 1 remains valid. Iterative rail tuning accounts for all-pass and
-loop-filter phase. Thus all reported experiments fix Fourier onset placement
-and Thiran 3/1 propagation.\footnote{An auxiliary \gls{bicul}-only screen also covers
-analytic, Lagrange-5, Fourier, and Thiran-1 onset placement and Linear,
-Lagrange, Fourier, and Thiran propagation:
-\url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#renderer-screen}. It is
-a sensitivity diagnostic, not the basis for the fixed renderer or an
-objective-independent ranking.}
+%FLAMO's phase response
+%$e^{-j\omega\delta_o}$~\cite{dalsanto2025flamo}, where $\omega$ is angular
+%frequency in radians per sample and %$j^2=-1$. 
 
-The Thiran rails, reflections, and termination are algebraically collapsed into
-one event-conditioned rational transfer and evaluated in \gls{df2}
-through PhilTorch and its TorchLPC backend~\cite{yu2025philtorch,yu2024torchlpc}.
-At each detached event boundary $\lfloor t_i f_s\rfloor$, event-wise reset zeros
-the recurrence history before the new excitation; the persistent diagnostic
-instead carries it across events. All recursive campaign rendering runs on
-NVIDIA \glspl{gpu}.
+%Event spectra are accumulated,
+%the \gls{dc} and Nyquist bins are constrained to be real so the implied negative
+%frequencies preserve Hermitian symmetry, and one inverse \gls{fft} produces the
+%summed excitation; its first 8000 %samples form the rendered interval.
 
-\begin{figure}[!t]
-\centering
-\setlength{\abovecaptionskip}{0pt}
-\includegraphics[width=\columnwidth,trim=0 20bp 194bp 0,clip]{\PaperRoot/figures/state_realization.pdf}
-\vspace{-3.5mm}
-\caption{Reset-\acrshort{df2} target spectrogram and middle-event \acrshort{bicul} sweeps for
-the three-pluck target $(110~\mathrm{Hz},0.5~\mathrm{s})$,
-$(160~\mathrm{Hz},1.0~\mathrm{s})$, and $(280~\mathrm{Hz},1.5~\mathrm{s})$.
-Purple solid curves retain state, yellow dashed curves reset it, red dashed
-lines mark the middle event, and cyan dashed lines mark the other events. Each
-curve is independently min--max normalised.}
-\label{fig:state-realization}
-\end{figure}
+In order to obtain meaningful gradients for $f_0$, we require the delay lines to be continuously fractional. Hence, favouring flat frequency magnitude at subsample fracttions, these are split into two paths with Thiran all-pass interpolation \textcolor{red}{here reference to Thiran Filters}. To preserve a maximally flat all-pass response, we choose orders 1 and 3 for the shorter bridge-side path and the longer nut-side path respectively--required since the shortest bridge-side delay falls below the order-3 limit within our 80-320Hz $f_0$ range to preserve unity frequency response \cite{laakso1996splitting}/
 
-As shown in Fig.~\ref{fig:state-realization}, resetting the string state is
-necessary to smooth the plotted \gls{df2} loss sweeps in this three-event diagnostic;
-Experiment II therefore uses event-wise reset.\footnote{The full \gls{df2}/Literal
-comparison is available at
-\url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#state-realisation}.
-Their reset curves appear coincident in this diagnostic only; generalisation is
-outside the present scope.}
+Lastly, we collapse our \gls{dwg} algebraically into a rational transfer evaluated in Direct-Form II, as required by the used fast time-domain GPU library PhilTorch an its TorchLPC backend~\cite{yu2025philtorch,yu2024torchlpc}. Importantly, we find that in order to smooth out the loss landscape when multiple plucks are present, it is necessary to reset the \gls{dwg} state when at a the incoming's event onset. We hypothesise this is due to destructive phase interference\footnote{We provide additional loss landscapes as supplementary materials at \url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#renderer-screen} which informed the choice of onset placement method and fractional delay interpolation and the \gls{dwg} state reset behaviour under multi-pluck landscapes, as well as a comparison between Direct-Form II and Literal implementations}.
+
+%The Thiran rails, reflections, and termination are algebraically collapsed into
+%one event-conditioned rational transfer and evaluated in \gls{df2}
+%through PhilTorch and its TorchLPC backend~\cite{yu2025philtorch,yu2024torchlpc}.
+%At each detached event boundary $\lfloor t_i f_s\rfloor$, event-wise reset zeros
+%the recurrence history before the new excitation; the persistent diagnostic
+%instead carries it across events. All recursive campaign rendering runs on
+%NVIDIA \glspl{gpu}.
+
+%a longer nut-side path and a shorter bridge-side path, and approximate then 
+%with a maximally flat all-pass delays of order 3 and 1 respectively. 
+%Continuous $f_0$ likewise requires real-valued rail delays: integer-only lines
+%quantise pitch and provide no useful $f_0$ gradient. 
+
+%We split the phase-corrected
+%one-way string delay at the fixed pluck position into a long nut-side path and a
+%short bridge-side path, then approximate them with maximally-flat Thiran
+%all-pass delays~\cite{laakso1996splitting}. Their respective orders are 3 and 1.
+%A causal, stable order-$M$ Thiran section requires delay greater than $M-1$;
+%over 80--320~Hz, the shortest bridge-side delay falls below the order-3 limit,
+%whereas order 1 remains valid. Iterative rail tuning accounts for all-pass and
+%loop-filter phase. Thus all reported experiments fix Fourier onset placement
+%and Thiran 3/1 propagation.\footnote{An auxiliary \gls{bicul}-only screen also covers
+%analytic, Lagrange-5, Fourier, and Thiran-1 onset placement and Linear,
+%Lagrange, Fourier, and Thiran propagation:
+%\url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#renderer-screen}. It is
+%a sensitivity diagnostic, not the basis for the fixed renderer or an
+%objective-independent ranking.}
 
 \section{Experiments and Methodology}
 \subsection{Loss Objectives}
