@@ -62,5 +62,63 @@ python scripts/test_amplitude_recovery.py --verify
 python scripts/test_amplitude_recovery.py --output docs/amplitude-pilot
 ```
 
-Results are pending. This pilot does not replace the outstanding full recovery
-rerun at 2.048 padding.
+## Results
+
+All four fits completed on CPU with float64, stopping by the registered patience
+rule before the 3000-update cap. No additional cases were fitted or discarded.
+The fixed-amplitude baseline reproduces the historical middle-event swap at
+2.048 padding. Its 270.21 Hz event occurs at 1.30690 s and its 154.58 Hz event
+at 1.39043 s. The target has 153.41 Hz at 1.30964 s followed by 270.20 Hz at
+1.50589 s.
+
+| Condition | Updates | Best CeL | Pitch MAE (cents) | Onset MAE (ms) | Amplitudes |
+|---|---:|---:|---:|---:|---|
+| Fixed: original start | 1374 | 0.0078786668 | 5.481 | 70.452 | 0.800, 0.800, 0.800, 0.800 |
+| Fixed: restart | 248 | 0.0078786668 | 5.481 | 70.452 | 0.800, 0.800, 0.800, 0.800 |
+| Free amplitude: restart | 632 | 0.0073076684 | 10.212 | 69.671 | 0.794, 0.858, 0.741, 0.823 |
+| Free amplitude: original start | 1029 | 0.011833162 | 104.190 | 188.917 | 0.084, 0.818, 0.861, 0.850 |
+
+Errors use the paper's joint Hungarian assignment. A small matched pitch MAE
+can conceal the wrong temporal order: the baseline's matched pitch MAE is
+5.48 cents, but pairing events chronologically instead gives 488.89 cents.
+The latter is an additional diagnostic, not a replacement paper metric.
+
+- A fixed-amplitude restart gives no improvement at the strict-best state.
+- The amplitude-enabled restart lowers CeL by **7.25%** but retains the swap.
+  Its middle events are 268.71 Hz at 1.31088 s and 153.35 Hz at 1.38737 s.
+  Matched onset MAE changes only from 70.45 to 69.67 ms, while matched pitch
+  MAE worsens from 5.48 to 10.21 cents. Amplitudes remain 0.741–0.858 at the
+  selected state: this modest loss improvement does not involve silencing.
+- Learning amplitudes from the original start produces a worse solution,
+  with 104.19-cent / 188.92-ms matched errors. One excitation shrinks to
+  **0.084**, around 10.5% of the target amplitude. Two candidate events cluster
+  near 0.77–0.79 s and the late 270 Hz target is not recovered.
+
+**Interpretation:** per-event amplitude optimisation does not resolve the
+pitch–time association failure in this selected case under this parameterisation
+and optimiser. It permits both a slightly better wrong configuration and,
+from the original start, a weak misplaced excitation. This is evidence against
+assuming free amplitude will fix the problem; it is not a general impossibility
+result or a comparison of amplitude parameterisations. A constrained or
+regularised amplitude variant would be a separate experiment.
+
+![Strict-best event configurations](fits.png)
+
+Black crosses are targets, blue circles are fits, circle area scales with
+excitation amplitude, and annotations give its value. Grey lines show the
+paper's joint Hungarian pairing, not persistent event identities.
+
+![Optimisation trajectories](trajectories.png)
+
+The objective panel shows the best-so-far loss; error and amplitude panels
+show the current evaluated state. Each run's update axis starts from zero.
+Amplitude event indices follow the optimiser's persistent parameter slots.
+
+Artifacts: [numerical table](table.md), [additional diagnostics](diagnostics.json),
+[provenance](provenance.json), [baseline](baseline.json),
+[fixed restart](restart_fixed.json), [amplitude restart](restart_amplitude.json),
+[amplitude from original start](initial_amplitude.json). Recreate the plots
+with `python scripts/report_amplitude_pilot.py`.
+
+This pilot does not replace the outstanding full recovery rerun at 2.048 padding.
+

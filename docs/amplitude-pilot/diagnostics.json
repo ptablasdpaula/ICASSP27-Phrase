@@ -1,0 +1,26 @@
+{
+  "baseline": {
+    "time_ordered_pitch_mae_cents": 488.8862777007292,
+    "amplitude_min_over_trajectory": 0.8,
+    "amplitude_max_over_trajectory": 0.8,
+    "stopped_by": "patience"
+  },
+  "restart_fixed": {
+    "time_ordered_pitch_mae_cents": 488.8862777007293,
+    "amplitude_min_over_trajectory": 0.8,
+    "amplitude_max_over_trajectory": 0.8,
+    "stopped_by": "patience"
+  },
+  "restart_amplitude": {
+    "time_ordered_pitch_mae_cents": 495.434311063621,
+    "amplitude_min_over_trajectory": 0.7228592323649161,
+    "amplitude_max_over_trajectory": 0.918336122250368,
+    "stopped_by": "patience"
+  },
+  "initial_amplitude": {
+    "time_ordered_pitch_mae_cents": 484.43456290749657,
+    "amplitude_min_over_trajectory": 0.08379240024222684,
+    "amplitude_max_over_trajectory": 1.046722541539987,
+    "stopped_by": "patience"
+  }
+}

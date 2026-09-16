@@ -22,3 +22,12 @@ Percentages below summarise the target-level rates: each target first averages i
 | 8 | 63.49 ± 4.07; 63.28 | 63.83 ± 4.12; 62.50 |
 
 The [full comparison](README.md), [summary CSV](summary.csv), and [protocol](protocol.md) retain all 30 configurations and the separate axes, conditional slices and initialisation diagnostics.
+
+## Follow-up: excitation amplitude (2026-09-16)
+
+The gradient discussion motivated a [paired four-event recovery pilot](../amplitude-pilot/README.md):
+could learning excitation amplitude release a pitch–time swap? A fresh fixed-amplitude
+fit reproduced the swap at 2.048 padding. Learning amplitudes from that state reduced
+CeL by 7.25% without resolving the swap; learning them from the original start gave
+worse matched errors and one weak excitation. The linked note retains the controls,
+full trajectories, checks and limitations. This is a single selected-case diagnostic.
