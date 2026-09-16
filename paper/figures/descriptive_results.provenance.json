@@ -1,17 +1,17 @@
 {
   "condition_count": 40,
-  "created_utc": "2026-09-14T06:06:35.845198+00:00",
+  "created_utc": "2026-09-16T11:15:16.010935+00:00",
   "figure4": {
     "artifacts": {
-      "pdf": "9f855a96bbcd432c2863e88987155dcf71a9760fae87f3caf54fa4b1336a3fb9",
-      "png": "849b3f44262166c91768752b739b7e167614de8108fdfe79421d7042294ae218"
+      "pdf": "e1a38d31e4383542afaa3a94bdf7b8f64fa69a8e00fe1645cf788013a838f512",
+      "png": "20e53ab6e7123a5dbb8e062c8e2bf6eaaf498196fdb51132a3cdb2084c151705"
     },
     "metric": "complete per-phrase log-spectral-distance distributions"
   },
   "fit_count": 6000,
   "loss_count": 8,
   "milestone_n": 150,
-  "payload_sha256": "c768955041490ca49bb988c01c5ec9754eeae2b686598041713d94e706809b66",
+  "payload_sha256": "1f3f15c64a13aad28479b0b5ee89ff29cd9e9f6aeaa93dc6810b2c0c60d46285",
   "schema": "paper-eight-loss-n150-v1",
   "selection": "target_index < milestone_n within every cardinality",
   "sources": {
@@ -208,6 +208,6 @@
         }
       }
     },
-    "sha256": "d7a8068d3ed4bb148c58b9198404124ddcb5611642e298886d585e622656843b"
+    "sha256": "7ae97da8e5f33349fc1b967545aa8dfb5c0d2cde173a9f3ca405216fffbe1441"
   }
 }

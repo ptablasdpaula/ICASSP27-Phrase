@@ -88,7 +88,7 @@
     "endpoint_tick_alignment": "outer plot and colorbar labels pulled inward",
     "layout": "single-column 3x2 independently normalized loss surfaces",
     "panel_annotation": "pure-white target-directed percentage at upper right",
-    "pdf_sha256": "3ff90295fd55cb4a9d97cbf4c1dfea9167b5e06b734ddc67f2ec82707b5c4026",
+    "pdf_sha256": "e9d10593972bef9326db23983ca4aca485c13c1beffae279c192dfb2f43d6e1f",
     "renderer": "fourier_thiran",
     "x_label_alignment": "horizontal center of the plot and colorbar span",
     "y_label_alignment": "vertical center of the MSS axes"
@@ -101,7 +101,7 @@
     "linear_jtfot",
     "bidirectional_cumulative_energy"
   ],
-  "payload_sha256": "f55d3a3dc946f142ff5f68f50c4f30c9adfc72acf5d8a0814be89451e5c8eaba",
+  "payload_sha256": "023839a5f65441c22d72608606007fa6dad09f57756405316480bd0052753286",
   "renderers": {
     "fourier_thiran": {
       "display_name": "Fourier--Thiran",
@@ -167,7 +167,7 @@
   "schema": "single-event-two-renderer-gradient-diagnostic-v1",
   "source_commit": "962453275044976f3620398a8e29cf6fca66bc87",
   "source_sha256": {
-    "scripts/render_loss_landscapes.py": "46799d6ad42377019a154c128fde29dea780d0c917c13db00ee2e04fdf72b128",
+    "scripts/render_loss_landscapes.py": "fc7e30970d300e8f2f9ec965e4d0c765cefa8a7c9600ac834207cde79e5b5dca",
     "src/config.py": "eda46024c2a833e4272ca7fa5d78c075da4eb9ebf835b38b8f528971c1a99aff",
     "src/exciter.py": "ea65a2e1b047ae9f71946ae067fc9f7cb0322d491168dc679fd4ea4e5471dd7c",
     "src/losses.py": "3087ea3988f99e75eac7bd1a7f58df4f5ace7d9d9e9ff5645f6e60775fcf1976",

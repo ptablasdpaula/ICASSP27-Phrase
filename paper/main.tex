@@ -21,6 +21,8 @@
 \usepackage{textcomp}
 \usepackage{url}
 \usepackage{xcolor}
+\usepackage[acronym,nonumberlist,nopostdot]{glossaries}
+\makeglossaries
 % Keep IEEE's typography and page geometry while avoiding oversized gaps
 % around floats.
 \setlength{\textfloatsep}{7pt plus 2pt minus 2pt}
@@ -43,22 +45,42 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \IEEEauthorblockA{\texttt{p.tablasdepaula@qmul.ac.uk};
 \texttt{sebastian.schlecht@fau.de}}}
 
-% LaTeX control words cannot contain underscores, so the requested
-% \l_one and \l_two source names are represented by \lone and \ltwo.
-\newcommand{\lone}{\ensuremath{\mathcal{L}_1}}
-\newcommand{\ltwo}{\ensuremath{\mathcal{L}_2}}
-\newcommand{\ddsp}{DDSP}
-\newcommand{\mss}{MSS}
-\newcommand{\sot}{SOT}
-\newcommand{\tfw}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}
-\newcommand{\bicul}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}
+% Expand acronyms on first use; the introduction starts a fresh first-use scope.
+\newacronym{ddsp}{DDSP}{differentiable digital signal processing}
+\newacronym{ot}{OT}{optimal transport}
+\newacronym[
+  shortplural={Ce\ensuremath{\mathcal{L}}s},
+  longplural={Cumulative Energy Losses}
+]{cel}{Ce\ensuremath{\mathcal{L}}}{Cumulative Energy Loss}
+\newacronym{mss}{MSS}{multi-scale spectral loss}
+\newacronym{sot}{SOT}{spectral optimal transport}
+\newacronym{tfw}{\ensuremath{\mathrm{TF}\mathcal{W}_2}}{time--frequency Wasserstein distance}
+\newacronym{bicul}{\ensuremath{\mathrm{BiCu}\mathcal{L}}}{bidirectional cumulative-energy loss}
+\newacronym{stft}{STFT}{short-time Fourier transform}
+\newacronym{fft}{FFT}{fast Fourier transform}
+\newacronym{dft}{DFT}{discrete Fourier transform}
+\newacronym{fm}{FM}{frequency modulation}
+\newacronym{ir}{IR}{impulse response}
+\newacronym{mir}{MIR}{music information retrieval}
+\newacronym{midi}{MIDI}{Musical Instrument Digital Interface}
+\newacronym{rms}{RMS}{root-mean-square}
+\newacronym{cdf}{CDF}{cumulative distribution function}
+\newacronym{hrc}{HRC}{half-raised-cosine}
+\newacronym{df2}{DF2}{direct form II}
+\newacronym{dc}{DC}{direct current}
+\newacronym{gpu}{GPU}{graphics processing unit}
+\newacronym{mae}{MAE}{mean absolute error}
+\newacronym{lsd}{LSD}{log-spectral distance}
+\newacronym{logq}{Log-Q}{log-frequency quadrature}
+\newacronym{hpc}{HPC}{high-performance computing}
+\newacronym{jnd}{JND}{just-noticeable difference}
 
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Differentiable digital signal processing enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. On this work, we propose the use of Cumulative Energy Losses, which compare STFT power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines the pluck's pitch, in the process recovering musical phrases. In a single-pluck landscape, we find our proposed losses have gradients that point towards the target at 120 equally spaced coordinates. Across 6000 fits containing one to eight pluck phrase fits, our proposed losses improve joint onset--pitch recovery over traditional waveform, spectral pointwise and recently proposed optimal transport objectives. We believe these losses will further support unsupervised optimisation of onset timing, pitch and delay line length, and provide a PyTorch library for ease of use in future applications\footnote{\textcolor{red}{link to library should be here}}.
+\Gls{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. On this work, we propose the use of \glspl{cel}, which compare \gls{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines the pluck's pitch, in the process recovering musical phrases. In a single-pluck landscape, we find our proposed losses have gradients that point towards the target at 120 equally spaced coordinates. Across 6000 fits containing one to eight pluck phrase fits, our proposed losses improve joint onset--pitch recovery over traditional waveform, spectral pointwise and recently proposed \gls{ot} objectives. We believe these losses will further support unsupervised optimisation of onset timing, pitch and delay line length, and provide a PyTorch library for ease of use in future applications\footnote{\textcolor{red}{link to library should be here}}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -66,22 +88,23 @@ differentiable digital signal processing, digital waveguide, audio loss, analysi
 \end{IEEEkeywords}
 
 \section{Introduction}
-Engel et al. coined the term Differentiable digital signal processing (\ddsp), as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, FM synthesis, reverberation, vocal tract modelling and effects modulation ~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}. 
+\glsresetall
+Engel et al. coined the term \Gls{ddsp}, as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, \gls{fm} synthesis, reverberation, vocal tract modelling and effects modulation ~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}.
 
-In DDSP, controls are mostly predicted as either a constant set of parameters, or dense frame trajectories, naturally fit for IR prediction or continuously driven sounds respectively. However, that is not how many instruments are instinctively performed. Previously, we proposed an event-set predictor for the recovery of sparse guitar plucks \cite{tablasdepaula2026karplus}, forming note events with onset, pitch ($f_0$) and velocity among other physical parameters. This work expands this framework with the purpose of joining common MIR representations, where plucked string is represented as MIDI, sheet music or guitar tablatures ~\cite{riley2024gaps, loth2025goat,loth2025guitarflow} with \ddsp.
+In \gls{ddsp}, controls are mostly predicted as either a constant set of parameters, or dense frame trajectories, naturally fit for \gls{ir} prediction or continuously driven sounds respectively. However, that is not how many instruments are instinctively performed. Previously, we proposed an event-set predictor for the recovery of sparse guitar plucks \cite{tablasdepaula2026karplus}, forming note events with onset, pitch ($f_0$) and velocity among other physical parameters. This work expands this framework with the purpose of joining common \gls{mir} representations, where plucked string is represented as \gls{midi}, sheet music or guitar tablatures ~\cite{riley2024gaps, loth2025goat,loth2025guitarflow} with \gls{ddsp}.
 
-However, $f_0$ and onset time, representing a displacement of energy, are notoriously difficult to predict. This is due to the fact that~\ddsp     relies on waveform and pointwise spectral losses, such as Multi-Scale Spectral loss \mss, prompt to oscillatory local minima and useless when there is no energy overlap \cite{wang2019nsf, turian2020loss}. Recent revisions of \mss aimed to reduce the former issue by reducing spectral leaking \cite{schwar2023mss}, but do not address the latter. Complex surrogates were proposed but remain synthesiser-dependant \cite{hayes2023sinusoidal}. The literature commonly eludes this problematic via external detectors or synthetic labels, the first inherit the detectors' errors and veto further end-to-end training of $f_0$ \cite{engel2020inverse, engel2020ddsp, caspe2022ddx7, sudholt2023vocal}, while the latter generalises poorly to out of domain data \cite{tablasdepaula2026karplus}.
+However, $f_0$ and onset time, representing a displacement of energy, are notoriously difficult to predict. This is due to the fact that~\gls{ddsp}     relies on waveform and pointwise spectral losses, such as \gls{mss}, prompt to oscillatory local minima and useless when there is no energy overlap \cite{wang2019nsf, turian2020loss}. Recent revisions of \gls{mss} aimed to reduce the former issue by reducing spectral leaking \cite{schwar2023mss}, but do not address the latter. Complex surrogates were proposed but remain synthesiser-dependant \cite{hayes2023sinusoidal}. The literature commonly eludes this problematic via external detectors or synthetic labels, the first inherit the detectors' errors and veto further end-to-end training of $f_0$ \cite{engel2020inverse, engel2020ddsp, caspe2022ddx7, sudholt2023vocal}, while the latter generalises poorly to out of domain data \cite{tablasdepaula2026karplus}.
 
-Recent years have seen the adoption of Optimal Transport (OT), which measures the shortest energy displacement cost, in machine learning \cite{monge1781deblais,cuturi2013sinkhorn,peyre2019computational} and audio applications, such as music transcription and source separation \cite{flamary2016optimal, rolet2018blind}. Torres et al. were the first to apply it to \ddsp for harmonic parameter estimation, as a frame-wise spectral $\mathcal{W}_2$, Spectral OT (\sot) \cite{torres2024sot}; followingly, Fabiani et al. proposed a sliced formulation of a joint time--frequency OT as a similarity metric (\tfw) ~\cite{fabiani2024jtfot}. 
+Recent years have seen the adoption of \gls{ot}, which measures the shortest energy displacement cost, in machine learning \cite{monge1781deblais,cuturi2013sinkhorn,peyre2019computational} and audio applications, such as music transcription and source separation \cite{flamary2016optimal, rolet2018blind}. Torres et al. were the first to apply it to \gls{ddsp} for harmonic parameter estimation, as a frame-wise spectral $\mathcal{W}_2$, \gls{sot} \cite{torres2024sot}; followingly, Fabiani et al. proposed a sliced formulation of a joint time--frequency \gls{ot} as a similarity metric, the \gls{tfw} ~\cite{fabiani2024jtfot}.
 
-While promising, we showed that (\sot) is unreliable for joint onset--$f_0$ optimisation, and proposed (\tfw) as future work \cite{tablasdepaula2026karplus}. Hence, we propose recovering musical phrases via optimisation of $f_0$ and onset time of plucks rendered by a simple digital waveguide \cite{smith2010physical}, comparing (\tfw) with a newly proposed family of losses, Cumulative Energy Losses (Ce$\mathcal{L}$s), which compare STFT power accumulation in time and frequency bins.
+While promising, we showed that \gls{sot} is unreliable for joint onset--$f_0$ optimisation, and proposed \gls{tfw} as future work \cite{tablasdepaula2026karplus}. Hence, we propose recovering musical phrases via optimisation of $f_0$ and onset time of plucks rendered by a simple digital waveguide \cite{smith2010physical}, comparing \gls{tfw} with a newly proposed family of losses, \glspl{cel}, which compare \gls{stft} power accumulation in time and frequency bins.
 
 %OT traces to Monge's earth-moving problem~\cite{monge1781deblais} and measures
 %displacement using support geometry~\cite{peyre2019computational}.
 %Scalable entropic regularisation~\cite{cuturi2013sinkhorn} has supported audio
 %applications including spectral unmixing for music
 %transcription~\cite{flamary2016optimal} and frequency-aware NMF for source
-%separation~\cite{rolet2018blind}. Torres et al. brought OT into \ddsp{} as a
+%separation~\cite{rolet2018blind}. Torres et al. brought OT into \gls{ddsp} as a
 %frame-wise spectral $\mathcal{W}_2$ objective for joint $f_0$ and harmonic
 %amplitudes, augmented by a pointwise multi-scale term and cumulative-mass
 %cutoff~\cite{torres2024sot}; Fabiani et al. subsequently used sliced projections
@@ -90,32 +113,32 @@ While promising, we showed that (\sot) is unreliable for joint onset--$f_0$ opti
 %We retain their event representation but
 %optimise phrases rendered by a simple digital
 %waveguide~\cite{smith2010physical,depaula2026waveguides}, comparing joint
-%time--frequency OT with \bicul{}, which compares normalised STFT-power
+%time--frequency OT with \gls{bicul}, which compares normalised STFT-power
 %accumulations towards all four corners. The renderer fixes Fourier-shifted
 %excitation and Thiran fractional-delay propagation, with event-wise string-state
 %reset for phrase recovery.
 
 Hence, our contributions are twofold:
 \begin{itemize}
-    \item A family of losses, Ce$\mathcal{L}$s, that can recover onset time and $f_0$ in the single-pluck landscape.
+    \item A family of losses, \glspl{cel}, that can recover onset time and $f_0$ in the single-pluck landscape.
     \item An unsupervised method for recovering monophonic plucked string musical phrases that is superior to previously proposed loss configurations.
 \end{itemize}
 
 
 
-%(i)~\bicul{} for direct onset--pitch recovery;
-%(ii)~a registered single-pluck lattice on which \bicul{} alone directs all 120
+%(i)~\gls{bicul} for direct onset--pitch recovery;
+%(ii)~a registered single-pluck lattice on which \gls{bicul} alone directs all 120
 %displayed descents towards the target; and (iii)~a comparison of eight loss
 %configurations across 6000 phrase fits, with a diagnostic of the multi-event
 %effect of state reset.
 
 \section{Bidirectional cumulative-energy loss}
 \label{sec:losses}
-The bidirectional cumulative-energy loss, \bicul{}, compares STFT power
+The \gls{bicul} compares \gls{stft} power
 accumulated towards all four time--frequency corners. Displacement alters values
 between the energy and each boundary, exposing early/late and low/high direction
 without favouring a boundary. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and
-candidate periodic-Hann FFT-256/hop-64 power at frequency bin $k$ and frame $n$.
+candidate periodic-Hann \gls{fft}-256/hop-64 power at frequency bin $k$ and frame $n$.
 For $q=(d_t,d_f)$, $d_t\in\{\rightarrow,\leftarrow\}$ and
 $d_f\in\{\uparrow,\downarrow\}$ select accumulation direction; $C^t_{d_t}$ and
 $C^f_{d_f}$ are the corresponding cumulative sums:
@@ -130,23 +153,23 @@ m_q&=\max S_q,\qquad R_q=\sqrt{\max(S_q/m_q,10^{-12})},\\
 \end{equation*}
 Here $S_q,\hat S_q$ are the target/candidate cumulative surfaces; $m_q$ is the
 target maximum; $R_q,\hat R_q$ are target-normalised square roots floored at
-$10^{-12}$; and $\ell_q$ is their root-mean-square (RMS) difference over
-$(k,n)$. \bicul{} averages all four $\ell_q$ without event coordinates,
+$10^{-12}$; and $\ell_q$ is their \gls{rms} difference over
+$(k,n)$. \gls{bicul} averages all four $\ell_q$ without event coordinates,
 detectors, or salience weights.
 
-\bicul{} is related to CDF-based Cram\'er distances: in one dimension, the
-Cram\'er discrepancy integrates squared CDF
+\gls{bicul} is related to \gls{cdf}-based Cram\'er distances: in one dimension, the
+Cram\'er discrepancy integrates squared \gls{cdf}
 differences~\cite{szekely2013energy}. With equal-mass unit-normalised power, one
 accumulation direction, and no square-root feature, $\ell_q$ becomes a discrete
 axis-aligned two-dimensional Cram\'er-type discrepancy. Both sense displacement
 without pointwise overlap because a shift changes the intervening cumulative
-region. \bicul{} is not the standard distance: target-only normalisation admits
+region. \gls{bicul} is not the standard distance: target-only normalisation admits
 unequal candidate energy, square roots compress dominant regions, and four
 orientations avoid privileging one boundary.
 
-Phrase recovery additionally evaluates Log-Q \bicul. It retains the same STFT,
+Phrase recovery additionally evaluates \gls{logq} \gls{bicul}. It retains the same \gls{stft},
 cumulative surfaces, target-maximum normalisation, and square-root features, but
-replaces the final uniform-bin RMS. For
+replaces the final uniform-bin \gls{rms}. For
 $E_q(k,n)=\hat R_q(k,n)-R_q(k,n)$, the candidate-minus-target surface error,
 the directional loss becomes
 \begin{equation*}
@@ -156,8 +179,8 @@ w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
 \end{equation*}
 Here $w^f_{d_f,k}$ and $w^t_{d_t,n}$ are direction-aligned adjacent-bin widths
 in octaves and seconds, respectively; the frequency coordinate is
-$\log_2[\max(f,20)/20]$, whose 20-Hz floor gives a finite origin. Log-Q denotes
-log-frequency quadrature, not a constant-Q transform. Both sums span $(k,n)$,
+$\log_2[\max(f,20)/20]$, whose 20-Hz floor gives a finite origin. \acrshort{logq} denotes
+\acrlong{logq}, not a constant-Q transform. Both sums span $(k,n)$,
 $\ell^{\rm quad}_q$ replaces $\ell_q$, and all other operations are unchanged.
 
 \begin{figure}[!t]
@@ -202,7 +225,7 @@ travelling velocity. All experiments use the fixed configuration described
 below for both target and candidate.
 
 Audio is float64, 2~s long, and sampled at 4~kHz. Each event excites a zero-onset
-half-raised-cosine (HRC)
+\gls{hrc}
 \begin{equation*}
 e_0(t)=\begin{cases}
 \dfrac{A_e}{2}[1-\cos(\pi t/T_e)],&0\leq t<T_e,\\
@@ -214,8 +237,8 @@ $T_e=10$~ms its duration. To place an onset by $\delta_o$ samples, we multiply
 the 262,144-point spectrum of $e_0$ by FLAMO's phase response
 $e^{-j\omega\delta_o}$~\cite{dalsanto2025flamo}, where $\omega$ is angular
 frequency in radians per sample and $j^2=-1$. Event spectra are accumulated,
-the DC and Nyquist bins are constrained to be real so the implied negative
-frequencies preserve Hermitian symmetry, and one inverse FFT produces the
+the \gls{dc} and Nyquist bins are constrained to be real so the implied negative
+frequencies preserve Hermitian symmetry, and one inverse \gls{fft} produces the
 summed excitation; its first 8000 samples form the rendered interval.
 
 Continuous $f_0$ likewise requires real-valued rail delays: integer-only lines
@@ -227,7 +250,7 @@ A causal, stable order-$M$ Thiran section requires delay greater than $M-1$;
 over 80--320~Hz, the shortest bridge-side delay falls below the order-3 limit,
 whereas order 1 remains valid. Iterative rail tuning accounts for all-pass and
 loop-filter phase. Thus all reported experiments fix Fourier onset placement
-and Thiran 3/1 propagation.\footnote{An auxiliary \bicul-only screen also covers
+and Thiran 3/1 propagation.\footnote{An auxiliary \gls{bicul}-only screen also covers
 analytic, Lagrange-5, Fourier, and Thiran-1 onset placement and Linear,
 Lagrange, Fourier, and Thiran propagation:
 \url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#renderer-screen}. It is
@@ -235,19 +258,19 @@ a sensitivity diagnostic, not the basis for the fixed renderer or an
 objective-independent ranking.}
 
 The Thiran rails, reflections, and termination are algebraically collapsed into
-one event-conditioned rational transfer and evaluated in direct form II (DF2)
+one event-conditioned rational transfer and evaluated in \gls{df2}
 through PhilTorch and its TorchLPC backend~\cite{yu2025philtorch,yu2024torchlpc}.
 At each detached event boundary $\lfloor t_i f_s\rfloor$, event-wise reset zeros
 the recurrence history before the new excitation; the persistent diagnostic
 instead carries it across events. All recursive campaign rendering runs on
-NVIDIA GPUs.
+NVIDIA \glspl{gpu}.
 
 \begin{figure}[!t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
 \includegraphics[width=\columnwidth,trim=0 20bp 194bp 0,clip]{\PaperRoot/figures/state_realization.pdf}
 \vspace{-3.5mm}
-\caption{Reset-DF2 target spectrogram and middle-event \bicul{} sweeps for
+\caption{Reset-\acrshort{df2} target spectrogram and middle-event \acrshort{bicul} sweeps for
 the three-pluck target $(110~\mathrm{Hz},0.5~\mathrm{s})$,
 $(160~\mathrm{Hz},1.0~\mathrm{s})$, and $(280~\mathrm{Hz},1.5~\mathrm{s})$.
 Purple solid curves retain state, yellow dashed curves reset it, red dashed
@@ -257,8 +280,8 @@ curve is independently min--max normalised.}
 \end{figure}
 
 As shown in Fig.~\ref{fig:state-realization}, resetting the string state is
-necessary to smooth the plotted DF2 loss sweeps in this three-event diagnostic;
-Experiment II therefore uses event-wise reset.\footnote{The full DF2/Literal
+necessary to smooth the plotted \gls{df2} loss sweeps in this three-event diagnostic;
+Experiment II therefore uses event-wise reset.\footnote{The full \gls{df2}/Literal
 comparison is available at
 \url{https://ptablasdpaula.github.io/ICASSP27-Phrase/#state-realisation}.
 Their reset curves appear coincident in this diagnostic only; generalisation is
@@ -267,27 +290,27 @@ outside the present scope.}
 \section{Experiments and Methodology}
 \subsection{Loss Objectives}
 \label{sec:loss-objectives}
-We compare six base objectives. \lone{} is mean absolute and \ltwo{} mean
+We compare six base objectives. $L_1$ is mean absolute and $L_2$ mean
 squared sample error. Wang et al. introduced multi-resolution spectral
-comparison~\cite{wang2019nsf}; Engel et al. adopted it as \mss{} in
-\ddsp{}~\cite{engel2020ddsp}, and Schw\"ar and M\"uller later revisited its
-design~\cite{schwar2023mss}. Following the latter, \mss{} sums squared \ltwo{}
+comparison~\cite{wang2019nsf}; Engel et al. adopted it as \gls{mss} in
+\gls{ddsp}~\cite{engel2020ddsp}, and Schw\"ar and M\"uller later revisited its
+design~\cite{schwar2023mss}. Following the latter, \gls{mss} sums squared $L_2$
 distances between
 $\log(1+|\operatorname{STFT}|)$ magnitudes, where $|\cdot|$ is magnitude and
 $\log$ the natural logarithm. Its prime-length flat-top windows
 $\{17,31,67,127,257,509\}$ and hops $\{8,15,33,63,128,254\}$ limit leakage
-without aligning DFT bins. Torres et al.'s \sot{}~\cite{torres2024sot}
-combines frame-normalised FFT-512/hop-64 flat-top STFT-power transport with
-their unbalanced quantile cutoff and $0.05$ Hann-windowed linear-magnitude MSS.
-Fabiani et al.'s \tfw{}~\cite{fabiani2024jtfot} globally normalises a
-periodic-Hann FFT-256/hop-128 magnitude STFT and projects it along ten angles.
+without aligning \gls{dft} bins. Torres et al.'s \gls{sot}~\cite{torres2024sot}
+combines frame-normalised \gls{fft}-512/hop-64 flat-top \gls{stft}-power transport with
+their unbalanced quantile cutoff and $0.05$ Hann-windowed linear-magnitude \gls{mss}.
+Fabiani et al.'s \gls{tfw}~\cite{fabiani2024jtfot} globally normalises a
+periodic-Hann \gls{fft}-256/hop-128 magnitude \gls{stft} and projects it along ten angles.
 We retain their scaling $\widetilde t=(10^3\,\mathrm{Hz/s})t$, making 1~s
 commensurate with 1000~Hz in the ground cost. Immediately after this canonical
 configuration, Experiment II tests a $1\,\mathrm{s}=1\,\mathrm{oct}$ variant
-that changes \tfw{} coordinates to
+that changes \gls{tfw} coordinates to
 $\log_2[\max(f,20)/20]$ octaves and seconds; $f$ is bin-centre Hz and the
 20-Hz floor gives a finite origin. The sixth base objective is
-Sec.~\ref{sec:losses}'s \bicul; Experiment II additionally evaluates its Log-Q
+Sec.~\ref{sec:losses}'s \gls{bicul}; Experiment II additionally evaluates its \gls{logq}
 variant defined there. Experiment I compares the six base objectives, while
 Experiment II compares all eight configurations.
 
@@ -337,7 +360,7 @@ counts${}={}$6000 fits.
 \setlength{\abovecaptionskip}{0pt}
 \includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
 \vspace{-5.0mm}
-\caption{Per-phrase LSD distributions over the same targets; lower is better.}
+\caption{Per-phrase \acrshort{lsd} distributions over the same targets; lower is better.}
 \label{fig:lsd}
 \end{figure}
 
@@ -352,11 +375,11 @@ method~\cite{kuhn1955hungarian} finds the one-to-one pairing minimising
 $\sum d_{ij}$. Table~\ref{tab:pilot-compact} reports its errors and
 Fig.~\ref{fig:lsd} the audio-error distributions.
 
-Across phrases, we report medians of within-phrase pitch MAE (cents) and onset
-MAE (ms). Periodic-Hann FFT-256/hop-64 LSD is objective-independent.
+Across phrases, we report medians of within-phrase pitch \gls{mae} (cents) and onset
+\gls{mae} (ms). Periodic-Hann \gls{fft}-256/hop-64 \gls{lsd} is objective-independent.
 
-Post hoc, each phrase's \bicul-family score averages \bicul{} and Log-Q; its
-\tfw-family score averages canonical \tfw{} and the $1\,\mathrm{s}=1\,\mathrm{oct}$
+Post hoc, each phrase's \gls{bicul}-family score averages \gls{bicul} and \gls{logq}; its
+\gls{tfw}-family score averages canonical \gls{tfw} and the $1\,\mathrm{s}=1\,\mathrm{oct}$
 variant. For each count--metric cell, the paired two-sided Wilcoxon signed-rank
 test ranks the magnitudes of the 150 family-score differences and compares
 positive with negative rank sums to assess whether the differences are centred
@@ -365,34 +388,34 @@ $p$-values, jointly adjusted by Holm's procedure~\cite{holm1979simple}.
 
 \section{Results}
 \subsection{Experiment I: Single-event Gradient Diagnostic}
-In the loss order \lone, \ltwo, \mss, \sot, \tfw, and \bicul, the fixed
+In the loss order $L_1$, $L_2$, \gls{mss}, \gls{sot}, \gls{tfw}, and \gls{bicul}, the fixed
 renderer gives 60.0\%, 49.2\%, 42.5\%, 51.7\%, 75.8\%, and 100.0\%
-target-directed descent, respectively. Thus \bicul{} is the only objective with
+target-directed descent, respectively. Thus \gls{bicul} is the only objective with
 120/120 target-directed directions in this registered renderer and diagnostic
 case; Fig.~\ref{fig:landscapes} does not imply a renderer-independent ranking.
 
 \subsection{Experiment II: Phrase Recovery}
 Table~\ref{tab:pilot-compact} and Fig.~\ref{fig:lsd} report all conditions and
-LSD distributions. Both \bicul{} variants are essentially exact at one and two
-events. A \bicul{} variant has the lowest median pitch error at every count and
-onset error through four; published linear-Hz \tfw{} has the lowest onset error
+\gls{lsd} distributions. Both \gls{bicul} variants are essentially exact at one and two
+events. A \gls{bicul} variant has the lowest median pitch error at every count and
+onset error through four; published linear-Hz \gls{tfw} has the lowest onset error
 at six and eight.
 
-Across these 15 tests, median paired family differences favour \bicul{}; 14
+Across these 15 tests, median paired family differences favour \gls{bicul}; 14
 have $p_{\mathrm{Holm}}\leq0.0069$, with only six-event onset above 0.05
 ($-10.5$~ms; $p_{\mathrm{Holm}}=0.186$).
 
 \section{Conclusion}
-We introduced \bicul{} for pluck-onset and pitch recovery. With fixed
+We introduced \gls{bicul} for pluck-onset and pitch recovery. With fixed
 Fourier--Thiran rendering, it gives 120/120 target-directed descents; reset
-smooths the three-event DF2 sweeps. Across 6000 fits, \bicul{} strengthens joint
-recovery, with Log-Q improving descriptive results. At four events, Log-Q
-\bicul{}'s median pitch error (19.1 cents) is
-comparable to reported JNDs~\cite{holmes2022pitch}, while its onset error
-(6.75 ms) is below reported guitar-context timing JNDs~\cite{camara2026timing};
+smooths the three-event \gls{df2} sweeps. Across 6000 fits, \gls{bicul} strengthens joint
+recovery, with \gls{logq} improving descriptive results. At four events, \gls{logq}
+\gls{bicul}'s median pitch error (19.1 cents) is
+comparable to reported \glspl{jnd}~\cite{holmes2022pitch}, while its onset error
+(6.75 ms) is below reported guitar-context timing \glspl{jnd}~\cite{camara2026timing};
 from six events, both errors exceed those perceptual scales, with pitch error
 above one semitone. This contextual comparison does not establish perceptual
-equivalence between JND experiments and phrase-level mean absolute errors.
+equivalence between \gls{jnd} experiments and phrase-level mean absolute errors.
 
 Future work should test reset generality, expressive techniques, higher sample
 rates, and persistent state.
@@ -401,8 +424,8 @@ rates, and persistent state.
 \section*{Acknowledgment}
 Pablo Tablas de Paula is supported by the UKRI Centre for Doctoral Training in
 Artificial Intelligence and Music (grant EP/S022694/1). This research utilised
-Queen Mary's Apocrita HPC facility, supported by QMUL Research-IT
-(\url{https://doi.org/10.5281/zenodo.438045}), using NVIDIA V100 and A100 GPUs.
+Queen Mary's Apocrita \gls{hpc} facility, supported by QMUL Research-IT
+(\url{https://doi.org/10.5281/zenodo.438045}), using NVIDIA V100 and A100 \glspl{gpu}.
 
 \IEEEtriggeratref{16}
 \bibliographystyle{IEEEtran}

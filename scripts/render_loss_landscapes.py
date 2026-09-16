@@ -48,8 +48,8 @@ BASE_LOSS_NAMES = (
     "bidirectional_cumulative_energy",
 )
 PAPER_LOSS_LABELS = (
-    r"$\mathcal{L}_1$",
-    r"$\mathcal{L}_2$",
+    r"$L_1$",
+    r"$L_2$",
     "MSS",
     "SOT",
     r"$\mathrm{TF}\mathcal{W}_2$",

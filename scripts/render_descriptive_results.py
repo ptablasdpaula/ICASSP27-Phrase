@@ -27,8 +27,8 @@ LOSS_NAMES = (
     "log_quadrature_bicul",
 )
 LOSS_LABELS = (
-    r"$\mathcal{L}_1$",
-    r"$\mathcal{L}_2$",
+    r"$L_1$",
+    r"$L_2$",
     "MSS",
     "SOT",
     r"$\mathrm{TF}\mathcal{W}_2$",
@@ -37,14 +37,14 @@ LOSS_LABELS = (
     r"$\hookrightarrow$ Log-Q",
 )
 TEX_LOSS_LABELS = (
-    r"\lone",
-    r"\ltwo",
-    r"\mss",
-    r"\sot",
-    r"\tfw",
+    r"$L_1$",
+    r"$L_2$",
+    r"\acrshort{mss}",
+    r"\acrshort{sot}",
+    r"\acrshort{tfw}",
     r"$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$",
-    r"\bicul",
-    r"$\hookrightarrow$ Log-Q",
+    r"\acrshort{bicul}",
+    r"$\hookrightarrow$ \acrshort{logq}",
 )
 CARDINALITIES = (1, 2, 4, 6, 8)
 METRICS = (
