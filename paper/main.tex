@@ -134,6 +134,17 @@ Hence, our contributions are twofold:
 
 \section{Cumulative Energy Losses}
 \label{sec:losses}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
+\caption{STFT power of a 160-Hz pluck at 1.0~s and cumulative-power surfaces
+for the labelled direction pairs $(d_t,d_f)$. The shared dB colour bar refers
+to peak power for the spectrogram and total target power for $S_q/m$.
+Values below $-80$~dB are clipped for display only. Frequency is displayed
+logarithmically above 20~Hz; cumulative sums retain all bins. Arrows mark
+starting corners and accumulation directions.}
+\label{fig:cumulative-surfaces}
+\end{figure*}
 We propose a new family of losses, \Glspl{cel}, that compare accumulated
 spectral power, exposing displacement through changes between the original
 and shifted energy. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate
@@ -158,17 +169,7 @@ Each surface is a two-dimensional image used to compute the loss. Its value
 at $(k,n)$ contains the power in the rectangle from the chosen starting
 corner to that bin inclusive, as shown in Fig.~\ref{fig:cumulative-surfaces}.
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
-\caption{STFT power of a 160-Hz pluck at 1.0~s, followed by cumulative-power
-surfaces in the up-right, down-right, up-left, and down-left directions.
-The spectrogram is shown in dB relative to its peak; cumulative surfaces use
-a shared dB colour scale for $S_q/m$, relative to total target power. Values
-below $-80$~dB are clipped for display only. Diagonal arrows indicate each
-starting corner and accumulation direction.}
-\label{fig:cumulative-surfaces}
-\end{figure*}
+
 
 To compare these images, we divide both by the nonzero total target power
 $m=\sum_{k,n}P_{k,n}=\max S_q$ and apply a pointwise feature transformation

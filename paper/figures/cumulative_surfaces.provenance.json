@@ -1,16 +1,19 @@
 {
   "artifacts": {
-    "pdf": "25726f92c8f00489a66a422aaaffdfd0d8c153e2c16f69debb08f5b9786f5c8b",
-    "png": "9f32663a7d8226121803a51c562a530ad1d1e42408f923fcd4a81dc7fd83c73b"
+    "pdf": "6a2e9ea4fcbbf0e3fc0b65146fbe4806001cde56d743c0dc132b3748a28c8c50",
+    "png": "33b71b5ddfc6426d8a2797634fda46654b24f8933f97f43fed311d54e0ae55ec"
   },
   "device": "cpu",
   "display": {
+    "arrows": "landscape style, 4x length/head size, original shaft width",
+    "colorbar": "one vertical shared dB scale; distinct reference powers",
     "direction_order": [
       "Up-right",
       "Down-right",
       "Up-left",
       "Down-left"
     ],
+    "frequency_axis": "logarithmic, 20-2000 Hz; sums retain all STFT bins",
     "spectrogram": "peak-relative power dB, [-80,0]",
     "surfaces": "10*log10(S_q/m), shared [-80,0] dB display scale"
   },
@@ -48,7 +51,7 @@
     }
   },
   "schema": "cumulative-surfaces-figure-v1",
-  "script_sha256": "b9b732e97fdceb11205558d139e0f44b25d163b021816981379ad100f798918e",
+  "script_sha256": "64b2851bf9910bc87f48eacb8d88dece18024f06e503e2f7bc8a30e32891e975",
   "stft": {
     "center": false,
     "hop": 64,
