@@ -42,3 +42,43 @@ starting diagonal loss to 1e-12. Production objectives and paper are unchanged.
 Run `python scripts/test_orthogonal_directions.py VARIANT`, with VARIANT one of
 `all_four`, `frequency_only`, `diagonal_control`, in the project environment.
 Run `python scripts/report_orthogonal_directions.py` to reproduce the report.
+
+## Results
+
+Both axis-only variants escape this selected failure. The frequency-only
+restart followed by diagonal refinement recovers the target to 0.000286 cents
+pitch MAE and 0.000060 ms onset MAE (diagonal CeL 1.03482e-7). All four axis-only
+directions finish at 1.154383 cents and 0.152674 ms (CeL 0.000172409), compared
+with the starting 5.481 cents and 70.452 ms (CeL 0.007878667).
+
+The first >1% improvement in the original diagonal loss occurs at exploration
+update 136 for all four axes and 326 for frequency-only. Their selected
+exploration checkpoints occur at updates 331 and 974, respectively. Diagonal
+refinement takes 248 and 1695 further updates, respectively. Thus the matched
+1600-update exploration establishes escape before the unequal refinement
+budgets; the near-exact final recovery additionally uses more refinement.
+
+Frequency-only accumulation does **not** mean pitch-only optimisation. At the
+initial state its unscaled raw-logit pitch-gradient norm is 0.000798 while its
+onset-gradient norm is 0.050387. It can strongly adjust timing to reduce
+within-frame spectral mismatch. For all four axes these norms are 0.013383 and
+0.020627. These are gradients in bounded-control logits, not physical units,
+and their magnitudes alone do not establish movement toward the target.
+
+This supports the proposed axis-only escape mechanism on the development case.
+It does not establish reliability across failed phrases, which axis subset is
+best generally, or an automatic switching/patience rule. The experiment uses
+an abrupt objective switch, not a gradual rotation or alternating individual
+axis directions. There is no pitch reassignment or parallel swap.
+
+[Final metrics](table.md). Full per-update controls, losses, matched errors and
+refinement trajectories: [all four axes](all_four.json),
+[frequency only](frequency_only.json), [diagonal control](diagonal_control.json).
+
+![Exploration trajectories; final refinement metrics are in the table](comparison.png)
+
+The diagonal-only control never improves on the starting checkpoint and remains
+at 5.480767 cents / 70.452117 ms after 1600 exploration updates plus 248
+refinement updates. Total descent updates are 1848 (all four axes), 3295
+(frequency-only), and 1848 (control); this is not an exactly matched total-compute
+comparison of the final refined errors.
