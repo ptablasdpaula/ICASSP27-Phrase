@@ -134,14 +134,7 @@ Hence, our contributions are twofold:
 
 \section{Cumulative Energy Losses}
 \label{sec:losses}
-\Glspl{cel} compare accumulated spectral power, exposing displacement through changes
-between the original and shifted energy even without spectral overlap. The
-family varies accumulation directions, feature transformations, and comparison
-norms. We evaluate a bidirectional variant and its Log-Weighing extension.
-
-Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate \gls{stft} power
-at frequency bin $k$ and frame $n$, using a periodic Hann window, a 256-point
-\gls{fft}, and a 64-sample hop. For $q=(d_t,d_f)$,
+We propose a new family of losses, \Glspl{cel}, that compare accumulated spectral power, exposing displacement through changes between the original and shifted energy. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate \gls{stft} power at frequency bin $k$ and frame $n$, using a periodic Hann window, a 256-point \gls{fft}, and a 64-sample hop. For $q=(d_t,d_f)$,
 $d_t\in\{\rightarrow,\leftarrow\}$ and $d_f\in\{\uparrow,\downarrow\}$
 select increasing or decreasing index order. The cumulative sums
 \begin{equation*}
@@ -149,7 +142,7 @@ S_q=C^f_{d_f}(C^t_{d_t}(P)),\qquad
 \hat S_q=C^f_{d_f}(C^t_{d_t}(\hat P))
 \end{equation*}
 include the current bin, so each value contains the power in a rectangle
-between one spectrogram corner and $(k,n)$. For nonzero target mass
+between one spectrogram corner up to $(k,n)$. For nonzero target mass
 $m=\sum_{k,n}P_{k,n}=\max S_q$, define
 \begin{equation*}
 \begin{aligned}
