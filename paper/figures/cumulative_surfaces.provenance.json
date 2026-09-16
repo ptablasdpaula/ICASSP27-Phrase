@@ -19,7 +19,7 @@
   },
   "power_sha256": "a7714cbdb2a8bec6ad6c485cf454f9df5bc8f9abd19179cf9bd681b4f4714665",
   "schema": "cumulative-surfaces-figure-v2",
-  "script_sha256": "3c6f5b01000e778019a33fc6cfae6c69c561618e8da4302fc7b256352fdf758d",
+  "script_sha256": "dee6b5249b8faf1ef54f014a3f4fb0531634e87b31e1d10aaae03cd5b6444a34",
   "stft": {
     "center": false,
     "hop": 64,

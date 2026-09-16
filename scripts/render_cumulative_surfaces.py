@@ -104,7 +104,9 @@ def main() -> None:
     figure, axes = plt.subplots(1, 5, figsize=(7.2, 1.85), sharex=True, sharey=True)
     figure.subplots_adjust(left=0.075, right=0.91, bottom=0.21, top=0.88, wspace=0.06)
     common = dict(cmap="magma", vmin=0, vmax=1, shading="flat", rasterized=True)
-    spectral_image = axes[0].pcolormesh(time_edges, frequency_edges, spectrogram_normalised, **common)
+    spectral_image = axes[0].pcolormesh(
+        time_edges, frequency_edges, spectrogram_normalised, **common
+    )
     axes[0].set_title("Spectrogram")
     axes[0].set_ylabel("Frequency (Hz)")
     style = LANDSCAPE_FIGURE_STYLE
