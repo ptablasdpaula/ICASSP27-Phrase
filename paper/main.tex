@@ -58,18 +58,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \maketitle
 
 \begin{abstract}
-Differentiable digital signal processing enables interpretable, unsupervised
-analysis by synthesis, but waveform and pointwise spectral losses do not encode
-onset or fundamental-frequency displacement direction. External detectors
-bypass this geometry yet prevent the reconstruction loss from correcting their
-estimates. We propose \bicul{}, which compares STFT power accumulated in both
-time and frequency directions, to recover onset and pitch for sparse plucks
-rendered by a differentiable digital waveguide. In a single-pluck landscape,
-\bicul{} alone directs all 120 displayed descents towards the target under the
-fixed Fourier--Thiran renderer. Across 6000 one- to eight-pluck phrase fits,
-\bicul{} improves joint onset--pitch recovery over waveform, spectral, and
-optimal-transport objectives, supporting unsupervised optimisation of event
-timing, pitch, and delay-line length under the controlled renderer.
+Differentiable digital signal processing enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. On this work, we propose the use of Cumulative Energy Losses, which compare STFT power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines the pluck's pitch, in the process recovering musical phrases. In a single-pluck landscape, we find our proposed losses have gradients that point towards the target at 120 equally spaced coordinates. Across 6000 fits containing one to eight pluck phrase fits, our proposed losses improve joint onset--pitch recovery over traditional waveform, spectral pointwise and recently proposed optimal transport objectives. We believe these losses will further support unsupervised optimisation of onset timing, pitch and delay line length, and provide a PyTorch library for ease of use in future applications\footnote{\textcolor{red}{link to library should be here}}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -77,51 +66,48 @@ differentiable digital signal processing, digital waveguide, audio loss, analysi
 \end{IEEEkeywords}
 
 \section{Introduction}
-Differentiable digital signal processing (\ddsp) embeds audio processors in
-automatic-differentiation graphs for interpretable analysis by
-synthesis~\cite{engel2020ddsp}, surveyed for music and speech by Hayes et
-al.~\cite{hayes2024review}. Applications include neural
-waveshaping~\cite{hayes2021waveshaping}, modulation
-discovery~\cite{mitcheltree2025modulation}, and feedback-delay-network
-optimisation~\cite{dalsanto2023diffdn}. Controls are typically global or dense
-frame trajectories, suited to static or continuously driven sounds. Plucked
-and struck strings instead form note events with onset, pitch, duration, and
-velocity in MIR~\cite{hawthorne2018onsets,riley2024gaps}; guitar tablature adds
-string, fret, and playing technique~\cite{loth2025goat,loth2025guitarflow}.
+Engel et al. coined the term Differentiable digital signal processing (\ddsp), as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, FM synthesis, reverberation, vocal tract modelling and effects modulation ~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}. 
 
-Event structure alone does not solve loss geometry. Pointwise spectral and
-waveform losses can mislead without energy overlap~\cite{turian2020loss}, while
-complex surrogates remain synthesizer-dependent~\cite{hayes2023sinusoidal}.
-External $f_0$ detectors or synthetic labels bypass this geometry but prevent
-the reconstruction loss from correcting estimates~\cite{engel2020ddsp,engel2020inverse}.
-OT traces to Monge's earth-moving problem~\cite{monge1781deblais} and measures
-displacement using support geometry~\cite{peyre2019computational}.
-Scalable entropic regularisation~\cite{cuturi2013sinkhorn} has supported audio
-applications including spectral unmixing for music
-transcription~\cite{flamary2016optimal} and frequency-aware NMF for source
-separation~\cite{rolet2018blind}. Torres et al. brought OT into \ddsp{} as a
-frame-wise spectral $\mathcal{W}_2$ objective for joint $f_0$ and harmonic
-amplitudes, augmented by a pointwise multi-scale term and cumulative-mass
-cutoff~\cite{torres2024sot}; Fabiani et al. subsequently used sliced projections
-for joint time--frequency displacement~\cite{fabiani2024jtfot}.
+In DDSP, controls are mostly predicted as either a constant set of parameters, or dense frame trajectories, naturally fit for IR prediction or continuously driven sounds respectively. However, that is not how many instruments are instinctively performed. Previously, we proposed an event-set predictor for the recovery of sparse guitar plucks \cite{tablasdepaula2026karplus}, forming note events with onset, pitch ($f_0$) and velocity among other physical parameters. This work expands this framework with the purpose of joining common MIR representations, where plucked string is represented as MIDI, sheet music or guitar tablatures ~\cite{riley2024gaps, loth2025goat,loth2025guitarflow} with \ddsp.
 
-Tablas de Paula et al. used an event-based plucked-string model to jointly
-estimate onset, $f_0$, and timbre, but synthetic supervision transferred poorly
-to real audio and spectral OT was unreliable for joint onset--pitch
-optimisation, leading them back to external
-detectors~\cite{tablasdepaula2026karplus}. We retain their event representation but
-optimise phrases rendered by a simple digital
-waveguide~\cite{smith2010physical,depaula2026waveguides}, comparing joint
-time--frequency OT with \bicul{}, which compares normalised STFT-power
-accumulations towards all four corners. The renderer fixes Fourier-shifted
-excitation and Thiran fractional-delay propagation, with event-wise string-state
-reset for phrase recovery.
+However, $f_0$ and onset time, representing a displacement of energy, are notoriously difficult to predict. This is due to the fact that~\ddsp     relies on waveform and pointwise spectral losses, such as Multi-Scale Spectral loss \mss, prompt to oscillatory local minima and useless when there is no energy overlap \cite{wang2019nsf, turian2020loss}. Recent revisions of \mss aimed to reduce the former issue by reducing spectral leaking \cite{schwar2023mss}, but do not address the latter. Complex surrogates were proposed but remain synthesiser-dependant \cite{hayes2023sinusoidal}. The literature commonly eludes this problematic via external detectors or synthetic labels, the first inherit the detectors' errors and veto further end-to-end training of $f_0$ \cite{engel2020inverse, engel2020ddsp, caspe2022ddx7, sudholt2023vocal}, while the latter generalises poorly to out of domain data \cite{tablasdepaula2026karplus}.
 
-Our contributions are: (i)~\bicul{} for direct onset--pitch recovery;
-(ii)~a registered single-pluck lattice on which \bicul{} alone directs all 120
-displayed descents towards the target; and (iii)~a comparison of eight loss
-configurations across 6000 phrase fits, with a diagnostic of the multi-event
-effect of state reset.
+Recent years have seen the adoption of Optimal Transport (OT), which measures the shortest energy displacement cost, in machine learning \cite{monge1781deblais,cuturi2013sinkhorn,peyre2019computational} and audio applications, such as music transcription and source separation \cite{flamary2016optimal, rolet2018blind}. Torres et al. were the first to apply it to \ddsp for harmonic parameter estimation, as a frame-wise spectral $\mathcal{W}_2$, Spectral OT (\sot) \cite{torres2024sot}; followingly, Fabiani et al. proposed a sliced formulation of a joint time--frequency OT as a similarity metric (\tfw) ~\cite{fabiani2024jtfot}. 
+
+While promising, we showed that (\sot) is unreliable for joint onset--$f_0$ optimisation, and proposed (\tfw) as future work \cite{tablasdepaula2026karplus}. Hence, we propose recovering musical phrases via optimisation of $f_0$ and onset time of plucks rendered by a simple digital waveguide \cite{smith2010physical}, comparing (\tfw) with a newly proposed family of losses, Cumulative Energy Losses (Ce$\mathcal{L}$s), which compare STFT power accumulation in time and frequency bins.
+
+%OT traces to Monge's earth-moving problem~\cite{monge1781deblais} and measures
+%displacement using support geometry~\cite{peyre2019computational}.
+%Scalable entropic regularisation~\cite{cuturi2013sinkhorn} has supported audio
+%applications including spectral unmixing for music
+%transcription~\cite{flamary2016optimal} and frequency-aware NMF for source
+%separation~\cite{rolet2018blind}. Torres et al. brought OT into \ddsp{} as a
+%frame-wise spectral $\mathcal{W}_2$ objective for joint $f_0$ and harmonic
+%amplitudes, augmented by a pointwise multi-scale term and cumulative-mass
+%cutoff~\cite{torres2024sot}; Fabiani et al. subsequently used sliced projections
+%for joint time--frequency displacement~\cite{fabiani2024jtfot}.
+
+%We retain their event representation but
+%optimise phrases rendered by a simple digital
+%waveguide~\cite{smith2010physical,depaula2026waveguides}, comparing joint
+%time--frequency OT with \bicul{}, which compares normalised STFT-power
+%accumulations towards all four corners. The renderer fixes Fourier-shifted
+%excitation and Thiran fractional-delay propagation, with event-wise string-state
+%reset for phrase recovery.
+
+Hence, our contributions are twofold:
+\begin{itemize}
+    \item A family of losses, Ce$\mathcal{L}$s, that can recover onset time and $f_0$ in the single-pluck landscape.
+    \item An unsupervised method for recovering monophonic plucked string musical phrases that is superior to previously proposed loss configurations.
+\end{itemize}
+
+
+
+%(i)~\bicul{} for direct onset--pitch recovery;
+%(ii)~a registered single-pluck lattice on which \bicul{} alone directs all 120
+%displayed descents towards the target; and (iii)~a comparison of eight loss
+%configurations across 6000 phrase fits, with a diagnostic of the multi-event
+%effect of state reset.
 
 \section{Bidirectional cumulative-energy loss}
 \label{sec:losses}
