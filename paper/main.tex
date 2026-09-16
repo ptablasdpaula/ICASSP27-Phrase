@@ -134,16 +134,39 @@ Hence, our contributions are twofold:
 
 \section{Cumulative Energy Losses}
 \label{sec:losses}
-We propose a new family of losses, \Glspl{cel}, that compare accumulated spectral power, exposing displacement through changes between the original and shifted energy. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate \gls{stft} power at frequency bin $k$ and frame $n$, using a periodic Hann window, a 256-point \gls{fft}, and a 64-sample hop. For $q=(d_t,d_f)$,
-$d_t\in\{\rightarrow,\leftarrow\}$ and $d_f\in\{\uparrow,\downarrow\}$
-select increasing or decreasing index order. The cumulative sums
+We propose a new family of losses, \Glspl{cel}, that compare accumulated
+spectral power, exposing displacement through changes between the original
+and shifted energy. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate
+\gls{stft} power at frequency bin $k$ and frame $n$, using a periodic Hann
+window, a 256-point \gls{fft}, and a 64-sample hop.
+
+For a chosen accumulation direction in time, $d_t$, we read frames from
+first to last ($\rightarrow$) or last to first ($\leftarrow$). Similarly,
+the frequency direction $d_f$ reads bins from low to high ($\uparrow$)
+or high to low ($\downarrow$). A direction pair $q=(d_t,d_f)$ combines
+one choice for each axis, giving four possible pairs.
+For each pair, the cumulative-sum operator $C^t_{d_t}$ replaces each bin's
+power by the sum of that power and all preceding frames at the same frequency
+in the chosen time direction. The operator $C^f_{d_f}$ performs the corresponding cumulative sum
+along frequency. Applying both operators gives the target and candidate
+cumulative-power surfaces, $S_q$ and $\hat S_q$:
 \begin{equation*}
 S_q=C^f_{d_f}(C^t_{d_t}(P)),\qquad
-\hat S_q=C^f_{d_f}(C^t_{d_t}(\hat P))
+\hat S_q=C^f_{d_f}(C^t_{d_t}(\hat P)).
 \end{equation*}
-include the current bin, so each value contains the power in a rectangle
-between one spectrogram corner up to $(k,n)$. For nonzero target mass
-$m=\sum_{k,n}P_{k,n}=\max S_q$, define
+Each surface is a two-dimensional image used to compute the loss. Its value
+at $(k,n)$ contains the power in the rectangle from the chosen starting
+corner to that bin, including both boundaries. For example, accumulating
+forwards in time and upwards in frequency gives
+$S_{(\rightarrow,\uparrow)}(k,n)=\sum_{i\leq k}\sum_{j\leq n}P_{i,j}$,
+where $i$ and $j$ run over frequency bins and time frames.
+
+To compare these images, we divide both by the nonzero total target power
+$m=\sum_{k,n}P_{k,n}=\max S_q$ and apply a pointwise feature transformation
+$\phi$. For each direction pair, let $E_q(k,n)$ be the candidate-minus-target
+feature error and $\ell_q$ its \gls{rms} over all bins and frames. For a selected
+set of direction pairs $\mathcal Q$, the scalar loss $\mathcal{L}_{\mathcal Q}$
+averages these directional errors; $|\mathcal Q|$ is the number of pairs:
 \begin{equation*}
 \begin{aligned}
 E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
@@ -151,15 +174,18 @@ E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
 \qquad\ell_q=\operatorname{RMS}(E_q).
 \end{aligned}
 \end{equation*}
-The \gls{rms} spans $(k,n)$. The bidirectional variant selects all four
-directions for $\mathcal Q$, treating both ends of each axis symmetrically,
-and uses $\phi(u)=\sqrt{\max(u,10^{-12})}$ to compress dominant
-values. Shared target normalisation preserves sensitivity to candidate energy.
+The bidirectional variant includes all four pairs in $\mathcal Q$, treating
+both ends of each axis symmetrically, and uses
+$\phi(u)=\sqrt{\max(u,10^{-12})}$ to compress dominant normalised values $u$.
+Shared target normalisation preserves sensitivity to candidate energy.
 
 The family includes an exact Cram\'er case. For one-dimensional, unit-mass
-distributions $p_j,\hat p_j$ on ordered coordinates $x_1<\cdots<x_J$,
-increasing-index accumulation with $\phi(u)=u$ gives their \glspl{cdf},
-$F_j,\hat F_j$. Their unnormalised, spacing-weighted $L_2$ comparison satisfies
+distributions with target and candidate masses $p_j,\hat p_j$ on $J$ ordered
+coordinates $x_1<\cdots<x_J$, increasing-index accumulation with $\phi(u)=u$
+gives their \glspl{cdf}, $F$ and $\hat F$. At coordinate $x_j$, their values
+are $F_j=\sum_{i\leq j}p_i$ and $\hat F_j=\sum_{i\leq j}\hat p_i$.
+The Cram\'er distance $D_{\rm C}$ is their unnormalised, spacing-weighted
+$L_2$ comparison:
 \begin{equation*}
 D_{\rm C}^2=\int_{\mathbb R}[F(x)-\hat F(x)]^2\,dx
 =\sum_{j=1}^{J-1}(x_{j+1}-x_j)(F_j-\hat F_j)^2.
@@ -174,7 +200,11 @@ extend beyond the exact Cram\'er case.
 \emph{Log-Weighing} weights errors by intervals in octaves and seconds,
 whereas uniform-bin \gls{rms} gives higher octaves more terms. Set
 $u_k=\log_2[\max(f_k,20)/20]$, where $f_k$ is bin-centre Hz, and let $t_n$
-be frame time in seconds. Replace $\ell_q$ by
+be frame time in seconds. For each direction pair, let $w^f_{d_f,k}$ be
+the frequency-interval width at bin $k$ in direction $d_f$, and $w^t_{d_t,n}$
+the time-interval width at frame $n$ in direction $d_t$. Their product weights
+the squared error at $(k,n)$. The weighted directional error $\ell^{\rm LW}_q$
+replaces $\ell_q$:
 \begin{equation*}
 \ell^{\rm LW}_q=\left[\frac{\sum_{k,n}
 w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
