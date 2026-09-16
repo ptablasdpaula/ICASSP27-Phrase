@@ -35,7 +35,10 @@ caches that environment.
 3. `PhraseSynth` sorts the active regimes by detached onset, sums the event
    excitations, and routes the source through the selected waveguide.
 
-The default is the exact recovery configuration used in the paper. PhilTorch
+The default onset FFT is now 16,384 samples (2.048× the signal length).
+The archived phrase-recovery results used 262,144 samples; reproduce those
+with `ExciterConfig(fourier_fft_length=262_144)`. New gradient screening uses
+the reduced padding; full recovery reruns are pending variant selection. PhilTorch
 dispatches the DF2 recurrence through TorchLPC on CPU and CUDA:
 
 ```python
@@ -107,6 +110,20 @@ after the final best-candidate render. All artefacts stay in memory. The
 notebook deliberately runs on CPU so it can be hosted without a GPU, while
 retaining the PhilTorch/TorchLPC DF2 path used by the paper. Larger fits will
 naturally be slower than the qualified CUDA campaign.
+
+## Cumulative Energy Loss variants
+
+`CumulativeEnergyDistance(target, directions=("right_up",), log_weighing=False)`
+selects any nonempty subset of `right_up`, `right_down`, `left_up`, `left_down`.
+The feature remains square-root normalised cumulative power. `build_loss`
+also accepts `cel_01` through `cel_15`, with optional `_lw`; masks use bits
+1, 2, 4, 8 in that direction order. Existing BiCuL identifiers remain supported
+for archived code. New figures and reports call these CeL variants.
+
+The [gradient-screen protocol](docs/cel-gradient-screen/protocol.md) defines
+an independent, optimisation-free comparison before selecting variants for
+new phrase-recovery experiments. Current historical recovery tables do not
+represent results at the new padding setting.
 
 ## Paper and confirmatory study
 

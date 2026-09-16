@@ -6,6 +6,7 @@ output=${2:?output directory}
 mode=${3:?qualify, compute or figure}
 cd "$repo"
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 CUBLAS_WORKSPACE_CONFIG=:4096:8
+export PYTHONHOME="$repo/.pixi/envs/default"
 python_bin="$repo/.pixi/envs/default/bin/python"
 case "$mode" in
   qualify)

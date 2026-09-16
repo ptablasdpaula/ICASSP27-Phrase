@@ -101,7 +101,50 @@ def test_named_directions_against_explicit_rectangles():
             for n in range(3):
                 fs = slice(k, None) if reverse_f else slice(None, k + 1)
                 ts = slice(n, None) if reverse_t else slice(None, n + 1)
-                errors.append(np.sqrt(c[fs, ts].sum() / p.sum())
-                              - np.sqrt(p[fs, ts].sum() / p.sum()))
+                errors.append(
+                    np.sqrt(c[fs, ts].sum() / p.sum()) - np.sqrt(p[fs, ts].sum() / p.sum())
+                )
         expected.append(np.sqrt(np.mean(np.square(errors))))
     np.testing.assert_allclose(actual, expected, atol=1e-15)
+
+
+def test_report_weights_targets_equally(tmp_path, monkeypatch):
+    import csv
+    import importlib.util
+    from pathlib import Path
+
+    from icassp27_phrase.cel_screen import ScreenTarget, source_hash
+
+    script = Path(__file__).resolve().parents[1] / "scripts/screen_cel_gradients.py"
+    spec = importlib.util.spec_from_file_location("screen_report", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    targets = [ScreenTarget(name, "independent", np.array([[0.8, 0.8]])) for name in ("a", "b")]
+    monkeypatch.setattr(module, "design", lambda: targets)
+    monkeypatch.setattr(module, "heatmaps", lambda *args: None)
+    monkeypatch.setattr(module, "write_report", lambda *args: None)
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    for target, signs in zip(targets, ([1, -1], [-1]), strict=True):
+        np.savez(
+            raw / f"{target.name}.npz",
+            source_hash=source_hash(),
+            device="cpu",
+            target=target.coordinates,
+            candidates=np.full((len(signs), 1, 2), 0.2),
+            assignments=np.zeros((len(signs), 1), dtype=int),
+            elementary_gradients=np.array(signs)[:, None, None, None]
+            * np.ones((len(signs), 8, 1, 2)),
+            tied=np.zeros(len(signs), dtype=bool),
+            kinds=np.array(["simultaneous"] * len(signs)),
+        )
+    module.report(raw, tmp_path / "report")
+    with (tmp_path / "report/summary.csv").open() as f:
+        row = next(
+            r
+            for r in csv.DictReader(f)
+            if r["variant"] == "cel_15" and r["metric"] == "joint_directed"
+        )
+    assert int(row["phrases"]) == 2
+    assert float(row["mean"]) == 0.75
+    assert float(row["median"]) == 0.75
