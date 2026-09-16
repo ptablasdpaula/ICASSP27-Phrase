@@ -1,0 +1,32 @@
+{
+  "all_four": {
+    "joint_error_reduction_percent_vs_previous": [
+      -0.498664211885802,
+      26.34729938763457,
+      8.009624012294381,
+      -14.373683165514262,
+      -18.661038130499485,
+      -7.720404453288965
+    ],
+    "median_joint_error_reduction_percent": -4.109534332587383,
+    "gains_over_20_percent": 1,
+    "regressions_over_20_percent": 0,
+    "strict_recoveries": 0,
+    "canonical_loss_improvements_over_1_percent": 1
+  },
+  "frequency_only": {
+    "joint_error_reduction_percent_vs_previous": [
+      99.84687703762005,
+      26.328033015572704,
+      73.52562510961182,
+      -33.34594983224803,
+      -105.81278741166842,
+      -63.88684748067814
+    ],
+    "median_joint_error_reduction_percent": -3.508958408337664,
+    "gains_over_20_percent": 3,
+    "regressions_over_20_percent": 3,
+    "strict_recoveries": 1,
+    "canonical_loss_improvements_over_1_percent": 2
+  }
+}
