@@ -1,7 +1,7 @@
 {
   "artifacts": {
-    "pdf": "3c00b5d909abee81387d90cac11789789eb01ebf05daad0e1dba5dac0e72700f",
-    "png": "e445c60284013171ab148f7d93d4a0b0e5019a4ba6f1cc34222718506e03f038"
+    "pdf": "25726f92c8f00489a66a422aaaffdfd0d8c153e2c16f69debb08f5b9786f5c8b",
+    "png": "9f32663a7d8226121803a51c562a530ad1d1e42408f923fcd4a81dc7fd83c73b"
   },
   "device": "cpu",
   "display": {
@@ -12,7 +12,7 @@
       "Down-left"
     ],
     "spectrogram": "peak-relative power dB, [-80,0]",
-    "surfaces": "raw cumulative power / shared total target power, [0,1]"
+    "surfaces": "10*log10(S_q/m), shared [-80,0] dB display scale"
   },
   "power_sha256": "c31aaf8fac63b0b78744583116521e716d0018097470d1794937a2888a63a768",
   "renderer": {
@@ -48,7 +48,7 @@
     }
   },
   "schema": "cumulative-surfaces-figure-v1",
-  "script_sha256": "d6a8209a9afba8a81e5041fadb16514f667cc98711e3707c8151534c3e85674b",
+  "script_sha256": "b9b732e97fdceb11205558d139e0f44b25d163b021816981379ad100f798918e",
   "stft": {
     "center": false,
     "hop": 64,

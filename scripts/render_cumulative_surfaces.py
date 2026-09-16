@@ -37,6 +37,7 @@ def digest(data: bytes) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument("--cumulative-scale", choices=("linear", "db"), default="db")
     parser.add_argument(
         "--output-stem", type=Path,
         default=ROOT / "paper/figures/cumulative_surfaces",
@@ -114,7 +115,11 @@ def main() -> None:
     for axis, surface, (name, _, _, start, end) in zip(
         axes[1:], surfaces, DIRECTIONS, strict=True
     ):
-        cumulative_image = axis.imshow(surface, cmap="magma", vmin=0, vmax=1, **common)
+        if args.cumulative_scale == "db":
+            displayed = 10 * np.log10(np.maximum(surface, 1e-8))
+            cumulative_image = axis.imshow(displayed, cmap="magma", vmin=-80, vmax=0, **common)
+        else:
+            cumulative_image = axis.imshow(surface, cmap="magma", vmin=0, vmax=1, **common)
         axis.set_title(name)
         arrow = FancyArrowPatch(
             start, end, transform=axis.transAxes, arrowstyle="-|>",
@@ -142,7 +147,10 @@ def main() -> None:
     ])
     for artist, bar_axis, ticks, label in (
         (spectral_image, spectral_bar, [-80, -40, 0], "Power (dB re. peak)"),
-        (cumulative_image, cumulative_bar, [0, 0.5, 1], r"Cumulative power $S_q/m$"),
+        (cumulative_image, cumulative_bar,
+         [-80, -60, -40, -20, 0] if args.cumulative_scale == "db" else [0, 0.5, 1],
+         r"Cumulative power $10\log_{10}(S_q/m)$ (dB)"
+         if args.cumulative_scale == "db" else r"Cumulative power $S_q/m$"),
     ):
         colorbar = figure.colorbar(artist, cax=bar_axis, orientation="horizontal", ticks=ticks)
         colorbar.ax.tick_params(length=1.5, width=0.5, pad=1, labelsize=6)
@@ -166,7 +174,11 @@ def main() -> None:
         "stft": {"n_fft": loss.n_fft, "hop": loss.hop, "center": False,
                  "window": "periodic Hann", "shape": list(power.shape)},
         "display": {"spectrogram": "peak-relative power dB, [-80,0]",
-                    "surfaces": "raw cumulative power / shared total target power, [0,1]",
+                    "surfaces": (
+                        "10*log10(S_q/m), shared [-80,0] dB display scale"
+                        if args.cumulative_scale == "db"
+                        else "raw cumulative power / shared total target power, [0,1]"
+                    ),
                     "direction_order": [item[0] for item in DIRECTIONS]},
         "target_audio_sha256": digest(target.cpu().numpy().tobytes()),
         "power_sha256": digest(power_array.tobytes()),
