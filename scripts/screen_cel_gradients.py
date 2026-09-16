@@ -245,6 +245,13 @@ def write_report(rows, quality, output):
         f"{quality['ambiguous_assignments']} tied Hungarian assignments excluded; "
         f"{quality['nonfinite_variant_candidates']} nonfinite variant/candidate gradients.",
         "",
+        "Start with the [findings](findings.md) and [execution/validation notes](execution.md). "
+        "Plots: [simultaneous errors](independent-simultaneous.png), "
+        "[pitch-only slices](structured-isolated_pitch.png), "
+        "[timing-only slices](structured-isolated_timing.png), "
+        "[joint slices](structured-isolated_joint.png), and "
+        "[fit initialisation](independent-initialisation.png).",
+        "",
         "Direction bits: 1 = right/up, 2 = right/down, 4 = left/up, 8 = left/down. "
         "Add bits to identify a subset; `_lw` adds Log-Weighing. `cel_15` is the "
         "existing four-direction variant.",
@@ -290,6 +297,11 @@ def write_report(rows, quality, output):
             "measures gradients that move "
             "already-correct coordinates. Whole-phrase alignment can be positive "
             "even when some events or axes move away.",
+            "",
+            "Correct-coordinate masks are evaluated after Hungarian matching. "
+            "A timing-only perturbation can change the assignment in the eight-event "
+            "ascending/descending cases, introducing matched pitch displacement. "
+            "This accounts for the eligible pitch scores in those timing-only slices.",
             "",
             "Pilot targets use seed 2028 and are independent of the frozen "
             "150-target evaluation registry. "

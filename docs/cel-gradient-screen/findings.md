@@ -7,6 +7,8 @@ These comparisons concern local gradients, not optimisation success. No variants
 - For the four-direction variant, Log-Weighing increases mean pitch alignment at two, four, six and eight events. Its onset changes are mixed. The mean joint changes are small relative to the target-to-target standard deviations below.
 - Direction subsets trade pitch against timing. For example, at four events, the downward-frequency pair (↘ ↙) has 72.6% pitch and 65.8% onset alignment, compared with 69.2% and 64.6% for all four directions. At one event, the forward-time pair (↗ ↘) has 94.5% onset alignment versus 92.0% for all four. These descriptive results do not establish statistical superiority or eventual convergence.
 
+In the eight-event ascending/descending timing-only slices, Hungarian reassignment can introduce matched pitch displacement. Correct-coordinate masks follow the matched targets, so those slices also have eligible pitch scores.
+
 ## Four-direction variants: joint alignment
 
 Percentages below summarise the target-level rates: each target first averages its 32 candidate configurations, and the table then reports mean ± sample SD and median across 30 targets. These are not confidence intervals.

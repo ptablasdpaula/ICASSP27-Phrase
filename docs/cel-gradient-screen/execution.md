@@ -10,7 +10,7 @@ directional denominators as specified in the protocol.
 Completed CPU shards from the workspace were reused when moving the run to
 Apocrita node `ddy26`. Slurm job 27153044 completed successfully in 10 minutes
 29 seconds with four CPU workers and 16 GB requested memory. Small batches
-were used after local workers were killed under memory pressure. Atomic
+were used after local workers exited with code 137. Atomic
 per-target checkpoints preserved completed work. Raw arrays are authoritative;
 all source hashes and backend identifiers agree across the 173 shards.
 
