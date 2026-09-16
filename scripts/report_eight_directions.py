@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import hashlib
 import json
+import subprocess
 import zipfile
 from pathlib import Path
 
 import numpy as np
+from explore_eight_directions import write_explorer
 from icassp27_phrase.cel_screen import design, score
 from screen_eight_directions import DIRECTIONS, NAMES, signature
 
@@ -83,15 +86,16 @@ def main():
             )
         )
     rows = []
-    for key, values in sorted(groups.items()):
-        values = np.stack(values)
-        # Paired target-level comparison to uniform four-diagonal reference.
-        differences = values - values[:, [14]]
-        for i, name in enumerate(NAMES):
-            finite = values[:, i][np.isfinite(values[:, i])]
-            diff = differences[:, i][np.isfinite(differences[:, i])]
-            rows.append(
-                dict(
+    with gzip.open(OUT / "summary.csv.gz", "wt") as f:
+        writer = None
+        for key, values in sorted(groups.items()):
+            values = np.stack(values)
+            # Paired target-level comparison to uniform four-diagonal reference.
+            differences = values - values[:, [14]]
+            for i, name in enumerate(NAMES):
+                finite = values[:, i][np.isfinite(values[:, i])]
+                diff = differences[:, i][np.isfinite(differences[:, i])]
+                row = dict(
                     events=key[0],
                     profile=key[1],
                     perturbation=key[2],
@@ -105,11 +109,14 @@ def main():
                     paired_mean_difference=float(diff.mean()) if len(diff) else None,
                     paired_std_difference=float(diff.std(ddof=1)) if len(diff) > 1 else None,
                 )
-            )
-    with (OUT / "summary.csv").open("w") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
+                if writer is None:
+                    writer = csv.DictWriter(f, fieldnames=list(row))
+                    writer.writeheader()
+                writer.writerow(row)
+                if int(name.split("_")[1]) <= 15 or (
+                    (key[1], key[2]) in CONDITIONS and key[3] in METRICS
+                ):
+                    rows.append(row)
     lookup = {
         (r["events"], r["profile"], r["perturbation"], r["metric"], r["variant"]): r for r in rows
     }
@@ -133,6 +140,9 @@ def main():
                     assert new[metric] is None
     provenance = dict(
         signature=signature(),
+        report_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        numpy_version=np.__version__,
         directions=DIRECTIONS,
         variants=NAMES,
         candidates=total,
@@ -150,6 +160,7 @@ def main():
         for target in design():
             z.write(ROOT / f"{target.name}.npz", f"{target.name}.npz")
     summaries(lookup)
+    write_explorer(lookup, OUT, NAMES, label)
     print(json.dumps({k: v for k, v in provenance.items() if k not in ("shards", "variants")}))
 
 
@@ -169,8 +180,10 @@ def summaries(lookup):
         "Same 173 targets and 13,099 candidate phrases as the earlier diagonal screen. "
         "This is a local-gradient screen, not a gradient-descent experiment.",
         "",
-        "[Protocol](protocol.md) · [Full CSV](summary.csv) · "
-        "[All-subset plots](all-subsets.pdf) · [Raw arrays](raw-results.zip)",
+        "[Findings](findings.md) · [Protocol](protocol.md) · "
+        "[Full CSV, compressed](summary.csv.gz) · "
+        "[Interactive table](explorer.html) · [All-subset plots](all-subsets.pdf) · "
+        "[Raw arrays](raw-results.zip)",
         "",
         "Each entry below is pitch / onset / joint target-directed event percentage. "
         "Targets are weighted equally within each condition and event count. "

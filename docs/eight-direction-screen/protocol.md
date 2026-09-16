@@ -50,3 +50,5 @@ subsets are exploratory and cannot be treated as validated winners.
 
 Run `bash jobs/eight_direction_screen.sh`, then
 `python scripts/report_eight_directions.py` in the pinned environment.
+
+See [execution and validation](execution.md) for the completed run and checks.
