@@ -17,8 +17,8 @@ and the associated implementation. Other sections' claims were not revised.
 
 The local Laakso copy is
 `/data/home/acw794/ICASSP2027-GtrArticulations/refs/Splitting_the_Unit_Delay.pdf`.
-For the explicit Thiran stability condition, see also the introduction of
-[Öğün and Köymen, “Interpolated Allpass Fractional-Delay Filters using Root Displacement,” ICASSP 2006](https://users.metu.edu.tr/hhuseyin/Conferences/hhogunkon_icassp06.pdf),
+For the explicit Thiran stability condition, see also the Section 2 of
+[Hacıhabiboğlu, Günel and Kondoz, “Interpolated Allpass Fractional-Delay Filters using Root Displacement,” ICASSP 2006](https://users.metu.edu.tr/hhuseyin/Conferences/hhogunkon_icassp06.pdf),
 which states the admissible delay as D > N − 1.
 
 ## Implementation checks
