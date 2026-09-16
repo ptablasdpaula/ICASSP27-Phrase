@@ -1,7 +1,7 @@
 {
   "artifacts": {
-    "pdf": "ab6b90fa50162459c365b573bebd43ee81c9c79aea1f856b864e9a8926e5b798",
-    "png": "d9991ae3ca10945c831a62fbb57b9902b713e0ae1e63324789edb55eb0d0d6f6"
+    "pdf": "63a6c1a067c7c3b60c85111e0730ebb94dafde15ae826af96ce1e9c0629835bf",
+    "png": "4bac49536ec29bf8ecec24453997dfb366855f5becd5bf009420e6477c6e273d"
   },
   "device": "cpu",
   "display": {
@@ -13,7 +13,7 @@
       "Up-left",
       "Down-left"
     ],
-    "frequency_axis": "logarithmic, 50-2000 Hz, decade ticks; sums retain all STFT bins",
+    "frequency_axis": "logarithmic, 50-2000 Hz; decade ticks; sums use all bins",
     "spectrogram": "peak-relative power dB, [-80,0]",
     "surfaces": "10*log10(S_q/m), shared [-80,0] dB display scale"
   },
