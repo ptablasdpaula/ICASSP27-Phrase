@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Maintain the paper's single-event loss-gradient diagnostic.
+"""Maintain the historical single-event loss-gradient diagnostic and styling.
 
 The qualified Fourier--Thiran panels are recovered losslessly from the existing
 Matplotlib PDF rather than recomputed. Only the Naive--Linear sensitivity
 comparison invokes the recursive renderer, and that command requires CUDA.
+Use recompute_loss_landscapes.py for the current paper figure and defaults.
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ from torch import Tensor
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURE_DIRECTORY = ROOT / "paper" / "figures"
-DEFAULT_OUTPUT_STEM = FIGURE_DIRECTORY / "loss_landscapes"
+DEFAULT_OUTPUT_STEM = FIGURE_DIRECTORY / "historical_loss_landscapes"
 DEFAULT_QUALIFIED_CACHE = FIGURE_DIRECTORY / "loss_landscapes.fourier_thiran.npz"
 DEFAULT_COMPARISON_CACHE = FIGURE_DIRECTORY / "loss_landscapes.naive_linear.npz"
 TARGET_F0_HZ = 160.0
