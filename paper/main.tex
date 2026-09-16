@@ -256,15 +256,17 @@ $\delta_o$ samples, we multiply the spectrum of $e_0$ by
 $e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per
 sample and $j^2=-1$. The excitation is zero-padded to an FFT length
 approximately $32.8$ times the full signal length to reduce circular
-wrap-around. We constrain the DC and Nyquist bins to be real to preserve
-Hermitian symmetry. Shifted event spectra are summed before one inverse
+wrap-around~\cite[Ch.~7]{smith2007dft}. We constrain the DC and Nyquist
+bins to be real to preserve Hermitian symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before one inverse
 FFT, retaining the first two seconds as the summed excitation.
 
 For gradient-based $f_0$ optimisation, we use real-valued delays with Thiran
-all-pass interpolation~\cite[p.~49]{laakso1996splitting}.
-These filters have unity magnitude and maximally flat group delay at DC.
+all-pass interpolation.
+These filters have unity magnitude and maximally flat group delay at
+DC~\cite[p.~49]{laakso1996splitting}.
 Each path combines an integer delay with an all-pass section. For an order-$M$
-section, the approximated delay must exceed $M-1$ samples for stability.
+section, the approximated delay must exceed $M-1$ samples for
+stability~\cite{laakso1996splitting}.
 We use orders 1 and 3 on the bridge-side and nut-side paths, respectively:
 at the upper end of our 80--320~Hz pitch range, the shorter path requires
 less than two samples, precluding a stable order-3 section. We iteratively

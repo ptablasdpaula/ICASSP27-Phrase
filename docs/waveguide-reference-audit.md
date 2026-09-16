@@ -57,3 +57,60 @@ The waveguide float requests bottom placement. The landscape float is moved
 in the source to the experiments section so it cannot block the waveguide
 in LaTeX's figure queue. Figure numbering follows this new order; references
 use labels. No landscape caption or experimental prose is changed.
+
+## Follow-up: Hermitian symmetry and FFT padding
+
+Smith's *Mathematics of the Discrete Fourier Transform*, second edition
+(2007), Chapter 7, supplies a single reference for the two distinct claims:
+
+- [Symmetry](https://www.dsprelated.com/freebooks/mdft/Symmetry.html): a real
+  sequence has a conjugate-symmetric spectrum. At the self-conjugate DC and
+  Nyquist bins of an even-length DFT, this requires real values.
+- [Convolution theorem](https://www.dsprelated.com/freebooks/mdft/Convolution_Theorem.html)
+  and [zero-padding applications](https://www.dsprelated.com/freebooks/mdft/Zero_Padding_Applications.html):
+  spectral multiplication implements circular convolution, and zero padding
+  guards against wrap-around. The familiar finite-convolution bound depends
+  on both operands' support; it does not prescribe a universal padding ratio.
+- [Windowed sinc interpolation](https://www.dsprelated.com/freebooks/pasp/Windowed_Sinc_Interpolation.html)
+  in Smith's *Physical Audio Signal Processing* describes ideal bandlimited
+  interpolation. The ideal fractional-delay sinc kernel has infinite support,
+  so finite FFT padding cannot make the operation exactly nonperiodic.
+
+The new `smith2007dft` citation is placed at both Fourier claims. Laakso is
+now cited directly at the unity-magnitude/group-delay statement and again at
+the stability/order discussion. “Unity magnitude” is the all-pass property;
+the section's delay need not be one sample.
+
+### Is 32.8 times excessive?
+
+For this **onset excitation**, it is conservative and probably larger than
+necessary. This is a numerical assessment, not a ratio recommended by Smith.
+The reproducible diagnostic `scripts/audit_onset_padding.py` compares the
+actual sampled 10-ms HRC shape against nonperiodic sinc interpolation,
+including its analytic derivative with respect to onset. It evaluates 41
+onsets spanning 0.2–1.8 seconds and fractional-sample offsets in float64,
+retaining the same 8000 output samples as the synthesiser. The analytic
+reference avoids assuming that some larger FFT is already converged.
+Full results are in `docs/onset-padding-audit.json`.
+
+| FFT length | Ratio to full signal | Worst relative waveform L2 error | Worst relative onset-derivative L2 error |
+| ---: | ---: | ---: | ---: |
+| 16,384 | 2.048× | 0.0195% | 0.200% |
+| 32,768 | 4.096× | 0.00457% | 0.0468% |
+| 65,536 | 8.192× | 0.00113% | 0.0115% |
+| 262,144 | 32.768× | 0.0000701% | 0.000717% |
+
+Each column reports its own maximum over the sampled onsets. Derivative
+errors are relative vector norms, not per-sample relative errors or loss-gradient errors. Integer onsets can reproduce the excitation exactly while
+still having an inaccurate derivative, which is why both quantities matter.
+
+A length of 32,768–65,536 is a plausible efficiency choice for a future
+configuration. The current experiments retain their original 262,144-point
+setting: this excitation-only diagnostic does not establish equivalence of
+waveguide outputs, loss gradients or converged phrase fits. No synthesis
+settings or experimental results were changed.
+
+As an implementation cross-check, at a 4000.25-sample onset with a
+16,384-point FFT, the diagnostic Fourier computation agrees with the actual
+FLAMO-backed `Exciter`: maximum absolute waveform difference was
+3.67e-13, and the onset derivative agreed with PyTorch's automatic differentiation JVP within 2.46e-9 (derivatives measured per second).
