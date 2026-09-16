@@ -95,3 +95,10 @@ assignment policy or stochastic sampling of permutations has not been tested.
 Artifacts: [probe scores and isolation checks](probes.json),
 [cyclic run](cyclic_one_step.json), [control](no_probe_control.json),
 [table](table.md). Recreate the report with `python scripts/report_shadow_swaps.py`.
+
+## Follow-up: accepting complete alternatives
+
+The [full-state takeover pilot](../counterfactual-takeover/README.md) adds
+patient paired exploration and commits the winning branch's complete state.
+It recovers this case with fixed amplitudes. This differs from the assignment-only
+probe here: it preserves the trial refinement that earned acceptance.

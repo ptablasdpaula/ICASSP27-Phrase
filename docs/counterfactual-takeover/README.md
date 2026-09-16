@@ -36,4 +36,49 @@ coordinates or matched errors; only canonical audio loss. Compute is greater
 than ordinary descent; no equal-compute performance claim is made.
 
 Run `python scripts/test_counterfactual_takeover.py` with the project Python and
-PYTHONHOME set to `.pixi/envs/default`. Results pending.
+PYTHONHOME set to `.pixi/envs/default`.
+
+## Results
+
+The whole-state takeover **recovers this four-event case**. The paired decisions
+were:
+
+| Pair | Updates per branch | Decision |
+|---|---:|---|
+| 1↔2 | 163 | retain live |
+| 2↔3 | 120 | adopt complete swapped state |
+| 3↔4 | 182 | reject swap; adopt improved keep state |
+
+All three paired trials stopped by patience before the 300-update cap. For
+2↔3, the accepted strict-best state was at trial update 80, including its Adam
+moments and count; the trial continued to update 120 before patience terminated
+it. Its canonical loss was **0.000811545**, down from **0.007878667**, with
+matched errors **1.451943 cents / 0.634515 ms** and the correct event association.
+
+The following keep branch improved the loss to **0.000530123**, with errors
+**2.720155 cents / 0.242641 ms**. The pitch-error change illustrates that
+acceptance uses the audio objective, not target-parameter errors.
+
+Continuing from the adopted full state reached canonical CeL **9.89659e-8**,
+matched pitch MAE **0.000160269 cents**, onset MAE **0.000084737 ms**, and the
+correct temporal pitch association. All excitation amplitudes stayed 0.8.
+
+Paired trials cost **930 Adam updates total** across both branches. Subsequent
+continuation used 2445 further updates. Thus this result is not an
+equal-compute comparison with ordinary descent. The first live checkpoint
+starts with fresh moments because the old run did not save them; thereafter
+accepted state is preserved. This single-case success does not establish
+performance on the full recovery set, optimal trial budgets, or a universally
+appropriate 1% threshold.
+
+Exact checks passed for live-state isolation, copied parameters/moments/count/LR,
+loss reproduction after takeover, and the acceptance inequalities. Committed
+loss never increases across the three decisions. The final complete checkpoint
+is retained, including moments and fixed objective-conditioning scale.
+
+![Recovery through full-state takeover](recovery.png)
+
+Artifacts: [all decisions, traces and checkpoint](result.json),
+[numerical decision table](decisions.md). Recreate the figure with
+`python scripts/report_counterfactual_takeover.py`.
+
