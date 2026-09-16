@@ -85,7 +85,7 @@ def main() -> None:
             })
 
     power_array = power.cpu().numpy()
-    spectrogram_db = 10 * np.log10(np.maximum(power_array / power_array.max(), 1e-8))
+    spectrogram_normalised = power_array / power_array.max()
     # STFT coordinates are window centres, rather than artificially shifted onsets.
     time_edges = (np.arange(power.shape[1] + 1) * loss.hop
                   + loss.n_fft / 2 - loss.hop / 2) / SAMPLE_RATE
@@ -103,16 +103,15 @@ def main() -> None:
     })
     figure, axes = plt.subplots(1, 5, figsize=(7.2, 1.85), sharex=True, sharey=True)
     figure.subplots_adjust(left=0.075, right=0.91, bottom=0.21, top=0.88, wspace=0.06)
-    common = dict(cmap="magma", vmin=-80, vmax=0, shading="flat", rasterized=True)
-    spectral_image = axes[0].pcolormesh(time_edges, frequency_edges, spectrogram_db, **common)
+    common = dict(cmap="magma", vmin=0, vmax=1, shading="flat", rasterized=True)
+    spectral_image = axes[0].pcolormesh(time_edges, frequency_edges, spectrogram_normalised, **common)
     axes[0].set_title("Spectrogram")
     axes[0].set_ylabel("Frequency (Hz)")
     style = LANDSCAPE_FIGURE_STYLE
     for axis, surface, (_, time_reverse, frequency_reverse, start, _) in zip(
         axes[1:], surfaces, DIRECTIONS, strict=True
     ):
-        displayed = 10 * np.log10(np.maximum(surface, 1e-8))
-        axis.pcolormesh(time_edges, frequency_edges, displayed, **common)
+        axis.pcolormesh(time_edges, frequency_edges, surface, **common)
         time_arrow = r"\leftarrow" if time_reverse else r"\rightarrow"
         frequency_arrow = r"\downarrow" if frequency_reverse else r"\uparrow"
         axis.set_title(r"$(d_t,d_f)= (" + time_arrow + "," + frequency_arrow + ")$", fontsize=7.5)
@@ -140,10 +139,10 @@ def main() -> None:
                     y=0.06, fontsize=7)
     bar_axis = figure.add_axes([bounds.x1 + 0.014, bounds.y0, 0.012, bounds.height])
     colorbar = figure.colorbar(
-        spectral_image, cax=bar_axis, orientation="vertical", ticks=[-80, -60, -40, -20, 0],
+        spectral_image, cax=bar_axis, orientation="vertical", ticks=[0, 0.25, 0.5, 0.75, 1],
     )
     colorbar.ax.tick_params(length=1.5, width=0.5, pad=1, labelsize=6)
-    colorbar.set_label("Power (dB)", fontsize=7, labelpad=9, rotation=270)
+    colorbar.set_label("Normalised power", fontsize=7, labelpad=9, rotation=270)
     colorbar.outline.set_linewidth(0.5)
 
     args.output_stem.parent.mkdir(parents=True, exist_ok=True)
@@ -166,10 +165,10 @@ def main() -> None:
         "torch_version": torch.__version__,
         "stft": {"n_fft": loss.n_fft, "hop": loss.hop, "center": False,
                  "window": "periodic Hann", "shape": list(power.shape)},
-        "display": {"spectrogram": "peak-relative power dB, [-80,0]",
-                    "surfaces": "10*log10(S_q/m), shared [-80,0] dB display scale",
+        "display": {"spectrogram": "linear power / peak STFT power, [0,1]",
+                    "surfaces": "linear S_q/m, shared [0,1] display scale",
                     "frequency_axis": "logarithmic, 20-1000 Hz; decade ticks; sums use all bins",
-                    "colorbar": "one vertical shared dB scale; distinct reference powers",
+                    "colorbar": "one vertical shared linear scale; distinct reference powers",
                     "arrows": "landscape style, 4x length/head size, original shaft width",
                     "direction_order": [item[0] for item in DIRECTIONS]},
         "target_audio_sha256": digest(target.cpu().numpy().tobytes()),
