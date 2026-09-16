@@ -76,6 +76,8 @@ def fit(
     progress: ProgressCallback | None = None,
     initial: EventPhrase | None = None,
     free_amplitudes: bool = False,
+    coordinate_encoder: Callable = encode_coordinates,
+    coordinate_decoder: Callable = decode_coordinates,
 ) -> FitResult:
     """Reproduce one registered gradient-descent fit entirely in memory."""
     renderer = synth or PhraseSynth()
@@ -87,7 +89,7 @@ def fit(
         raise FloatingPointError("target audio contains a non-finite value")
     canonical_name = canonical_loss_name(loss_name)
     initial = initial or initial_candidate(cardinality, device=target_audio.device)
-    raw = encode_coordinates(initial.f0_hz, initial.onset_seconds)
+    raw = coordinate_encoder(initial.f0_hz, initial.onset_seconds)
     if free_amplitudes:
         raw = torch.cat((raw, torch.zeros_like(raw[:, :1])), dim=1)
     raw = raw.requires_grad_(True)
@@ -108,7 +110,7 @@ def fit(
     stopped_by = "maximum updates"
 
     while True:
-        f0_hz, onset_seconds = decode_coordinates(raw[:, :2])
+        f0_hz, onset_seconds = coordinate_decoder(raw[:, :2])
         amplitudes = 0.8 * raw[:, 2].exp() if free_amplitudes else torch.full_like(f0_hz, 0.8)
         audio = render_amplitudes(renderer, f0_hz, onset_seconds, amplitudes)
         value_tensor = objective(audio)
@@ -187,7 +189,7 @@ def fit(
 
     if best_raw is None or initial_loss is None or best_loss is None:
         raise RuntimeError("the optimiser did not evaluate its initial state")
-    best_f0, best_onset = decode_coordinates(best_raw[:, :2])
+    best_f0, best_onset = coordinate_decoder(best_raw[:, :2])
     best_phrase = EventPhrase(best_f0.detach(), best_onset.detach())
     return FitResult(
         loss_name=canonical_name,
