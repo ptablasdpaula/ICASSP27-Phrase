@@ -207,6 +207,19 @@ def heatmaps(rows, output):
                         CEL_NAMES.index(row["variant"]), (1, 2, 4, 6, 8).index(row["events"])
                     ] = np.nan if row["mean"] is None else row["mean"] * 100
             im = ax.imshow(matrix, aspect="auto", vmin=0, vmax=100, cmap="viridis")
+            for row in range(30):
+                for column in range(5):
+                    value = matrix[row, column]
+                    ax.text(
+                        column,
+                        row,
+                        f"{value:.1f}" if np.isfinite(value) else "—",
+                        ha="center",
+                        va="center",
+                        fontsize=7,
+                        color="black" if not np.isfinite(value) or value > 55 else "white",
+                    )
+            ax.axhline(14.5, color="black", linewidth=0.6)
             ax.set_xticks(range(5), (1, 2, 4, 6, 8))
             ax.set_yticks(range(30), labels, fontsize=8)
             ax.set_xlabel("Events")
