@@ -32,3 +32,14 @@ amplitudes at every evaluation. Run `python scripts/test_swap_escape.py` with
 the project environment and PYTHONHOME set to `.pixi/envs/default`.
 
 Results pending. A success here is not evidence of general success across targets.
+
+## Adaptive follow-up: relax before judging a swap
+
+The greedy proposal screen selected the unchanged state: all six swaps initially
+increase CeL. Therefore also optimise **all six** swapped candidates under canonical
+CeL before selecting by their final strict-best losses (including the unchanged
+baseline in selection). Same full registered schedule, fixed amplitudes and
+independent times. This is a six-restart search with more compute, explicitly
+not an equal-budget loss comparison. Enumeration is lexicographic; no target
+coordinates select a proposal. Each trajectory is stored under `relaxed-swaps/`.
+Run `python scripts/test_relaxed_swaps.py` in the same environment.
