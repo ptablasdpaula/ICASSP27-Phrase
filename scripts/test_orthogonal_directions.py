@@ -19,6 +19,14 @@ from test_amplitude_recovery import metrics
 
 ROOT = Path("docs/orthogonal-escape-pilot")
 STEPS = 1600
+PERIOD = 800
+
+
+def orthogonal_weight(step, variant):
+    if variant == "eight_directions":
+        return 0.5
+    phase = (step % PERIOD) / PERIOD
+    return 1.0 - abs(2.0 * phase - 1.0)
 
 
 def surfaces(power):
@@ -29,8 +37,11 @@ def surfaces(power):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("variant", choices=["all_four", "frequency_only", "diagonal_control"])
+    parser.add_argument("variant", choices=["all_four", "frequency_only", "diagonal_control",
+                                                    "interpolating", "eight_directions"])
     args = parser.parse_args()
+    assert [orthogonal_weight(s, "interpolating") for s in (0, 200, 400, 600, 800)] == [
+        0.0, 0.5, 1.0, 0.5, 0.0]
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
     ROOT.mkdir(parents=True, exist_ok=True)
@@ -72,16 +83,24 @@ def main():
         terms = axis_terms(candidate)
         objective = (diagonal if args.variant == "diagonal_control" else
                      terms[:2].mean() if args.variant == "frequency_only" else terms.mean())
+        mixing = args.variant in ("interpolating", "eight_directions")
+        weight = orthogonal_weight(step, args.variant) if mixing else None
+        if mixing:
+            objective = (1 - weight) * diagonal + weight * terms.mean()
         value = float(diagonal.detach())
         if value < best:
             best, best_raw = value, raw.detach().clone()
         if step == 0:
             assert abs(value - baseline["best_loss"]) < 1e-12
-            scale = float(objective.detach())
+            scale = float(diagonal.detach()) if mixing else float(objective.detach())
         row = dict(update=step, canonical_loss=value, best_canonical_loss=best,
                    objective_loss=float(objective.detach()), axis_terms=terms.detach().tolist(),
                    f0_hz=f.detach().tolist(), onset_seconds=t.detach().tolist(),
                    metrics=metrics(f.detach().numpy(), t.detach().numpy(), metadata))
+        if mixing:
+            row["orthogonal_weight"] = weight
+            reconstructed = (1 - weight) * value + weight * sum(row["axis_terms"]) / 4
+            assert abs(row["objective_loss"] - reconstructed) < 1e-12
         if step % 100 == 0:
             gradient = torch.autograd.grad(objective, raw, retain_graph=True)[0]
             row["gradient_norm"] = float(gradient.norm())
@@ -107,6 +126,7 @@ def main():
                   source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"],
                                                          text=True).strip(),
                   initial_objective_scale=scale, target_mass=float(mass),
+                  interpolation_period=PERIOD if args.variant == "interpolating" else None,
                   exploration_trajectory=trajectory, best_exploration_loss=best, polish=out)
     path.write_text(json.dumps(result, indent=2) + "\n")
     print("COMPLETE", args.variant, polish.best_loss, out["metrics"], flush=True)

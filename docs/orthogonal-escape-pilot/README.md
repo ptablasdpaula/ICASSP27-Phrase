@@ -82,3 +82,26 @@ at 5.480767 cents / 70.452117 ms after 1600 exploration updates plus 248
 refinement updates. Total descent updates are 1848 (all four axes), 3295
 (frequency-only), and 1848 (control); this is not an exactly matched total-compute
 comparison of the final refined errors.
+
+## Continuous interpolation versus all eight directions
+
+Follow-up: restart the same stalled C04-T0005 controls, keeping amplitudes fixed
+and independent onset logits. Let D be the mean of the original four diagonal
+RMS terms and O the mean of the four axis-only RMS terms defined above.
+
+- `interpolating`: L(s) = (1-a(s)) D + a(s) O, where
+  a(s) = 1 - |2 ((s mod 800)/800) - 1|. Each cycle starts at pure diagonal,
+  reaches pure orthogonal after 400 updates, and returns after 800. Run two
+  cycles (1600 updates). This is continuous piecewise-linear interpolation
+  between loss families, not a geometric rotation of the cumulative operator.
+- `eight_directions`: L = (D+O)/2 throughout. Since both families contain four
+  directions, every directional RMS has weight 1/8.
+
+Both new runs divide their mixed objective by the **same starting diagonal
+loss**, held fixed throughout, and use identical fresh Adam settings and
+budgets. Neither loss family is individually standardised: equal coefficients
+need not imply equal gradient contributions. Keep strict-best diagonal-loss
+checkpoints, including the initial state, and apply the same diagonal refinement
+as before. Ground-truth errors never select checkpoints. Validate the triangular
+schedule at endpoints and midpoints and reconstruct each saved mixed loss from
+its component losses to tolerance 1e-12. Run the two variants concurrently.

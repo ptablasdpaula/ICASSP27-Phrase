@@ -8,7 +8,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = Path("docs/orthogonal-escape-pilot")
-NAMES = ["all_four", "frequency_only", "diagonal_control"]
+NAMES = ["all_four", "frequency_only", "diagonal_control", "interpolating", "eight_directions"]
 
 
 def main():
