@@ -1,8 +1,20 @@
 {
   "source": "raw-sweeps.npz",
   "source_sha256": "f8ec68f908cabe1984d271e849d0a22df2e73c3d359a039892774274df51e655",
-  "script_sha256": "bba43859a88dfceb695b6a31eaf31d6a513c49861eab26edb1dc2bb91aeff6e4",
+  "script_sha256": "afafb7aaf5d4125116d7527d3d81b3515a13d6aec6ff24a93bc7e29f65341310",
   "layouts": {
+    "comparison-six-no-cel": [
+      [
+        "waveform_l1",
+        "linear_mss",
+        "smooth_mss"
+      ],
+      [
+        "waveform_mse",
+        "linear_jtfot",
+        "sot_published_composite"
+      ]
+    ],
     "comparison-seven": [
       [
         "waveform_l1",
@@ -107,12 +119,14 @@
   "artifact_sha256": {
     "comparison-seven.png": "ea91953141dc27912376990411d4c37dee8400d10da70c668d1a183bf25fd91f",
     "comparison-seven.pdf": "a559e639f47b7350e05ed717e2d71eca625f5bb23ff007f6d0f0b25e7b498886",
+    "comparison-spectral-sot-left.png": "f96bb93be8fc7bdf7d2eeb02fc59b55b7a501d31ff0fb17edd402f8ec67c5f91",
+    "comparison-spectral-sot-left.pdf": "4961d6a18cee36abc9e5a4bc5af484886a7707ad23dae3de45eec122f78ca1db",
     "comparison-spectral.png": "74944b51245f2e37b72241eb372df8224308121194f2cdfc4b0251d4ce27ca4f",
     "comparison-spectral.pdf": "efd5030d8dd5718a61c2390c853543f429b3b5a6cfdf24d237e7b11fb4d551a1",
     "comparison-spectral-column.png": "4acc63d8688f4022c03396312a1063eb997f43dba4b78a0add39ab1895cd0c77",
     "comparison-spectral-column.pdf": "d24c871591f62a8fc76caa67d2754d91b72145a1a0aaf06a5edbc6283d651426",
-    "comparison-spectral-sot-left.png": "f96bb93be8fc7bdf7d2eeb02fc59b55b7a501d31ff0fb17edd402f8ec67c5f91",
-    "comparison-spectral-sot-left.pdf": "4961d6a18cee36abc9e5a4bc5af484886a7707ad23dae3de45eec122f78ca1db"
+    "comparison-six-no-cel.png": "ff9df1d44af723f1910d8b522cedead787fd20689ae85d55cd36914bb272a9d4",
+    "comparison-six-no-cel.pdf": "c41abb0c1462a0b7861262b684c51d0d77fb6283d2fb8cedf5dd6afbcc5ca6ae"
   },
   "checks": {
     "source_hash_matches": true,
