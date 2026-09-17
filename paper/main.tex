@@ -241,7 +241,7 @@ e_0(t)=\begin{cases}
 0,&\text{otherwise,}
 \end{cases}
 \end{equation*}
-where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its amplitude scale, and $T_e=10$~ms its duration. As a differentiable onset placement method, we use a Fourier phase-ramp delay for, using FLAMO~\cite{dalsanto2025flamo}. To place an onset by $\delta_o$ samples, we multiply the spectrum of $e_0$ by $e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per sample and $j^2=-1$. The excitation is zero-padded to an FFT length $2.048$ times the full signal length to reduce circular wrap-around~\cite[Ch.~7]{smith2007dft}. We constrain the DC and Nyquist bins to be real to preserve Hermitian symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before one inverse FFT, retaining the first two seconds as the summed excitation.
+where $e_0(t)$ is           amplitude at elapsed time $t$, $A_e=0.8$ its amplitude scale, and $T_e=10$~ms its duration. As a differentiable onset placement method, we use a Fourier phase-ramp delay for, using FLAMO~\cite{dalsanto2025flamo}. To place an onset by $\delta_o$ samples, we multiply the spectrum of $e_0$ by $e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per sample and $j^2=-1$. The excitation is zero-padded to an FFT length $2.048$ times the full signal length to reduce circular wrap-around~\cite[Ch.~7]{smith2007dft}. We constrain the DC and Nyquist bins to be real to preserve Hermitian symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before one inverse FFT, retaining the first two seconds as the summed excitation.
 
 For gradient-based $f_0$ optimisation, we use real-valued delays with Thiran
 all-pass interpolation.
