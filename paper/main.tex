@@ -71,7 +71,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \newacronym{gpu}{GPU}{graphics processing unit}
 \newacronym{mae}{MAE}{mean absolute error}
 \newacronym{lsd}{LSD}{log-spectral distance}
-\newacronym{logq}{Log-Q}{log-frequency quadrature}
+\newacronym{logq}{Log-Weigh}{log-frequency quadrature}
 \newacronym{hpc}{HPC}{high-performance computing}
 \newacronym{jnd}{JND}{just-noticeable difference}
 \newacronym{dwg}{DWG}{Digital Waveguide}
@@ -192,23 +192,6 @@ E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
 \end{equation*}
 
 
-Additionally, we apply a perceptually motivated \emph{Log-Weighing} by
-measuring frequency intervals in octaves. For bin-centre frequency $f_k$ in Hz,
-set $u_k=\log_2[\max(f_k,20)/20]$, with the 20-Hz floor providing a finite
-origin. Let $w^f_{d_f,k}$ and $w^t_{d_t,n}$ be adjacent widths in octaves and
-seconds, respectively, following the accumulation directions. We replace the
-uniform-bin error by the weighted \gls{rms}
-\begin{equation*}
-\ell^{\rm LW}_q=\left[\frac{\sum_{k,n}
-w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
-{\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2}.
-\end{equation*}
-Endpoints without a neighbouring interval have zero weight. This gives equal
-octave spans equal total weight while preserving the cumulative surfaces,
-normalisation, feature transformation, and directional average.
-
-
-
 \section{Differentiable Plucked-String Musical Phrases}
 \label{sec:renderer}
 We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings \cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$, where $f_s$ is the sample rate; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position arises as $D_2/(D_1+D_2)=0.23$ from the bridge. We synthesise two-second signals at $f_s=4$~kHz.
@@ -289,15 +272,47 @@ configuration, Experiment II tests a $1\,\mathrm{s}=1\,\mathrm{oct}$ variant
 that changes \gls{tfw} coordinates to
 $\log_2[\max(f,20)/20]$ octaves and seconds; $f$ is bin-centre Hz and the
 20-Hz floor gives a finite origin. The sixth base objective is
-Sec.~\ref{sec:losses}'s \gls{bicul}; Experiment II additionally evaluates its \gls{logq}
-variant defined there. Experiment I compares the six base objectives, while
-Experiment II compares all eight configurations.
+Sec.~\ref{sec:losses}'s bidirectional variant, \gls{bicul}.
+Experiment I compares the six base objectives. Experiment II compares the
+original eight configurations and additionally reports Fade descriptively.
+
+\subsection{CeL variants}
+\label{sec:cel-variants}
+Our base configuration averages all four direction pairs and uses
+$\phi(u)=\sqrt{u}$. We test two separate modifications:
+
+\emph{\acrshort{logq}} applies perceptually motivated frequency weighting.
+For bin-centre frequency $f_k$, define $u_k=\log_2[\max(f_k,20)/20]$.
+Let $w^f_{d_f,k}$ and $w^t_{d_t,n}$ denote adjacent interval widths in octaves
+and seconds, following the accumulation directions. Replace the uniform RMS by
+\begin{equation*}
+\ell^{\rm LW}_q=\left[\frac{\sum_{k,n}
+w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
+{\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2}.
+\end{equation*}
+Endpoints without a neighbouring interval have zero weight. Equal octave spans
+receive equal total frequency weight; cumulative surfaces are unchanged.
+
+\emph{Fade} makes accumulation more local. Within each direction's rectangle,
+a contribution at absolute time and frequency separations $\Delta t$ and
+$\Delta f$ from the receiving bin is multiplied by
+$w(\Delta t;H_t)w(\Delta f;H_f)$, where
+\begin{equation*}
+w(d;H)=\max\!\left(0,1-\frac{\log(1+9d/H)}{\log 10}\right).
+\end{equation*}
+We fix $H_t=1$~s and $H_f=1000$~Hz throughout optimisation; each weight reaches
+zero at its horizon. The same weights modify target and candidate accumulation.
+Both variants retain the original total target power $m$, square-root features,
+and four-direction average. Fade uses uniform RMS, without \acrshort{logq};
+its logarithmic decay is distinct from octave-based error weighting.
 
 \begin{table*}[!t]
 \centering
 \caption{\normalfont Median Hungarian-matched pitch and onset errors over 150
 phrases per event count; lower is better. Bold, underlined, and italic values
-indicate first, second, and third place, respectively.}
+indicate first, second, and third place among the original eight configurations.
+Fade is reported separately with 2.048 onset padding; the historical rows
+retain their original padding and are not ranked against Fade.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table.tex}
 \end{table*}
@@ -315,7 +330,7 @@ percentage of 120 non-target directions pointing towards the target.}
 
 \subsection{Experiment I: Single-event Gradient Diagnostic}
 \label{sec:gradient-diagnostic}
-\textcolor{red}{The single-event diagnostic now uses 2.048x onset padding. Phrase-recovery results below await reruns after CeL variant selection.}
+\textcolor{red}{The single-event diagnostic and Fade recovery runs use 2.048x onset padding. The original eight phrase-recovery configurations still await reruns at this setting.}
 We use a centred 160-Hz, 1.0-s target and a target-inclusive 25-by-25 lattice.
 Time is linear over $\pm0.8$~s and pitch logarithmic over $\pm1$ octave, so
 this relative lattice spans the complete registered candidate ranges
@@ -344,7 +359,9 @@ raw. A relative raw-loss decrease of $10^{-4}$ resets patience. At patience 100
 and 200, we restore the strict best, multiply the learning rate by 0.3 (floor
 $10^{-5}$), and clear optimiser state; we stop at patience 250 or 3000 updates
 and retain the best. Thus 150 targets $\times$ 8 losses $\times$ 5 event
-counts${}={}$6000 fits.
+counts${}={}$6000 historical fits. Fade adds 750 fits on the same targets and
+optimisation schedule, using the updated 2.048 onset padding; Table~\ref{tab:pilot-compact}
+reports it separately pending matched-padding baseline reruns.
 
 \begin{figure}[t]
 \centering
@@ -369,6 +386,7 @@ Fig.~\ref{fig:lsd} the audio-error distributions.
 Across phrases, we report medians of within-phrase pitch \gls{mae} (cents) and onset
 \gls{mae} (ms). Periodic-Hann \gls{fft}-256/hop-64 \gls{lsd} is objective-independent.
 
+Fade is excluded from the following historical family comparison.
 Post hoc, each phrase's \gls{bicul}-family score averages \gls{bicul} and \gls{logq}; its
 \gls{tfw}-family score averages canonical \gls{tfw} and the $1\,\mathrm{s}=1\,\mathrm{oct}$
 variant. For each count--metric cell, the paired two-sided Wilcoxon signed-rank
@@ -386,8 +404,8 @@ target-directed descent, respectively. Thus \gls{bicul} is the only objective wi
 case; Fig.~\ref{fig:landscapes} does not imply a renderer-independent ranking.
 
 \subsection{Experiment II: Phrase Recovery}
-Table~\ref{tab:pilot-compact} and Fig.~\ref{fig:lsd} report all conditions and
-\gls{lsd} distributions. Both \gls{bicul} variants are essentially exact at one and two
+Table~\ref{tab:pilot-compact} reports all nine configurations; Fig.~\ref{fig:lsd} shows the original eight
+\gls{lsd} distributions. Among the original configurations, both \gls{bicul} variants are essentially exact at one and two
 events. A \gls{bicul} variant has the lowest median pitch error at every count and
 onset error through four; published linear-Hz \gls{tfw} has the lowest onset error
 at six and eight.
