@@ -2,6 +2,8 @@
 
 ## Revised layout comparison
 
+- **Five spectral losses, one column:** [PNG](comparison-spectral-column.png) · [PDF](comparison-spectral-column.pdf). All five curves share each panel; onset above pitch.
+
 - **Seven losses:** [PNG](comparison-seven.png) · [PDF](comparison-seven.pdf). Left: L1, Linear MSS, Smooth MSS. Right: L2, SOT, TFW, CeL.
 - **Five spectral losses:** [PNG](comparison-spectral.png) · [PDF](comparison-spectral.pdf). Left: Linear MSS, Smooth MSS. Right: SOT, TFW, CeL.
 

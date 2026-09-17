@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -40,11 +41,25 @@ LAYOUTS = {
 }
 
 
+LAYOUTS["comparison-spectral-column"] = (
+    (
+        "linear_mss",
+        "smooth_mss",
+        "sot_published_composite",
+        "linear_jtfot",
+        "bidirectional_cumulative_energy",
+    ),
+)
+
+
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--layout", choices=tuple(LAYOUTS))
+    args = parser.parse_args()
     source = OUTPUT / "raw-sweeps.npz"
     original_hash = sha(source)
     previous = json.loads((OUTPUT / "provenance.json").read_text())
@@ -70,9 +85,19 @@ def main():
             "path.simplify": False,
         }
     )
-    outputs = {}
+    outputs = {
+        p.name: sha(p)
+        for stem in LAYOUTS
+        for ext in ("png", "pdf")
+        if (p := OUTPUT / f"{stem}.{ext}").exists()
+    }
     for stem, groups in LAYOUTS.items():
-        fig, panels = plt.subplots(2, 2, figsize=(10, 5.9), sharey=True)
+        if args.layout and stem != args.layout:
+            continue
+        columns = len(groups)
+        fig, panels = plt.subplots(
+            2, columns, figsize=(5.5 if columns == 1 else 10, 5.9), sharey=True, squeeze=False
+        )
         for row in range(2):
             for col, group in enumerate(groups):
                 ax = panels[row, col]
@@ -103,14 +128,19 @@ def main():
                     ax.legend(
                         loc="lower center",
                         bbox_to_anchor=(0.5, 1.07),
-                        ncol=2 if len(group) == 4 else len(group),
+                        ncol=3 if len(group) == 5 else 2 if len(group) == 4 else len(group),
                         frameon=False,
                         fontsize=9,
                         handlelength=2.5,
                         columnspacing=1.1,
                     )
         fig.subplots_adjust(
-            left=0.075, right=0.955, bottom=0.105, top=0.84, hspace=0.40, wspace=0.19
+            left=0.15 if columns == 1 else 0.075,
+            right=0.955,
+            bottom=0.105,
+            top=0.84,
+            hspace=0.40,
+            wspace=0.19,
         )
         for ext in ("png", "pdf"):
             path = OUTPUT / f"{stem}.{ext}"
