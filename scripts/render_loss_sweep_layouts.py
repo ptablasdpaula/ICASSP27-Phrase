@@ -64,6 +64,15 @@ LAYOUTS["comparison-spectral-column"] = (
 )
 
 
+STYLE_OVERRIDES = {
+    "comparison-six-cel": {
+        "linear_mss": ("Linear MSS", "#0072B2", "-", 1.3, 1.0),
+        "smooth_mss": ("Smooth MSS", "#C18A00", "-.", 1.3, 1.0),
+        "linear_jtfot": ("TFW", "#D55E00", "-.", 1.3, 1.0),
+    },
+}
+
+
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -115,7 +124,9 @@ def main():
                 ax = panels[row, col]
                 ax.axvline(0, color="0.5", linestyle=":", linewidth=0.9, zorder=0)
                 for name in group:
-                    label, colour, style, width, alpha = STYLE[name]
+                    label, colour, style, width, alpha = STYLE_OVERRIDES.get(stem, {}).get(
+                        name, STYLE[name]
+                    )
                     ax.plot(
                         axes[row],
                         normalised[row, names.index(name)],
@@ -167,6 +178,7 @@ def main():
         "script_sha256": sha(Path(__file__)),
         "layouts": LAYOUTS,
         "styles": STYLE,
+        "style_overrides": STYLE_OVERRIDES,
         "normalisation": "Unchanged saved independent min-max per loss and sweep",
         "points_per_curve": 3201,
         "smoothing": False,
