@@ -16,7 +16,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs/loss-sweeps"
 STYLE = {
-    "single_stft": ("Single-scale STFT", "#171717", "-", 1.3, 1.0),
+    "single_stft": ("Single-scale STFT", "#171717", "--", 1.3, 1.0),
     "waveform_l1": (r"$L_1$", "#171717", "-", 0.45, 0.65),
     "waveform_mse": (r"$L_2$", "#49302B", "-", 0.45, 0.65),
     "linear_mss": ("Linear MSS", "#0072B2", "--", 1.3, 1.0),
@@ -67,7 +67,7 @@ LAYOUTS["comparison-spectral-column"] = (
 
 STYLE_OVERRIDES = {
     "comparison-six-cel": {
-        "linear_mss": ("Linear MSS", "#0072B2", "--", 1.3, 1.0),
+        "linear_mss": ("Linear MSS", "#0072B2", "-", 1.3, 1.0),
         "smooth_mss": ("Smooth MSS", "#C62828", "-", 1.3, 1.0),
         "linear_jtfot": (r"$\mathrm{TF}\mathcal{W}_2$", "#D55E00", "-.", 1.3, 1.0),
     },
