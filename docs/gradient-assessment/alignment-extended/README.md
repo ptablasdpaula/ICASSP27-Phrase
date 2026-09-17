@@ -1,6 +1,6 @@
 # Extended gradient alignment study
 
-The GPU extension was submitted as Slurm job 27284248. This directory receives
+The GPU extension was resubmitted to gpushort as Slurm job 27287265 (the queued andrena job 27284248 was cancelled). This directory receives
 reports automatically on successful completion. The presence of this README
 alone does not indicate that results are available.
 
@@ -38,7 +38,7 @@ extract each archive into its recorded extract_into directory to reproduce.
 The manuscript and original seven-column reports remain unchanged.
 
 ```bash
-sbatch --account=pilot_andrena --partition=andrena --gres=gpu:1 \
+sbatch --account=pilot --partition=gpushort --gres=gpu:1 \
   --cpus-per-task=4 --mem=32G --time=01:00:00 \
   --job-name=cel-gradient-extra \
   --output=results/gradient-assessment-extended/logs/%j.log \
