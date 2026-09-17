@@ -68,7 +68,7 @@ STYLE_OVERRIDES = {
     "comparison-six-cel": {
         "linear_mss": ("Linear MSS", "#0072B2", "--", 1.3, 1.0),
         "smooth_mss": ("Smooth MSS", "#C62828", "-", 1.3, 1.0),
-        "linear_jtfot": ("TFW", "#D55E00", "-.", 1.3, 1.0),
+        "linear_jtfot": (r"$\mathrm{TF}\mathcal{W}_2$", "#D55E00", "-.", 1.3, 1.0),
     },
 }
 
