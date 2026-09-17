@@ -1,0 +1,9 @@
+{
+  "qualification_array": 27186985,
+  "fit_array": 27186997,
+  "report_job": 27187049,
+  "maximum_concurrent_fits": 64,
+  "expected_fits": 3000,
+  "signature": "72fd0df1b88edfcfc283a819c819d315d86c9e58a7c00e8554adfb1e9f60a33e",
+  "publication": "After all fits succeed, validate complete coverage, create reports, commit only docs/direction-recovery-150, and push main. Abort on missing fits, signature/validation failures or git conflicts."
+}
