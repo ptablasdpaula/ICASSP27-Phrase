@@ -122,3 +122,64 @@ def test_target_averaging_and_checkpoint_validation(tmp_path):
     np.savez(path, **{**data, "gradients": np.zeros((3, len(NAMES), 1, 2))})
     with pytest.raises(ValueError, match="incomplete/invalid"):
         module.checked_data(path)
+
+
+def test_report_uses_requested_metric_not_last_diagnostic(tmp_path, monkeypatch):
+    import importlib.util
+    import json
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[1] / "scripts/assess_gradients.py"
+    spec = importlib.util.spec_from_file_location("assessment_report", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    registry = [(f"C{n:02d}-T000", np.ones((n, 2))) for n in (1, 2, 4)]
+    monkeypatch.setattr(module, "targets", lambda: registry)
+    monkeypatch.setattr(module, "signature", lambda: ("test", {}))
+    monkeypatch.setattr(module, "sensitivity", lambda *args: {"passed": True})
+    monkeypatch.setattr(
+        module,
+        "candidates",
+        lambda name, target, count: {
+            kind: np.zeros((2, len(target), 2)) for kind in ("pitch", "time", "joint")
+        },
+    )
+    rows = {}
+    for n, kind in module.COLUMNS:
+        name = f"C{n:02d}-T000"
+        path = module.shard_path(tmp_path, name, kind, 2, 0)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"fixture")
+        rows[path] = dict(
+            candidates=np.zeros((2, n, 2)),
+            assignments=np.tile(np.arange(n), (2, 1)),
+            ties=np.zeros(2, bool),
+            wall_seconds=0.0,
+            peak_rss_kib=0,
+        )
+    monkeypatch.setattr(module, "checked_data", lambda path: rows[path])
+    monkeypatch.setattr(
+        module,
+        "scores_from",
+        lambda data: {
+            "both_directed": np.full((2, 11), 0.25),
+            "dot_directed": np.full((2, 11), 0.75),
+            "original_coordinate_drift": np.full((2, 11), np.nan),
+        },
+    )
+    module.save_json(
+        tmp_path / "sampling.json",
+        {
+            "complete": True,
+            "signature": "test",
+            "final_counts": {f"{n}-{kind}": 2 for n, kind in module.COLUMNS},
+        },
+    )
+    for filename in ("design.json", "qualification.json"):
+        module.save_json(tmp_path / filename, {})
+    for metric, expected in (("dot_directed", 75), ("both_directed", 25)):
+        destination = tmp_path / metric
+        module.report(tmp_path, destination, metric=metric)
+        result = json.loads((destination / "provenance.json").read_text())
+        assert result["metric"] == metric
+        np.testing.assert_array_equal(result["final_percentages"], np.full((11, 7), expected))

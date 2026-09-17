@@ -5,6 +5,8 @@ not change the historical loss registry, recovery runs, or manuscript.
 
 Start with the [findings and limitations](findings.md), [figure](gradient-assessment.pdf),
 [PNG preview](gradient-assessment.png), and [full statistics](summary.csv).
+The same samples rescored using a positive dot product are available in the
+[dot-product comparison](dot-product/README.md).
 
 ## Design
 

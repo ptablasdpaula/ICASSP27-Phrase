@@ -310,7 +310,7 @@ def finite_mean(values, axis=0):
     )
 
 
-def sensitivity(root, column, count):
+def sensitivity(root, column, count, metric="both_directed"):
     events, condition = column
     indices = [i for i, (_, t) in enumerate(targets()) if len(t) == events][:8]
     paired = [[], []]
@@ -318,7 +318,7 @@ def sensitivity(root, column, count):
         name, _ = targets()[i]
         for repeat in (0, 1):
             data = checked_data(shard_path(root, name, condition, count, repeat))
-            paired[repeat].append(finite_mean(scores_from(data)["both_directed"]))
+            paired[repeat].append(finite_mean(scores_from(data)[metric]))
     means = np.array([np.mean(rows, axis=0) for rows in paired])
     difference = 100 * np.abs(means[0] - means[1])
     return dict(
@@ -443,7 +443,7 @@ def write_csv(path, rows):
             )
 
 
-def report(root, output, initial_count=None):
+def report(root, output, initial_count=None, metric="both_directed"):
     sampling = (
         json.loads((root / "sampling.json").read_text())
         if initial_count is None
@@ -457,6 +457,19 @@ def report(root, output, initial_count=None):
     )
     if not sampling["complete"] or sampling["signature"] != signature()[0]:
         raise ValueError("campaign incomplete/stale")
+    if metric != "both_directed":
+        sampling = {
+            **sampling,
+            "metric": metric,
+            "sample_count_selection_metric": "both_directed",
+            "note": "Paired rescore of existing final samples; no new sampling or gradients.",
+            "checks": [
+                sensitivity(
+                    root, column, sampling["final_counts"][f"{column[0]}-{column[1]}"], metric
+                )
+                for column in COLUMNS
+            ],
+        }
     output.mkdir(parents=True, exist_ok=True)
     target_rows, summary, quality, matrix, artifacts = [], [], [], [], {}
     for events, condition in COLUMNS:
@@ -469,9 +482,9 @@ def report(root, output, initial_count=None):
             data = checked_data(path)
             assert np.array_equal(data["candidates"], candidates(name, target, count)[condition])
             metrics = scores_from(data)
-            for metric, values in metrics.items():
+            for metric_name, values in metrics.items():
                 mean = finite_mean(values)
-                collected.setdefault(metric, []).append(mean)
+                collected.setdefault(metric_name, []).append(mean)
                 for i, loss in enumerate(NAMES):
                     target_rows.append(
                         dict(
@@ -480,7 +493,7 @@ def report(root, output, initial_count=None):
                             target=name,
                             candidates=count,
                             loss=loss,
-                            metric=metric,
+                            metric=metric_name,
                             mean=float(mean[i]),
                             eligible=int(np.isfinite(values[:, i]).sum()),
                         )
@@ -501,8 +514,8 @@ def report(root, output, initial_count=None):
                 )
             )
             artifacts[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
-        matrix.append(np.mean(collected["both_directed"], axis=0) * 100)
-        for metric, values in collected.items():
+        matrix.append(np.mean(collected[metric], axis=0) * 100)
+        for metric_name, values in collected.items():
             array = np.array(values)
             for i, loss in enumerate(NAMES):
                 valid = array[:, i][np.isfinite(array[:, i])]
@@ -513,7 +526,7 @@ def report(root, output, initial_count=None):
                         candidates_per_target=count,
                         targets=len(array),
                         loss=loss,
-                        metric=metric,
+                        metric=metric_name,
                         mean=float(valid.mean()) if len(valid) else float("nan"),
                         sd=float(valid.std(ddof=1)) if len(valid) > 1 else float("nan"),
                         median=float(np.median(valid)) if len(valid) else float("nan"),
@@ -575,7 +588,10 @@ def report(root, output, initial_count=None):
         ax.axhline(boundary, color="white", linewidth=1.1)
     cax = fig.add_axes([0.245, 0.085, 0.74, 0.025])
     cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticks=[0, 25, 50, 75, 100])
-    cb.set_label("Target-directed events (%)", labelpad=2)
+    cb.set_label(
+        "Positive dot product (%)" if metric == "dot_directed" else "Target-directed events (%)",
+        labelpad=2,
+    )
     cb.ax.tick_params(length=2, pad=2)
     cb.ax.get_xticklabels()[0].set_horizontalalignment("left")
     cb.ax.get_xticklabels()[-1].set_horizontalalignment("right")
@@ -592,6 +608,7 @@ def report(root, output, initial_count=None):
         columns=COLUMNS,
         renderer=PhraseSynth().provenance(),
         final_percentages=matrix.tolist(),
+        metric=metric,
     )
     save_json(output / "provenance.json", provenance)
     print("REPORT", output / "gradient-assessment.png", flush=True)
@@ -605,6 +622,9 @@ def main():
     parser.add_argument("--batch", type=int, default=4)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument(
+        "--metric", choices=("both_directed", "dot_directed"), default="both_directed"
+    )
     parser.add_argument(
         "--initial-count",
         type=int,
@@ -624,7 +644,9 @@ def main():
     else:
         if args.initial_count is not None and args.output == DOCS:
             raise ValueError("Use a separate --output directory for the initial preview")
-        report(args.root, args.output, args.initial_count)
+        if args.metric != "both_directed" and args.output == DOCS:
+            raise ValueError("Use a separate --output directory for alternative scores")
+        report(args.root, args.output, args.initial_count, args.metric)
 
 
 if __name__ == "__main__":
