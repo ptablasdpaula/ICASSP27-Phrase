@@ -88,6 +88,19 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 differentiable digital signal processing, digital waveguide, audio loss, analysis by synthesis, event parameter estimation
 \end{IEEEkeywords}
 
+% Queue the cumulative illustration on page 1 so it occupies page 2.
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
+\caption{STFT power of a constant amplitude logarithmic 20-to-1000~Hz sine sweep over two seconds, and its resulting cumulative surfaces for the direction pairs $(d_t,d_f)$.
+The shared linear colour scale runs from 0 to 1, with power normalised by peak
+power for the spectrogram and total target power ($S_q/m$) for the
+cumulative-power surfaces. Logarithmic frequency axes are used for display
+only; accumulation uses linear power on the original STFT grid. Arrows mark
+starting corners and taccumulation directions.}
+\label{fig:cumulative-surfaces}
+\end{figure*}
+
 \section{Introduction}
 \glsresetall
 Engel et al. coined the term \Gls{ddsp}, as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, \gls{fm} synthesis, reverberation, vocal tract modelling and effects modulation ~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}.
@@ -135,17 +148,7 @@ Hence, our contributions are twofold:
 
 \section{Cumulative Energy Losses}
 \label{sec:losses}
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
-\caption{STFT power of a constant amplitude logarithmic 20-to-1000~Hz sine sweep over two seconds, and its resulting cumulative surfaces for the direction pairs $(d_t,d_f)$.
-The shared linear colour scale runs from 0 to 1, with power normalised by peak
-power for the spectrogram and total target power ($S_q/m$) for the
-cumulative-power surfaces. Logarithmic frequency axes are used for display
-only; accumulation uses linear power on the original STFT grid. Arrows mark
-starting corners and taccumulation directions.}
-\label{fig:cumulative-surfaces}
-\end{figure*}
+
 We propose a new family of losses, \Glspl{cel}, that compare accumulated
 spectral power, exposing displacement through changes between the original
 and shifted energy. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate
@@ -204,6 +207,25 @@ nut-side delay $D_1$ and bridge-side delay $D_2$ on each rail.}
 \label{fig:waveguide}
 \end{figure}
 
+% Queue the diagnostic pair early enough to appear on page 3.
+\begin{figure*}[!t]
+\centering
+\begin{minipage}[t]{0.665\textwidth}
+\vspace{0pt}
+\centering
+\includegraphics[width=\linewidth]{\PaperRoot/figures/loss_sweeps.pdf}
+\caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is independently min--max normalised over 3201 samples. Linear MSS denotes the linear-magnitude component of the SOT composite, without its mixing coefficient.}
+\label{fig:loss-sweeps}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.32\textwidth}
+\vspace{0pt}
+\centering
+\includegraphics[width=\linewidth]{\PaperRoot/figures/cel_landscape.pdf}
+\caption{Four-direction CeL landscape for the same target. The cross marks the target; white arrows show unit descent in normalised onset--pitch coordinates. All 120 displayed directions point towards the target.}
+\label{fig:landscapes}
+\end{minipage}
+\end{figure*}
+
 Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, where
 $H_L$ is the loss-filter transfer function, $z$ the transform variable, and
 $z^{-1}$ a one-sample delay:
@@ -251,23 +273,7 @@ diagnostic and comparison of \gls{df2} and literal \gls{dwg} implementations.}.
 
 \section{Experiments and Methodology}
 
-\begin{figure*}[!t]
-\centering
-\begin{minipage}[t]{0.665\textwidth}
-\vspace{0pt}
-\centering
-\includegraphics[width=\linewidth]{\PaperRoot/figures/loss_sweeps.pdf}
-\caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is independently min--max normalised over 3201 samples. Linear MSS denotes the linear-magnitude component of the SOT composite, without its mixing coefficient.}
-\label{fig:loss-sweeps}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.32\textwidth}
-\vspace{0pt}
-\centering
-\includegraphics[width=\linewidth]{\PaperRoot/figures/cel_landscape.pdf}
-\caption{Four-direction CeL landscape for the same target. The cross marks the target; white arrows show unit descent in normalised onset--pitch coordinates. All 120 displayed directions point towards the target.}
-\label{fig:landscapes}
-\end{minipage}
-\end{figure*}
+
 
 \subsection{Loss Objectives}
 \label{sec:loss-objectives}
