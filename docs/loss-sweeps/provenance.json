@@ -144,9 +144,9 @@
     "comparison.png": "4732c75bd780fcdc53176f443d2c4c9dd8300ec9b006ecb869c482177b072db1",
     "cel.pdf": "8ae7750d36dd7b8cb3b7aa175ef5eadb8f5f63607f7c5e8a7373387ca208eaac",
     "comparison.pdf": "805e3b9432661ff23a41c70e70651086a82a15c5e3f6de13570c7f15bc616191",
-    "sweeps.csv": "0f43ec89a03a1243de0c2e9a223bd42000ba14f42bd4acd13b9f3c9454cf3e5e",
+    "sweeps.csv": "afb642341b719fab0bab54e896cc40eef6d31576e5cec7848572ac2ecf8aafa3",
     "raw-sweeps.npz": "f8ec68f908cabe1984d271e849d0a22df2e73c3d359a039892774274df51e655"
   },
-  "render_only_revision": "Increased right margin after visual inspection; raw loss arrays unchanged.",
-  "render_source_sha256": "db27d355db79d5a8a67264f251abd0ca125018709128c98f027f84b9369c1b88"
+  "render_only_revision": "Increased right margin and used LF CSV newlines after inspection; numeric sweep values unchanged.",
+  "render_source_sha256": "84a2f58b296cf3de319df271b89d52692b2402be41e491df261322ac20285fe8"
 }

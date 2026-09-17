@@ -230,7 +230,7 @@ def main():
         names=np.array(NAMES),
     )
     with (args.output / "sweeps.csv").open("w") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow(["sweep", "displacement", *NAMES])
         for row, axis in enumerate(axes):
             for index, displacement in enumerate(axis):
