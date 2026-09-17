@@ -1,4 +1,4 @@
-"""Validate 3,000 single-stage orthogonal/clockwise fits and publish summaries."""
+"""Validate 4,500 single-stage orthogonal/clockwise/fading fits and publish summaries."""
 
 from __future__ import annotations
 
@@ -13,9 +13,13 @@ import numpy as np
 from icassp27_phrase.config import CARDINALITIES
 from icassp27_phrase.targets import load_target
 from run_clockwise_recovery import signature as clockwise_signature
-from run_direction_recovery import ROOT, VARIANTS
+from run_direction_recovery import ROOT
+from run_direction_recovery import VARIANTS as EXISTING_VARIANTS
 from run_direction_recovery import signature as orthogonal_signature
+from run_fading_recovery import signature as fading_signature
 from test_amplitude_recovery import metrics
+
+VARIANTS = (*EXISTING_VARIANTS, "fading", "fading_lw")
 
 OUT = Path("docs/direction-recovery-150")
 METRICS = ("pitch_mae_cents", "onset_mae_ms", "log_spectral_distance_db", "joint_event_error")
@@ -24,16 +28,23 @@ LABELS = dict(
     orthogonal_lw="Orthogonals + LW",
     clockwise="Clockwise",
     clockwise_lw="Clockwise + LW",
+    fading="Fixed fade 1 s / 1000 Hz",
+    fading_lw="Fixed fade + LW",
 )
 
 
 def main():
     rows, manifest, compact = [], [], []
-    signatures = dict(orthogonal=orthogonal_signature(), clockwise=clockwise_signature())
-    for index in range(3000):
+    signatures = dict(
+        orthogonal=orthogonal_signature(),
+        clockwise=clockwise_signature(),
+        fading=fading_signature(),
+    )
+    for index in range(4500):
         variant = VARIANTS[index // 750]
         rotating = variant.startswith("clockwise")
-        family = "clockwise" if rotating else "orthogonal"
+        fading = variant.startswith("fading")
+        family = "fading" if fading else "clockwise" if rotating else "orthogonal"
         events = CARDINALITIES[(index % 750) // 150]
         meta, _ = load_target(events, index % 150 + 1)
         path = ROOT / "raw" / variant / f"{meta.target_id}.json.gz"
@@ -42,9 +53,13 @@ def main():
         assert d["signature"] == signatures[family]
         assert d["index"] == index and d["variant"] == variant
         assert d["target"]["target_id"] == meta.target_id
-        key = "fit" if rotating else "baseline"
+        key = "fit" if rotating or fading else "baseline"
         result = d[key]
-        if rotating:
+        if fading:
+            assert d["schema"] == "fixed-fading-v1" and not d["fade_schedule"]
+            assert d["time_horizon_seconds"] == 1 and d["frequency_horizon_hz"] == 1000
+            assert d["log_weighing"] == variant.endswith("_lw")
+        elif rotating:
             assert d["schema"] == "single-stage-clockwise-v1"
             assert not d["diagonal_warmup"] and not d["refinement"] and "baseline" not in d
         else:
@@ -78,7 +93,7 @@ def main():
         )
         d[key].pop("trajectory")
         compact.append(d)
-    assert len(rows) == len({(r["target_id"], r["variant"]) for r in rows}) == 3000
+    assert len(rows) == len({(r["target_id"], r["variant"]) for r in rows}) == 4500
     write_csv("per_phrase.csv", rows)
     groups = defaultdict(list)
     for row in rows:
@@ -103,8 +118,15 @@ def main():
     lookup = {(r["target_id"], r["variant"]): r for r in rows}
     paired = []
     for events in CARDINALITIES:
-        for variant in ("clockwise", "clockwise_lw"):
-            reference = "orthogonal_lw" if variant.endswith("_lw") else "orthogonal"
+        for variant, reference in (
+            ("clockwise", "orthogonal"),
+            ("clockwise_lw", "orthogonal_lw"),
+            ("fading", "orthogonal"),
+            ("fading_lw", "orthogonal_lw"),
+            ("fading", "clockwise"),
+            ("fading_lw", "clockwise_lw"),
+            ("fading_lw", "fading"),
+        ):
             for metric in METRICS:
                 differences = np.array(
                     [
@@ -119,10 +141,10 @@ def main():
                         reference=reference,
                         metric=metric,
                         n=150,
-                        median_clockwise_minus_orthogonal=float(np.median(differences)),
-                        mean_clockwise_minus_orthogonal=float(differences.mean()),
-                        clockwise_better=int((differences < -1e-10).sum()),
-                        clockwise_worse=int((differences > 1e-10).sum()),
+                        median_variant_minus_reference=float(np.median(differences)),
+                        mean_variant_minus_reference=float(differences.mean()),
+                        variant_better=int((differences < -1e-10).sum()),
+                        variant_worse=int((differences > 1e-10).sum()),
                         tied=int((np.abs(differences) <= 1e-10).sum()),
                     )
                 )
@@ -133,11 +155,11 @@ def main():
         json.dumps(
             dict(
                 signatures=signatures,
-                fits=3000,
+                fits=4500,
                 target_count=750,
                 cardinalities=CARDINALITIES,
                 variants=VARIANTS,
-                schema="single-stage-direction-recovery-v2",
+                schema="single-stage-direction-recovery-v3",
                 report_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 raw_shards=manifest,
             ),
@@ -146,7 +168,7 @@ def main():
         + "\n"
     )
     report(groups, summary)
-    print("COMPLETE: all 3,000 single-stage fits validated", flush=True)
+    print("COMPLETE: all 4,500 single-stage fits validated", flush=True)
 
 
 def write_csv(name, rows):
@@ -164,9 +186,9 @@ def report(groups, summary):
 
     values = {(r["events"], r["variant"], r["metric"]): r for r in summary}
     lines = [
-        "# Single-stage orthogonal / clockwise recovery",
+        "# Full orthogonal / clockwise / fixed-fading recovery",
         "",
-        "**Complete:** 750 frozen targets × four methods = 3,000 fits. "
+        "**Complete:** 750 frozen targets × six methods = 4,500 fits. "
         "Each method has 150 targets at each of 1/2/4/6/8 events.",
         "",
         "[Protocol](protocol.md) · [Per-phrase results](per_phrase.csv) · "
@@ -181,6 +203,10 @@ def report(groups, summary):
         "average with matching Log-Weighing controls patience and checkpoint selection. "
         "Orthogonal fits monitor their static four-direction objective. The monitor is "
         "not used for clockwise backward updates.",
+        "",
+        "Fixed fading uses all four diagonal directions, with logarithmic fade-to-zero "
+        "horizons of 1 second and 1000 Hz throughout. Uniform and Log-Weighed variants "
+        "use their own fixed training loss for patience and checkpoint selection.",
         "",
         "## Median recovery errors",
         "",
@@ -219,8 +245,8 @@ def report(groups, summary):
         "",
         "![LSD distributions](lsd.png)",
         "",
-        "Paired differences compare clockwise and orthogonals on the same targets and "
-        "weighting. Negative clockwise-minus-orthogonal differences favour clockwise. "
+        "Paired differences compare each named variant and reference on the same targets. "
+        "Negative variant-minus-reference differences favour the variant. "
         "These are descriptive comparisons, not new significance claims.",
         "",
         "The full CSV includes mean/sample SD/median. LSD exactly follows the original "
@@ -257,7 +283,7 @@ def report(groups, summary):
     for ax, n in zip(axes, CARDINALITIES, strict=True):
         data = [[r["log_spectral_distance_db"] for r in groups[n, v]] for v in VARIANTS]
         ax.violinplot(data, showmedians=True, showextrema=True)
-        ax.set_xticks(range(1, 5), [LABELS[v] for v in VARIANTS])
+        ax.set_xticks(range(1, len(VARIANTS) + 1), [LABELS[v] for v in VARIANTS])
         ax.tick_params(axis="x", labelrotation=80, labelsize=8)
         ax.set_title(f"{n} events")
         ax.grid(axis="y", alpha=0.2)

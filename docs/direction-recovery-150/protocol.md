@@ -1,9 +1,10 @@
 # Full 150-per-cardinality recovery study
 
-Four requested configurations: four orthogonal directions averaged uniformly,
+Six requested configurations: four orthogonal directions averaged uniformly,
 the same with Log-Weighing, clockwise rotation without Log-Weighing, and clockwise
-rotation with Log-Weighing. The frozen registry contains 150 targets for each of
-1, 2, 4, 6 and 8 events: **750 targets × 4 configurations = 3,000 fits**.
+rotation with Log-Weighing, fixed 1-second/1000-Hz faded diagonals without
+Log-Weighing, and the same faded diagonals with Log-Weighing. The frozen registry contains 150 targets for each of
+1, 2, 4, 6 and 8 events: **750 targets × 6 configurations = 4,500 fits**.
 All start from the paper's 160-Hz, equal-cell-onset initialisation. No selected
 failure subset, amplitude fitting or target-dependent stopping/selection.
 
@@ -48,6 +49,31 @@ The earlier staged clockwise jobs were cancelled, and their outputs archived
 under `results/direction-recovery-150/superseded-plateau-clockwise`. They are
 excluded from this study. Valid completed orthogonal fits are reused unchanged.
 
+## Fixed logarithmically faded diagonals
+
+Two additional variants use all four diagonals with fixed horizons H_t=1 second
+and H_f=1000 Hz. Each contribution is multiplied by w(d_t;H_t)*w(d_f;H_f), where
+w(d;H)=max(0,1-log(1+9d/H)/log(10)). These are fade-to-zero horizons, not half-weight
+horizons. The kernel is logarithmic in both variants; Log-Weighing is a separate
+choice of final RMS quadrature. The accumulation uses linear-Hz displacement,
+not octave displacement. The LW version uses the original oriented quadrature
+in seconds and log-frequency, with the existing 20-Hz coordinate floor.
+
+Reuse exactly the earlier uniform 1s/1000Hz implementation; LW applies existing
+per-direction quadrature weights to the same faded feature errors. Global ORIGINAL
+target power normalisation, square-root feature, no per-frame mass rescaling.
+The fading remains constant throughout: no annealing, delayed patience, warm-up,
+plateau restart or refinement. Standard fresh initialisation; registered Adam
+LR .05, relative meaningful improvement 1e-4, rollback/clear moments/LR x.3 at
+patience 100/200, stop 250 or 3,000 updates, gradient scaling by initial own loss.
+Select strict-best OWN fixed training loss for both faded variants.
+
+Qualification checks exact uniform values/gradients/short trajectory against
+the pilot, independent oriented LW quadrature, both audio finite differences,
+both self-loss/gradient checks, and current shared optimiser/LSD qualification.
+The four one/eight-event gate fits cover both weightings before launching 1,500 fits.
+Existing orthogonal/clockwise runs and their source signatures remain unchanged.
+
 ## Rendering, metrics and provenance
 
 2.048 onset padding (FFT 16,384), fixed .8 amplitudes, independent bounded logits,
@@ -67,9 +93,9 @@ function to check exact agreement.
 
 Save all fit trajectories, selected metrics, parameters and costs as
 compressed per-fit JSON, with source/registry signatures. Resume only matching
-signatures. Aggregate only after all 3,000 unique fits validate; report means,
-sample SDs and medians by event count/configuration, plus paired clockwise-versus-orthogonal comparisons
-with matching weighting. Raw data remain in the results directory;
+signatures. Aggregate only after all 4,500 unique fits validate; report means,
+sample SDs and medians by event count/configuration, plus paired method comparisons
+with matching weighting and the faded LW-versus-uniform comparison. Raw data remain in the results directory;
 commit the full per-phrase table, summaries, plots and archive manifest.
 
 The earlier sensitivity audit applies: single trajectories can respond strongly

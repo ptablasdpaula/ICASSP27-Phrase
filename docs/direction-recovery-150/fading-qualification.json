@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "signature": "56271b7931b1424fe50d56f11eee92a7261a69710888c3c99affc4cefd521e84",
+  "uniform_pilot_values_gradients_trajectory_exact": true,
+  "independent_log_quadrature": true,
+  "finite_difference_both": true,
+  "self_loss_gradient_both": true,
+  "registered_optimizer_and_lsd_qualification_current": true,
+  "targets": 750,
+  "variants": 2,
+  "time_horizon_seconds": 1,
+  "frequency_horizon_hz": 1000,
+  "fade_schedule": false
+}

@@ -8,12 +8,13 @@ export PYTHONHOME="$PWD/.pixi/envs/default" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREA
   scripts/report_direction_recovery.py scripts/run_direction_recovery.py \
   scripts/_recovery_study_fit.py scripts/qualify_direction_recovery.py \
   scripts/run_clockwise_recovery.py scripts/_clockwise_study_fit.py \
-  scripts/qualify_clockwise_recovery.py
+  scripts/qualify_clockwise_recovery.py \
+  scripts/run_fading_recovery.py scripts/qualify_fading_recovery.py
 test "$(git branch --show-current)" = main
 git pull --ff-only
 git add -- docs/direction-recovery-150
 git diff --cached --check -- docs/direction-recovery-150
 if ! git diff --cached --quiet -- docs/direction-recovery-150; then
-  git commit --only -m "Report full orthogonal and clockwise phrase recovery study" -- docs/direction-recovery-150
+  git commit --only -m "Report full orthogonal clockwise and fixed-fading recovery study" -- docs/direction-recovery-150
 fi
 git push origin HEAD:main

@@ -1,24 +1,26 @@
-# Full orthogonal / clockwise phrase-recovery study
+# Full orthogonal / clockwise / fixed-fading recovery study
 
-**Running:** 3,000 fits, comprising 150 frozen targets at each of 1/2/4/6/8 events,
-for orthogonal, orthogonal + Log-Weighing, clockwise and clockwise + Log-Weighing.
+**Running:** six methods × 750 targets = 4,500 fits. Each method uses 150 frozen
+targets at each of 1/2/4/6/8 events.
 
-All four methods start from the standard initial guess, with the same Adam,
-patience and 3,000-update cap. Clockwise rotates throughout: no diagonal pre-fit,
-warm-up or refinement. Its fixed eight-direction mean monitors progress and
-selects checkpoints; only the rotating loss supplies gradients.
+- Orthogonals, without and with Log-Weighing (1500 fits completed).
+- Clockwise rotation, without and with Log-Weighing (running).
+- Fixed logarithmic fade 1 s / 1000 Hz over four diagonals, without and with Log-Weighing (added).
 
-- Orthogonal array: `27187528` (resumes valid completed fits).
-- Corrected clockwise gate: `27188071`; full array: `27188083`.
-- Reporting/publishing job: `27188097`, dependent on both arrays succeeding.
-- Maximum 64 concurrent full-study CPU fits.
-- Optimiser, rollback and gradient checks passed for both clockwise weightings.
+The new fading variants use the original registered Adam/patience settings from
+the standard initial guess. No fade schedule, delayed patience, plateau restart
+or refinement. The logarithmic fade kernel is shared by both; Log-Weighing changes
+only the final quadrature. Each fixed objective selects its own best loss iterate.
 
-See the [protocol](protocol.md), [original qualification](qualification.json),
-[clockwise qualification](clockwise-qualification.json), and [job metadata](jobs.json).
-Selected states, per-phrase metrics, aggregate mean/SD/median tables and plots
-will be published here automatically after all 3,000 fits validate. Compressed
-trajectories stay under `results/direction-recovery-150/raw`. The cancelled staged
-clockwise outputs are archived separately and excluded.
+[Protocol](protocol.md) · [Original qualification](qualification.json) ·
+[Clockwise qualification](clockwise-qualification.json) ·
+[Fading qualification](fading-qualification.json) · [Jobs](jobs.json)
 
-These are not completed results yet. The paper is unchanged.
+Fading gate 27192164 precedes array 27192172. Combined report job 27192224 waits for
+the clockwise and fading arrays, then validates all 4,500 fits including completed
+orthogonals. It publishes mean/SD/median summaries, per-phrase results, comparisons
+and plots, and automatically commits and pushes this directory. The previous
+four-method report job was replaced; no experiment jobs were cancelled.
+
+Full trajectories remain under `results/direction-recovery-150/raw`.
+These are not completed aggregate results. The paper is unchanged.
