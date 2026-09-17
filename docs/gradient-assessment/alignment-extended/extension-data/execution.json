@@ -1,0 +1,77 @@
+{
+  "job_id": "27287265",
+  "signature": "cfef0caec91cd6532fc6d3c4a198e49aa59f0ffddf41f6fb6149019bf10061fb",
+  "backend": "CUDA float64",
+  "gpu": "Tesla V100-PCIE-16GB",
+  "all_saved_comparisons": 25600,
+  "all_saved_loss_gradient_evaluations": 281600,
+  "summed_shard_seconds": 841.5284895338118,
+  "peak_host_rss_kib": 1388232,
+  "benchmarks": {
+    "gradient-assessment/benchmark-b4.json": [
+      {
+        "events": 1,
+        "batch": 4,
+        "candidates": 32,
+        "seconds": 7.7878889087587595,
+        "seconds_per_candidate": 0.24337152839871123,
+        "peak_rss_kib": 805456
+      },
+      {
+        "events": 2,
+        "batch": 4,
+        "candidates": 32,
+        "seconds": 9.244969222694635,
+        "seconds_per_candidate": 0.28890528820920736,
+        "peak_rss_kib": 832948
+      },
+      {
+        "events": 4,
+        "batch": 4,
+        "candidates": 32,
+        "seconds": 10.57421007938683,
+        "seconds_per_candidate": 0.33044406498083845,
+        "peak_rss_kib": 832948
+      }
+    ],
+    "gradient-assessment/benchmark-b8.json": [
+      {
+        "events": 1,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 8.152890024706721,
+        "seconds_per_candidate": 0.25477781327208504,
+        "peak_rss_kib": 1247996
+      },
+      {
+        "events": 2,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 10.19015210494399,
+        "seconds_per_candidate": 0.3184422532794997,
+        "peak_rss_kib": 1247996
+      },
+      {
+        "events": 4,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 12.0758603438735,
+        "seconds_per_candidate": 0.3773706357460469,
+        "peak_rss_kib": 1247996
+      }
+    ]
+  },
+  "cpu_gpu_comparison": "omitted at user request",
+  "determinism": "CUDA reflection-padding backward is not guaranteed bitwise deterministic",
+  "gradient_coordinates": [
+    "log2(f/80) octaves",
+    "onset seconds"
+  ],
+  "source_hashes": {
+    "scripts/assess_gradients.py": "aba34316131df457289fab67e1c0e78618cf663038b12db137909cd7c36e0b80",
+    "/data/home/acw794/ICASSP27-Phrase/scripts/package_gradient_assessment.py": "531ce726ef0e8a63a4485e6e9d78610945a5379b5d6a9f34383f4a8bf2623352",
+    "jobs/gradient_assessment_gpu.sh": "a6fd599e772ff0f876a0ac560ad3ac62c53abe80d662a804dbaa823cf992af2a",
+    "scripts/extend_gradient_cardinality.py": "4704cffa5913aabd13606a69c413d4148a309561def7cc912e18fe6fe81cca44",
+    "jobs/gradient_cardinality_gpu.sh": "1e7675d60ea35a37fae42e9bcd93ef8c9e5b537aa661ea2593f3319f9887af9e"
+  }
+}

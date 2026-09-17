@@ -1,0 +1,7 @@
+{
+  "signature": "cfef0caec91cd6532fc6d3c4a198e49aa59f0ffddf41f6fb6149019bf10061fb",
+  "device": "cuda",
+  "gpu": "Tesla V100-PCIE-16GB",
+  "cpu_gpu_comparison": "omitted at user request",
+  "checks": "Every shard must contain finite losses and gradients"
+}
