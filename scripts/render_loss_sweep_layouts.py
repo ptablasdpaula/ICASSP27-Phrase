@@ -16,6 +16,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs/loss-sweeps"
 STYLE = {
+    "single_stft": ("Single-scale STFT", "#171717", "-", 1.3, 1.0),
     "waveform_l1": (r"$L_1$", "#171717", "-", 0.45, 0.65),
     "waveform_mse": (r"$L_2$", "#49302B", "-", 0.45, 0.65),
     "linear_mss": ("Linear MSS", "#0072B2", "--", 1.3, 1.0),
@@ -26,7 +27,7 @@ STYLE = {
 }
 LAYOUTS = {
     "comparison-six-cel": (
-        ("waveform_l1", "linear_mss", "smooth_mss"),
+        ("single_stft", "linear_mss", "smooth_mss"),
         ("linear_jtfot", "bidirectional_cumulative_energy", "sot_published_composite"),
     ),
     "comparison-six-no-cel": (
@@ -96,6 +97,22 @@ def main():
         normalised,
         (raw - raw.min(axis=-1, keepdims=True)) / np.ptp(raw, axis=-1)[..., None],
     )
+    additional = OUTPUT / "single-stft-sweeps.npz"
+    additional_provenance = json.loads((OUTPUT / "single-stft.provenance.json").read_text())
+    assert sha(additional) == additional_provenance["artifact_sha256"]
+    assert original_hash == additional_provenance["source_sweeps_sha256"]
+    with np.load(additional) as saved:
+        np.testing.assert_array_equal(axes, saved["displacement"])
+        additional_raw = saved["losses"]
+        additional_normalised = saved["normalised"]
+    assert np.isfinite(additional_raw).all()
+    np.testing.assert_array_equal(
+        additional_normalised,
+        (additional_raw - additional_raw.min(axis=-1, keepdims=True))
+        / np.ptp(additional_raw, axis=-1)[:, None],
+    )
+    names.append("single_stft")
+    normalised = np.concatenate([normalised, additional_normalised[:, None, :]], axis=1)
     plt.rcParams.update(
         {
             "font.size": 10,
@@ -210,6 +227,8 @@ def main():
     provenance = {
         "source": "raw-sweeps.npz",
         "source_sha256": original_hash,
+        "additional_source": additional.name,
+        "additional_source_sha256": sha(additional),
         "script_sha256": sha(Path(__file__)),
         "layouts": LAYOUTS,
         "styles": STYLE,
@@ -232,7 +251,7 @@ def main():
         "points_per_curve": 3201,
         "smoothing": False,
         "downsampling": False,
-        "manuscript_changed": False,
+        "manuscript_figure": "paper/figures/loss_sweeps.pdf (comparison-six-cel)",
         "artifact_sha256": outputs,
         "checks": {
             "source_hash_matches": True,

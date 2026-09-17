@@ -54,3 +54,19 @@ PYTHONHOME="$PWD/.pixi/envs/default" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
 ```
 
 The script is isolated from shared experiment source files so that earlier fit signatures remain unchanged.
+
+### Single-scale STFT replacement
+
+The manuscript layout (`comparison-six-cel`) replaces waveform L1 with the
+mean absolute pointwise STFT magnitude difference: periodic Hann, 256 samples,
+64-sample hop, no centering, at 4 kHz, matching the CeL STFT. The target, renderer,
+3201 coordinates per sweep and all other curves are unchanged. Each new curve
+is independently min–max normalised; no smoothing or downsampling is applied.
+This matches the input representation; it is not an ablation of accumulation
+alone, since CeL also uses power, target-mass scaling and an RMS reduction.
+
+Raw values and normalised curves are in `single-stft-sweeps.npz`, with source
+hashes and numerical checks in `single-stft.provenance.json`. Recompute with
+`scripts/compute_single_stft_sweeps.py`, then render using
+`scripts/render_loss_sweep_layouts.py --layout comparison-six-cel`. The original
+seven-loss arrays are preserved in `raw-sweeps.npz`.
