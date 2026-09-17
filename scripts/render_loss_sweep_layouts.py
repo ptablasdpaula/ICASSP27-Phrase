@@ -66,8 +66,8 @@ LAYOUTS["comparison-spectral-column"] = (
 
 STYLE_OVERRIDES = {
     "comparison-six-cel": {
-        "linear_mss": ("Linear MSS", "#0072B2", "-", 1.3, 1.0),
-        "smooth_mss": ("Smooth MSS", "#C18A00", "-.", 1.3, 1.0),
+        "linear_mss": ("Linear MSS", "#0072B2", "--", 1.3, 1.0),
+        "smooth_mss": ("Smooth MSS", "#C62828", "-", 1.3, 1.0),
         "linear_jtfot": ("TFW", "#D55E00", "-.", 1.3, 1.0),
     },
 }
