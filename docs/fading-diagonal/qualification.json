@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "signature": "7b6440a462fd54c96f864820008a7fc944d66ba7d250d8373169da91d2decfab",
+  "explicit_rectangles": true,
+  "reverse_directions": true,
+  "no_fade_cumsum_limit": true,
+  "autograd_and_audio_finite_difference": true,
+  "zero_self_loss_and_gradient": true
+}
