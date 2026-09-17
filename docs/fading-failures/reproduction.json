@@ -1,0 +1,12 @@
+{
+  "plateau": {
+    "metrics_exact": true,
+    "trajectory_exact": true,
+    "best_phrase_exact": true
+  },
+  "fresh": {
+    "metrics_exact": true,
+    "trajectory_exact": true,
+    "best_phrase_exact": true
+  }
+}
