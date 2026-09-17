@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "signature": "72fd0df1b88edfcfc283a819c819d315d86c9e58a7c00e8554adfb1e9f60a33e",
+  "torch_version": "2.7.1+cu126",
+  "numpy_version": "2.4.6",
+  "optimizer_exact_agreement": true,
+  "plateau_schedule_exact_agreement": true,
+  "lsd_exact_agreement": true,
+  "objectives_checked": [
+    "orthogonal",
+    "orthogonal_lw",
+    "diagonal",
+    "diagonal_lw"
+  ],
+  "targets": 750
+}
