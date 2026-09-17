@@ -250,6 +250,25 @@ loss landscapes at
 diagnostic and comparison of \gls{df2} and literal \gls{dwg} implementations.}.
 
 \section{Experiments and Methodology}
+
+\begin{figure*}[!t]
+\centering
+\begin{minipage}[t]{0.665\textwidth}
+\vspace{0pt}
+\centering
+\includegraphics[width=\linewidth]{\PaperRoot/figures/loss_sweeps.pdf}
+\caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is independently min--max normalised over 3201 samples. Linear MSS denotes the linear-magnitude component of the SOT composite, without its mixing coefficient.}
+\label{fig:loss-sweeps}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.32\textwidth}
+\vspace{0pt}
+\centering
+\includegraphics[width=\linewidth]{\PaperRoot/figures/cel_landscape.pdf}
+\caption{Four-direction CeL landscape for the same target. The cross marks the target; white arrows show unit descent in normalised onset--pitch coordinates. All 120 displayed directions point towards the target.}
+\label{fig:landscapes}
+\end{minipage}
+\end{figure*}
+
 \subsection{Loss Objectives}
 \label{sec:loss-objectives}
 We compare six base objectives. $L_1$ is mean absolute and $L_2$ mean
@@ -317,16 +336,7 @@ retain their original padding and are not ranked against Fade.}
 \input{\PaperRoot/figures/median_recovery_table.tex}
 \end{table*}
 
-\begin{figure}[!t]
-\centering
-\setlength{\abovecaptionskip}{0pt}
-\includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_landscapes.pdf}
-\vspace{-5.8mm}
-\caption{Single-pluck loss landscapes; the CeL variant averages all four direction pairs. The cross marks the
-target, white arrows show unit descent, and each white upper-right number is the
-percentage of 120 non-target directions pointing towards the target.}
-\label{fig:landscapes}
-\end{figure}
+
 
 \subsection{Experiment I: Single-event Gradient Diagnostic}
 \label{sec:gradient-diagnostic}
@@ -340,8 +350,10 @@ sublattice with the target omitted, leaving 120 directions. A direction is
 target-directed when its dot product with the target displacement is positive
 in the normalised onset--pitch coordinates.
 
-Figure~\ref{fig:landscapes} shows the six loss surfaces and directions using
-Sec.~\ref{sec:renderer}'s fixed Fourier--Thiran renderer. Target and candidate
+Figure~\ref{fig:landscapes} shows the four-direction CeL surface and directions.
+Figure~\ref{fig:loss-sweeps} additionally shows conditional slices with either
+pitch or onset fixed, using 3201 equally spaced samples per axis. Both figures
+use Sec.~\ref{sec:renderer}'s synthesis configuration. Target and candidate
 share this configuration, isolating loss geometry from renderer mismatch. This
 is one full-range diagnostic case, not evidence of target invariance or a
 population estimate.
