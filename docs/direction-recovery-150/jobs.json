@@ -1,9 +1,13 @@
 {
-  "qualification_array": 27186985,
-  "fit_array": 27186997,
-  "report_job": 27187049,
+  "cancelled_staged_fit_array": 27186997,
+  "cancelled_staged_report_job": 27187049,
+  "orthogonal_fit_array": 27187528,
+  "clockwise_qualification_array": 27188071,
+  "clockwise_fit_array": 27188083,
+  "report_job": 27188097,
   "maximum_concurrent_fits": 64,
   "expected_fits": 3000,
-  "signature": "72fd0df1b88edfcfc283a819c819d315d86c9e58a7c00e8554adfb1e9f60a33e",
-  "publication": "After all fits succeed, validate complete coverage, create reports, commit only docs/direction-recovery-150, and push main. Abort on missing fits, signature/validation failures or git conflicts."
+  "orthogonal_signature": "72fd0df1b88edfcfc283a819c819d315d86c9e58a7c00e8554adfb1e9f60a33e",
+  "clockwise_signature": "ab37a36f64da0f013812f0092da5670ef78416e1ccee4ba2d492ab9445140c9a",
+  "publication": "After both fit arrays succeed, validate complete coverage, create reports, commit only docs/direction-recovery-150, and push main. Abort on missing fits, signature/validation failures or git conflicts."
 }

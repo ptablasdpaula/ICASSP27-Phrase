@@ -22,30 +22,31 @@ rollback/LR ×.3/moment clearing at patience 100 and 200, stop at patience 250 o
 Retain the strict-best loss iterate. The isolated fitter only adds objective
 injection; qualification checks exact agreement with the production fitter.
 
-## Clockwise recovery after a diagonal plateau
+## Single-stage clockwise recovery
 
-First fit the matching four-diagonal objective (uniform or LW) with the same
-registered procedure. If this stops on patience, restart from its strict-best
-state and apply the previously tested recovery schedule once:
+Start from the same standard initial candidate and rotate throughout optimisation:
+↗ → ↘ ↓ ↙ ← ↖ ↑, linearly interpolating adjacent directional losses over
+100 updates per sector (800 updates per full turn). Update zero uses pure ↗.
+There is no diagonal pre-fit, warm-up, refinement or restart stage. Both uniform
+and Log-Weighing versions use this one setup.
 
-- 1,600 rotation updates, order ↗ → ↘ ↓ ↙ ← ↖ ↑, linear interpolation between
-  adjacent losses, 100 updates per sector (800 per full turn).
-- During the first 100 updates, ramp from uniform four-diagonal weights to the
-  rotating weights. Fresh Adam, LR .05, fixed initial diagonal-loss scaling.
-- 800 diagonal-only refinement updates from the actual last rotation state.
-  Fresh Adam, LR .05/.015/.0045/.00135 in four 200-update blocks.
-- Retain the best matching diagonal loss across the starting incumbent, rotation
-  and refinement. No ground-truth errors select checkpoints. For LW runs, the
-  training terms and canonical selection/refinement objective all use LW.
+Use the same registered Adam, learning-rate reductions, rollback, patience and
+3,000-update cap as the orthogonal fits. Condition the gradient by the initial
+rotating training loss. Advance rotation only on actual Adam updates; rollback
+neither advances nor resets its phase.
 
-If the initial fit reaches the 3,000-update cap without a patience stop, retain
-its result and record that rotation was not triggered. The trigger uses loss
-patience alone; even a nearly recovered fit may trigger. No target-error gate.
+Because the rotating objective changes with phase, its values are not directly
+comparable across updates. The fixed equal mean of all eight directional terms,
+with the matching weighting, controls meaningful improvement, patience, rollback
+and strict-best checkpoint selection. Only the rotating objective supplies the
+training gradient. Orthogonal fits monitor their static four-term objective.
+A clockwise run can stop before a full revolution: there is no minimum-cycle
+exemption from the common patience rule. Report actual updates and wall time;
+all methods share the same maximum budget but may stop at different times.
 
-Thus clockwise fits may use up to 5,400 updates, versus at most 3,000 for static
-orthogonals. This is **not an equal-compute comparison**. Report update counts,
-wall time, triggering frequency, and the saved pre-rotation diagonal fits as
-reference rows. No additional matched-budget continuation control is implied.
+The earlier staged clockwise jobs were cancelled, and their outputs archived
+under `results/direction-recovery-150/superseded-plateau-clockwise`. They are
+excluded from this study. Valid completed orthogonal fits are reused unchanged.
 
 ## Rendering, metrics and provenance
 
@@ -64,11 +65,11 @@ and RMS of 20-log10 magnitude differences. It is distinct from the center=False
 STFT used by the training losses. Qualification executes the original metric
 function to check exact agreement.
 
-Save all fit trajectories, baseline metrics, selected parameters and costs as
+Save all fit trajectories, selected metrics, parameters and costs as
 compressed per-fit JSON, with source/registry signatures. Resume only matching
 signatures. Aggregate only after all 3,000 unique fits validate; report means,
-sample SDs and medians by event count/configuration, plus paired clockwise changes
-from their own diagonal starting fits. Raw data remain in the results directory;
+sample SDs and medians by event count/configuration, plus paired clockwise-versus-orthogonal comparisons
+with matching weighting. Raw data remain in the results directory;
 commit the full per-phrase table, summaries, plots and archive manifest.
 
 The earlier sensitivity audit applies: single trajectories can respond strongly

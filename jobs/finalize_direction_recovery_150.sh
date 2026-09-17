@@ -6,7 +6,9 @@ export PYTHONHOME="$PWD/.pixi/envs/default" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREA
 .pixi/envs/default/bin/python scripts/report_direction_recovery.py
 .pixi/envs/default/bin/ruff check --no-cache --no-respect-gitignore \
   scripts/report_direction_recovery.py scripts/run_direction_recovery.py \
-  scripts/_recovery_study_fit.py scripts/qualify_direction_recovery.py
+  scripts/_recovery_study_fit.py scripts/qualify_direction_recovery.py \
+  scripts/run_clockwise_recovery.py scripts/_clockwise_study_fit.py \
+  scripts/qualify_clockwise_recovery.py
 test "$(git branch --show-current)" = main
 git pull --ff-only
 git add -- docs/direction-recovery-150
