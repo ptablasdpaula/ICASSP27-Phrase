@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "signature": "cfef0caec91cd6532fc6d3c4a198e49aa59f0ffddf41f6fb6149019bf10061fb",
+  "source_hashes": {
+    "gradient_assessment.py": "06e95f701e8afc1ae4fbfeb51fcedd010c2c2797e7ce2c4888824ae297e29805",
+    "losses.py": "082dee8505b242be0f612549225bd85116a1600c6873c2aef3b2955fc2cdeb03",
+    "synth.py": "55cc93cdd3a4cd6349d3b602c4066e9d0fe1ac0ff4f9adc04bdf2e9c401902f4",
+    "exciter.py": "ea65a2e1b047ae9f71946ae067fc9f7cb0322d491168dc679fd4ea4e5471dd7c",
+    "waveguide.py": "7c142f9cd3bce174be1f7e4ab567e1a43bd27b0434a34bb35819db3ad8338de5",
+    "_fractional.py": "e1ca1ca327f455c5818d3b052de2f7927b53ae7c0aa3f10e8e16acb08c59c6ad",
+    "config.py": "40939bda9636943c985d11c2f8bfbe0dbdb9d92bf9839274011833525d6b5c87",
+    "runtime.py": "adc48a47ccbd43bac51a78424f6ce0934f66a97422445123c7ca482dfd07989a"
+  },
+  "device": "cuda",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "checks": "finite losses and gradients in GPU benchmarks",
+  "cpu_gpu_comparison": "omitted at user request"
+}

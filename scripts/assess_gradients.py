@@ -443,8 +443,18 @@ def write_csv(path, rows):
             )
 
 
-def report(root, output):
-    sampling = json.loads((root / "sampling.json").read_text())
+def report(root, output, initial_count=None):
+    sampling = (
+        json.loads((root / "sampling.json").read_text())
+        if initial_count is None
+        else {
+            "signature": signature()[0],
+            "complete": True,
+            "status": "initial fixed-count preview; sensitivity campaign may still be running",
+            "final_counts": {f"{n}-{condition}": initial_count for n, condition in COLUMNS},
+            "checks": [],
+        }
+    )
     if not sampling["complete"] or sampling["signature"] != signature()[0]:
         raise ValueError("campaign incomplete/stale")
     output.mkdir(parents=True, exist_ok=True)
@@ -567,6 +577,8 @@ def report(root, output):
     cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticks=[0, 25, 50, 75, 100])
     cb.set_label("Target-directed events (%)", labelpad=2)
     cb.ax.tick_params(length=2, pad=2)
+    cb.ax.get_xticklabels()[0].set_horizontalalignment("left")
+    cb.ax.get_xticklabels()[-1].set_horizontalalignment("right")
     fig.savefig(output / "gradient-assessment.pdf")
     fig.savefig(output / "gradient-assessment.png", dpi=300)
     plt.close(fig)
@@ -593,6 +605,11 @@ def main():
     parser.add_argument("--batch", type=int, default=4)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument(
+        "--initial-count",
+        type=int,
+        help="Report a completed fixed-count stage separately from final results",
+    )
     args = parser.parse_args()
     os.environ.setdefault("OMP_NUM_THREADS", "1")
     os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -605,7 +622,9 @@ def main():
             raise ValueError("Use one GPU worker with batched candidates")
         campaign(args.root, args.batch, args.workers, args.device)
     else:
-        report(args.root, args.output)
+        if args.initial_count is not None and args.output == DOCS:
+            raise ValueError("Use a separate --output directory for the initial preview")
+        report(args.root, args.output, args.initial_count)
 
 
 if __name__ == "__main__":
