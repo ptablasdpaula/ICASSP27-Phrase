@@ -1,5 +1,21 @@
 # Single-event loss sweeps
 
+## Revised layout comparison
+
+- **Seven losses:** [PNG](comparison-seven.png) · [PDF](comparison-seven.pdf). Left: L1, Linear MSS, Smooth MSS. Right: L2, SOT, TFW, CeL.
+- **Five spectral losses:** [PNG](comparison-spectral.png) · [PDF](comparison-spectral.pdf). Left: Linear MSS, Smooth MSS. Right: SOT, TFW, CeL.
+
+Both revisions use the exact saved values and normalisation below, with no smoothing or downsampling. Each loss has its own colour, consistent across both rows and versions. Waveform curves are thin dark lines behind the spectral curves (0.45 pt, opacity 0.65); spectral curves are 1.3 pt. The original figures remain available below. [Rendering provenance](layouts.provenance.json).
+
+Reproduce only these layouts, without recomputing losses:
+
+```bash
+PYTHONHOME="$PWD/.pixi/envs/default" OPENBLAS_NUM_THREADS=1 \
+  .pixi/envs/default/bin/python scripts/render_loss_sweep_layouts.py
+```
+
+## Original review figures
+
 Review figures for deciding the gradient experiment and its presentation. The manuscript figures have not been replaced.
 
 - [Six-loss comparison (PDF)](comparison.pdf): left column waveform L1, Linear MSS and SOT; right column waveform L2, Smooth MSS and TFW.
