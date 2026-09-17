@@ -54,3 +54,47 @@ def test_permutation_and_nonfinite():
     source["gradients"][0, 0, 0, 0] = np.nan
     with pytest.raises(FloatingPointError):
         alignment(source)
+
+
+def test_extended_registry_and_single_event_projections():
+    from extend_gradient_cardinality import EXTENDED_COLUMNS, extended_candidates, extra_targets
+
+    registry = extra_targets()
+    assert len(registry) == 65
+    assert EXTENDED_COLUMNS == (
+        (1, "joint"),
+        (2, "joint"),
+        (4, "joint"),
+        (6, "joint"),
+        (8, "joint"),
+        (1, "pitch"),
+        (2, "pitch"),
+        (4, "pitch"),
+        (1, "time"),
+        (2, "time"),
+        (4, "time"),
+    )
+    for (name, target), (other_name, other_target) in zip(registry, extra_targets(), strict=True):
+        assert name == other_name
+        np.testing.assert_array_equal(target, other_target)
+        if len(target) > 1:
+            assert np.diff(target[:, 1]).min() >= 0.05
+        assert np.all((target[:, 0] >= 0) & (target[:, 0] <= 2))
+        assert np.all((target[:, 1] >= 0.2) & (target[:, 1] <= 1.8))
+        projected = extended_candidates(name, target)
+        np.testing.assert_array_equal(projected["pitch"][..., 0], projected["joint"][..., 0])
+        np.testing.assert_array_equal(projected["time"][..., 1], projected["joint"][..., 1])
+        np.testing.assert_array_equal(
+            projected["pitch"][..., 1], np.broadcast_to(target[:, 1], (256, len(target)))
+        )
+        np.testing.assert_array_equal(
+            projected["time"][..., 0], np.broadcast_to(target[:, 0], (256, len(target)))
+        )
+
+
+def test_extended_render(tmp_path):
+    from extend_gradient_cardinality import EXTENDED_COLUMNS
+    from report_gradient_alignment import render
+
+    render(tmp_path, "phrase-cosine", np.zeros((11, 11)), np.ones((11, 11)), EXTENDED_COLUMNS)
+    assert (tmp_path / "phrase-cosine.pdf").stat().st_size > 1000

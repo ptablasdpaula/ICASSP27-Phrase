@@ -60,7 +60,7 @@ def main():
             "signature": signature()[0],
             "archives": archives,
             "shards": raw_manifest,
-            "extract_into": "results/gradient-assessment-gpu",
+            "extract_into": str(args.root),
         },
     )
     benchmarks = {}
@@ -86,6 +86,8 @@ def main():
                 Path("scripts/assess_gradients.py"),
                 Path(__file__),
                 Path("jobs/gradient_assessment_gpu.sh"),
+                Path("scripts/extend_gradient_cardinality.py"),
+                Path("jobs/gradient_cardinality_gpu.sh"),
             )
         },
     )

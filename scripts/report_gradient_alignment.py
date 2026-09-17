@@ -64,7 +64,14 @@ def alignment(data):
     return {"event-cosine": event, "phrase-descent": positive, "phrase-cosine": cosine}
 
 
-def render(output, metric, means, sds):
+def render(output, metric, means, sds, columns=COLUMNS):
+    width = len(columns)
+    boundaries = [i - 0.5 for i in range(1, width) if columns[i][1] != columns[i - 1][1]]
+    edges = [-0.5, *boundaries, width - 0.5]
+    groups = [
+        ((a + b) / 2, {"joint": "Both", "pitch": "Pitch", "time": "Time"}[columns[int(a + 0.5)][1]])
+        for a, b in zip(edges[:-1], edges[1:], strict=True)
+    ]
     import matplotlib
 
     matplotlib.use("Agg")
@@ -72,8 +79,8 @@ def render(output, metric, means, sds):
 
     percentage = metric == "phrase-descent"
     plt.rcParams.update({"font.size": 7, "pdf.fonttype": 42})
-    fig, ax = plt.subplots(figsize=(3.5, 3.65))
-    fig.subplots_adjust(left=0.245, right=0.985, top=0.87, bottom=0.17)
+    fig, ax = plt.subplots(figsize=(3.5 if width == 7 else 4.9, 3.65))
+    fig.subplots_adjust(left=0.245 if width == 7 else 0.18, right=0.985, top=0.87, bottom=0.17)
     im = ax.imshow(
         means,
         cmap="cividis" if percentage else "RdBu",
@@ -82,13 +89,13 @@ def render(output, metric, means, sds):
         aspect="auto",
     )
     ax.set_yticks(range(11), LABELS)
-    ax.set_xticks(range(7), ["1", "2", "4", "2", "4", "2", "4"])
+    ax.set_xticks(range(width), [str(n) for n, _ in columns])
     ax.xaxis.tick_top()
     ax.tick_params(length=0, pad=3)
-    for center, title in ((0, "Both"), (1.5, "Pitch"), (3.5, "Time"), (5.5, "Both")):
+    for center, title in groups:
         ax.text(center, -1.25, title, ha="center", va="bottom", clip_on=False)
     for i in range(11):
-        for j in range(7):
+        for j in range(width):
             value = means[i, j]
             color = "white" if (value < 48 if percentage else abs(value) > 0.55) else "black"
             ax.text(
@@ -110,15 +117,15 @@ def render(output, metric, means, sds):
                     fontsize=5.2,
                     color=color,
                 )
-    ax.set_xticks(np.arange(-0.5, 7), minor=True)
+    ax.set_xticks(np.arange(-0.5, width), minor=True)
     ax.set_yticks(np.arange(-0.5, 11), minor=True)
     ax.grid(which="minor", color="white", alpha=0.4, linewidth=0.4)
     ax.tick_params(which="minor", length=0)
-    for boundary in (0.5, 2.5, 4.5):
+    for boundary in boundaries:
         ax.axvline(boundary, color="white", linewidth=1.1)
     for boundary in (1.5, 4.5, 7.5):
         ax.axhline(boundary, color="white", linewidth=1.1)
-    cax = fig.add_axes([0.245, 0.085, 0.74, 0.025])
+    cax = fig.add_axes([0.245 if width == 7 else 0.18, 0.085, 0.74 if width == 7 else 0.805, 0.025])
     cb = fig.colorbar(
         im,
         cax=cax,
@@ -134,7 +141,18 @@ def render(output, metric, means, sds):
     plt.close(fig)
 
 
-def report(root, output, archive):
+def report(root, output, archive, extension=None):
+    columns, registry = COLUMNS, targets()
+    extra_counts = {}
+    if extension is not None:
+        from extend_gradient_cardinality import EXTENDED_COLUMNS, extra_targets
+
+        columns = EXTENDED_COLUMNS
+        registry += [(name, target) for name, target in extra_targets() if len(target) > 1]
+        extra_sampling = json.loads((extension / "sampling.json").read_text())
+        if not extra_sampling["complete"] or extra_sampling["signature"] != signature()[0]:
+            raise ValueError("Incomplete or stale extension")
+        extra_counts = extra_sampling["final_counts"]
     sampling = json.loads((root / "sampling.json").read_text())
     if not sampling["complete"] or sampling["signature"] != signature()[0]:
         raise ValueError("Incomplete or stale sampling")
@@ -146,14 +164,18 @@ def report(root, output, archive):
         }
     output.mkdir(parents=True, exist_ok=True)
     rows, quality, hashes = [], [], {}
-    matrices = {metric: (np.zeros((11, 7)), np.zeros((11, 7))) for metric in METRICS}
-    for column, (events, condition) in enumerate(COLUMNS):
-        count = sampling["final_counts"][f"{events}-{condition}"]
+    matrices = {
+        metric: (np.zeros((11, len(columns))), np.zeros((11, len(columns)))) for metric in METRICS
+    }
+    for column, (events, condition) in enumerate(columns):
+        key = f"{events}-{condition}"
+        source_root = extension if key in extra_counts else root
+        count = (extra_counts if key in extra_counts else sampling["final_counts"])[key]
         collected = {metric: [] for metric in METRICS}
-        for name, target in targets():
+        for name, target in registry:
             if len(target) != events:
                 continue
-            path = shard_path(root, name, condition, count, 0)
+            path = shard_path(source_root, name, condition, count, 0)
             data = checked_data(path)
             np.testing.assert_array_equal(data["target"], target)
             metrics = alignment(data)
@@ -174,7 +196,7 @@ def report(root, output, archive):
             for i, loss in enumerate(NAMES):
                 valid = values[:, i][np.isfinite(values[:, i])]
                 mean, sd = float(valid.mean()), float(valid.std(ddof=1))
-                if metric == "event-cosine":
+                if metric == "event-cosine" and (events, condition, loss) in old:
                     np.testing.assert_allclose(mean, old[events, condition, loss], atol=1e-12)
                 matrices[metric][0][i, column] = mean * (100 if metric == "phrase-descent" else 1)
                 matrices[metric][1][i, column] = sd
@@ -194,20 +216,25 @@ def report(root, output, archive):
     write_csv(output / "summary.csv", rows)
     write_csv(output / "quality.csv", quality)
     for metric, (means, sds) in matrices.items():
-        render(output, metric, means, sds)
+        render(output, metric, means, sds, columns)
         write_csv(output / f"{metric}.csv", [r for r in rows if r["metric"] == metric])
         lines = [
             f"# {METRICS[metric]}",
             "",
-            "| Loss | Both: 1 | Pitch: 2 | Pitch: 4 | Time: 2 | Time: 4 | Both: 2 | Both: 4 |",
-            "|---|---:|---:|---:|---:|---:|---:|---:|",
+            "| Loss | "
+            + " | ".join(
+                f"{ {'joint': 'Both', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
+                for n, c in columns
+            )
+            + " |",
+            "|---|" + "---:|" * len(columns),
         ]
         for i, label in enumerate(TEXT_LABELS):
             cells = [
                 f"{means[i, j]:.1f}"
                 if metric == "phrase-descent"
                 else f"{means[i, j]:.2f} ± {sds[i, j]:.2f}"
-                for j in range(7)
+                for j in range(len(columns))
             ]
             lines.append("| " + " | ".join([label, *cells]) + " |")
         (output / f"{metric}.md").write_text("\n".join(lines) + "\n")
@@ -216,11 +243,11 @@ def report(root, output, archive):
         dict(
             signature=signature()[0],
             raw_artifacts=hashes,
-            final_counts=sampling["final_counts"],
+            final_counts={**sampling["final_counts"], **extra_counts},
             script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             candidates=sum(q["candidates"] for q in quality),
             losses=NAMES,
-            columns=COLUMNS,
+            columns=columns,
             sd="Across candidate phrases, ddof=1; descriptive, not a confidence interval",
             validation=(
                 "Archived event cosine means agree; single-event cosines agree; "
@@ -236,5 +263,6 @@ if __name__ == "__main__":
     parser.add_argument("--root", type=Path, default=Path("results/gradient-assessment-gpu"))
     parser.add_argument("--output", type=Path, default=Path("docs/gradient-assessment/alignment"))
     parser.add_argument("--archive", type=Path, default=Path("docs/gradient-assessment"))
+    parser.add_argument("--extension", type=Path)
     args = parser.parse_args()
-    report(args.root, args.output, args.archive)
+    report(args.root, args.output, args.archive, args.extension)
