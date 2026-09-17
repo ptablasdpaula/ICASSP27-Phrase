@@ -2,6 +2,8 @@
 
 ## Revised layout comparison
 
+- **Six losses, corrected grouping:** [PNG](comparison-six-cel.png) · [PDF](comparison-six-cel.pdf). Left: L1, Linear MSS, Smooth MSS. Right: TFW, CeL, SOT.
+
 - **Six losses, without CeL:** [PNG](comparison-six-no-cel.png) · [PDF](comparison-six-no-cel.pdf). Left: L1, Linear MSS, Smooth MSS. Right: L2, TFW, SOT.
 
 - **Five spectral losses, SOT on the left:** [PNG](comparison-spectral-sot-left.png) · [PDF](comparison-spectral-sot-left.pdf). Left: Linear MSS, Smooth MSS, SOT. Right: TFW, CeL.

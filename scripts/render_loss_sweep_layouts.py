@@ -25,6 +25,10 @@ STYLE = {
     "bidirectional_cumulative_energy": (r"Ce$\mathcal{L}$", "#6A3D9A", "-", 1.3, 1.0),
 }
 LAYOUTS = {
+    "comparison-six-cel": (
+        ("waveform_l1", "linear_mss", "smooth_mss"),
+        ("linear_jtfot", "bidirectional_cumulative_energy", "sot_published_composite"),
+    ),
     "comparison-six-no-cel": (
         ("waveform_l1", "linear_mss", "smooth_mss"),
         ("waveform_mse", "linear_jtfot", "sot_published_composite"),
