@@ -40,4 +40,4 @@ cases and a single schedule cannot establish general training benefits.
 
 Run `scripts/test_clockwise_eight.py --index 0` for the development case and
 indices 1–6 for the frozen additional cases. `jobs/clockwise_eight.sh` is the
-Slurm array wrapper. Results pending.
+Slurm array wrapper. See [results](README.md), [interpretation](findings.md), and [validation](execution.md).

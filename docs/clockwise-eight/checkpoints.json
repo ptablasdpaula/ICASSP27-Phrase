@@ -1,0 +1,149 @@
+[
+  {
+    "case": "C04-T0003",
+    "variant": "clockwise",
+    "best_update": 2253,
+    "phase": "refinement",
+    "sha256": "8711a5df61b34743e4c54e0ae1fc22ea1d7fbc8521f9c9ef1cd74fcefefe2c14"
+  },
+  {
+    "case": "C04-T0003",
+    "variant": "diagonal_control",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "a3a70563c44426086ce5f4fa87cc8d58ebcf918ca4a4377dac87555f5d82756a"
+  },
+  {
+    "case": "C04-T0003",
+    "variant": "uniform_eight",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "ad2e97254f194abf56daa3ac846e136b91e75a508157e84f73df8b2325ab8381"
+  },
+  {
+    "case": "C04-T0005",
+    "variant": "clockwise",
+    "best_update": 2315,
+    "phase": "refinement",
+    "sha256": "86ee5e260d68938adb310826848fd2229d2c5c65156468f7ec2610154f3f27cb"
+  },
+  {
+    "case": "C04-T0005",
+    "variant": "diagonal_control",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "80413c5296492d5af2481381b3b4a922c633aa8eae12300c623ea8b122e8ab37"
+  },
+  {
+    "case": "C04-T0005",
+    "variant": "uniform_eight",
+    "best_update": 2302,
+    "phase": "refinement",
+    "sha256": "a275d824a5b7a4dbca6a7d2c1320e5ee85c6838c370e7b808ed782c458f1096a"
+  },
+  {
+    "case": "C04-T0007",
+    "variant": "clockwise",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "47db0e39e4636168e5deba379a7e92d06a4e5b71c494015f07c60b4f02dbc317"
+  },
+  {
+    "case": "C04-T0007",
+    "variant": "diagonal_control",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "bb4a85834cb6cd92d410dede31c9c4bbc323ea0d585bea9fa7fd5bd4a9335dcd"
+  },
+  {
+    "case": "C04-T0007",
+    "variant": "uniform_eight",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "26593206a7b696e5c1f4b5a6e01508875a75e2de0390d913b2cb3d9094cbabac"
+  },
+  {
+    "case": "C06-T0000",
+    "variant": "clockwise",
+    "best_update": 2032,
+    "phase": "refinement",
+    "sha256": "8dd11af9191081d9ddd375eb904683c9d8c7740775ed8bec240fba3a1286ec72"
+  },
+  {
+    "case": "C06-T0000",
+    "variant": "diagonal_control",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "afbde974b3ac2d95f47c9ea8a3cad9e823b70707946bd9577ba92fa695034e6c"
+  },
+  {
+    "case": "C06-T0000",
+    "variant": "uniform_eight",
+    "best_update": 2082,
+    "phase": "refinement",
+    "sha256": "7b1b8a643bab705b5550cfb5384deaf1e1be9d754f00985885df3372a078fd83"
+  },
+  {
+    "case": "C06-T0008",
+    "variant": "clockwise",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "7e2d99ad82e025ab325e486d31f2efcfced941e6e60081cea851853811b137d6"
+  },
+  {
+    "case": "C06-T0008",
+    "variant": "diagonal_control",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "c14562343c6f5bbe1ffbdd4f2cd8f1b452541da7b064bad38f8dbde0b4dd4a14"
+  },
+  {
+    "case": "C06-T0008",
+    "variant": "uniform_eight",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "e99023d10e4ba8c45ed50baa92863da9a8f3221e447d81b1aaf0bd434850d2d7"
+  },
+  {
+    "case": "C08-T0000",
+    "variant": "clockwise",
+    "best_update": 1127,
+    "phase": "rotation/exploration",
+    "sha256": "0469f7cc9070955ab813189e721ea0dacf5a3d0cd3f6e651f5ab03c155537ae2"
+  },
+  {
+    "case": "C08-T0000",
+    "variant": "diagonal_control",
+    "best_update": 2138,
+    "phase": "refinement",
+    "sha256": "4550e8bfe6a430bf599268a6029782b51d58835f9bfd743c7b51334b7278880a"
+  },
+  {
+    "case": "C08-T0000",
+    "variant": "uniform_eight",
+    "best_update": 467,
+    "phase": "rotation/exploration",
+    "sha256": "8f71f87c006e9bd5eda1e9b451c20395aab6679049f0c704bea9da25aa84c4b8"
+  },
+  {
+    "case": "C08-T0004",
+    "variant": "clockwise",
+    "best_update": 0,
+    "phase": "baseline",
+    "sha256": "4c9063e80940feeed84175e468b7d93131a41851fb9e057d30a494ddb42ca180"
+  },
+  {
+    "case": "C08-T0004",
+    "variant": "diagonal_control",
+    "best_update": 1160,
+    "phase": "rotation/exploration",
+    "sha256": "476bca613778ee544a3c1285045a2c216fee2e035791b2af1748a677f2e4216b"
+  },
+  {
+    "case": "C08-T0004",
+    "variant": "uniform_eight",
+    "best_update": 286,
+    "phase": "rotation/exploration",
+    "sha256": "deda41e2202c64e0957ea1e4f8a0bde89ca22853a2a1115eea4c2ad94554142d"
+  }
+]

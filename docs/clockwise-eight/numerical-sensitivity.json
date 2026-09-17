@@ -1,0 +1,56 @@
+{
+  "current": "uniform_eight on C04-T0005",
+  "previous": "docs/orthogonal-escape-pilot/eight_directions.json",
+  "rows": [
+    {
+      "update": 0,
+      "current_diagonal_loss": 0.007878666817394341,
+      "previous_diagonal_loss": 0.007878666817394332,
+      "max_pitch_difference_hz": 0.0,
+      "max_onset_difference_seconds": 0.0
+    },
+    {
+      "update": 1,
+      "current_diagonal_loss": 0.012607719034326555,
+      "previous_diagonal_loss": 0.012607719034326576,
+      "max_pitch_difference_hz": 0.0,
+      "max_onset_difference_seconds": 0.0
+    },
+    {
+      "update": 2,
+      "current_diagonal_loss": 0.009259151356239118,
+      "previous_diagonal_loss": 0.009259151356239722,
+      "max_pitch_difference_hz": 3.694822225952521e-13,
+      "max_onset_difference_seconds": 3.774758283725532e-15
+    },
+    {
+      "update": 10,
+      "current_diagonal_loss": 0.008709660481377647,
+      "previous_diagonal_loss": 0.008709663306256579,
+      "max_pitch_difference_hz": 4.635677584019504e-06,
+      "max_onset_difference_seconds": 8.914964566564265e-08
+    },
+    {
+      "update": 100,
+      "current_diagonal_loss": 0.025280184909611557,
+      "previous_diagonal_loss": 0.008118221537077792,
+      "max_pitch_difference_hz": 7.425712412933763,
+      "max_onset_difference_seconds": 0.19540618485311856
+    },
+    {
+      "update": 800,
+      "current_diagonal_loss": 0.0008473455035705642,
+      "previous_diagonal_loss": 0.008560142965553257,
+      "max_pitch_difference_hz": 1.7329020736409007,
+      "max_onset_difference_seconds": 0.1909825133349934
+    },
+    {
+      "update": 1600,
+      "current_diagonal_loss": 0.000661706035440454,
+      "previous_diagonal_loss": 0.022089892233536905,
+      "max_pitch_difference_hz": 28.77951104179766,
+      "max_onset_difference_seconds": 0.4161802590856174
+    }
+  ],
+  "interpretation": "Identical starting physical coordinates and round-off-scale initial loss differences grow into distinct optimisation paths. Equivalent loss summation and CPU execution routes differ; this audit does not isolate the cause. Current paired variants share a process/node per case."
+}
