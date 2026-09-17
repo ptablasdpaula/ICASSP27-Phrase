@@ -3,7 +3,7 @@
   "source_sha256": "f8ec68f908cabe1984d271e849d0a22df2e73c3d359a039892774274df51e655",
   "additional_source": "single-stft-sweeps.npz",
   "additional_source_sha256": "9049e3e3aca0710da106bb15e672e8d1dc86c36bce36b696231922fc6255747c",
-  "script_sha256": "de2a0a1e63de21a18c213a5cc55740aa7aee5fc53786d9d56c6ce90fe40ff39c",
+  "script_sha256": "f6ae4724c99b571d319d26b209fb066fba411b0e766e1a1e819bf485542046e0",
   "layouts": {
     "comparison-six-cel": [
       [
@@ -157,6 +157,7 @@
       ]
     }
   },
+  "curve_layering": "Dashed and dash-dot curves above solid curves",
   "compact_layout": {
     "figure": "comparison-six-cel",
     "closed_spines": true,
@@ -185,8 +186,8 @@
   "downsampling": false,
   "manuscript_figure": "paper/figures/loss_sweeps.pdf (comparison-six-cel)",
   "artifact_sha256": {
-    "comparison-six-cel.png": "1fe2586451c41d9dbbacb0efc9f7a4c94306e85e2e867b4b8b626d58d50a6559",
-    "comparison-six-cel.pdf": "bbef782db27ed57ddff8bc54cf3c6a78a3832cfb79c3549322f22e7194aa2458",
+    "comparison-six-cel.png": "3ae2c303ee25607fa6ef288475fc13fbb13ebde7e4a187c228d2f98c9d9a05f0",
+    "comparison-six-cel.pdf": "3d5a22f337b386ccbf1f024dcb87b4ac8517f1299bf44b4b0fc564b7e194a2aa",
     "comparison-six-no-cel.png": "ff9df1d44af723f1910d8b522cedead787fd20689ae85d55cd36914bb272a9d4",
     "comparison-six-no-cel.pdf": "c41abb0c1462a0b7861262b684c51d0d77fb6283d2fb8cedf5dd6afbcc5ca6ae",
     "comparison-seven.png": "ea91953141dc27912376990411d4c37dee8400d10da70c668d1a183bf25fd91f",

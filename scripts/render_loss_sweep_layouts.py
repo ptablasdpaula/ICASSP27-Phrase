@@ -153,7 +153,11 @@ def main():
                         linestyle=style,
                         linewidth=width,
                         alpha=alpha,
-                        zorder=1 if name.startswith("waveform") else 3,
+                        zorder=4
+                        if style in ("--", "-.")
+                        else 1
+                        if name.startswith("waveform")
+                        else 3,
                     )
                 ax.set(
                     xlim=(axes[row, 0], axes[row, -1]),
@@ -233,6 +237,7 @@ def main():
         "layouts": LAYOUTS,
         "styles": STYLE,
         "style_overrides": STYLE_OVERRIDES,
+        "curve_layering": "Dashed and dash-dot curves above solid curves",
         "compact_layout": {
             "figure": "comparison-six-cel",
             "closed_spines": True,
