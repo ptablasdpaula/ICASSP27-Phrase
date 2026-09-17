@@ -149,3 +149,7 @@ sbatch --account=pilot_andrena --partition=andrena --gres=gpu:1 \
 The job benchmarks, runs the primary and sensitivity campaigns, and generates
 the report. `scripts/assess_gradients.py report --root results/gradient-assessment-gpu`
 regenerates the figure and CSVs from completed checkpoints without recomputing gradients.
+
+Additional paired [event and whole-phrase alignment tables](alignment/README.md)
+report candidate-level cosine variability and positive summed-dot percentages
+from the same frozen gradients.
