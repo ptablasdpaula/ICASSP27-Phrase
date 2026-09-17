@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "signature": "e320c6d77497e6fe4ca962d1590b25b4818ad8dbd769a8f082888c1ffb459cdd",
+  "previous_time_only_value_gradient_checks_current": true,
+  "registered_optimizer_checks_current": true,
+  "frequency_unit_weights": true,
+  "time_horizon_seconds": 0.25,
+  "frequency_horizon": null,
+  "fade_schedule": false
+}
