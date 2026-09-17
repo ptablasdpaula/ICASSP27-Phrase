@@ -207,24 +207,13 @@ nut-side delay $D_1$ and bridge-side delay $D_2$ on each rail.}
 \label{fig:waveguide}
 \end{figure}
 
-% Queue the diagnostic pair early enough to appear on page 3.
-\begin{figure*}[!t]
+% Queue the single-column slices for page 3.
+\begin{figure}[!t]
 \centering
-\begin{minipage}[t]{\dimexpr(\textwidth-\columnsep)/2\relax}
-\vspace{0pt}
-\centering
-\includegraphics[width=\linewidth]{\PaperRoot/figures/loss_sweeps.pdf}
+\includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_sweeps.pdf}
 \caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is independently min--max normalised over 3201 samples. Linear MSS denotes the linear-magnitude component of the SOT composite, without its mixing coefficient.}
 \label{fig:loss-sweeps}
-\end{minipage}\hfill
-\begin{minipage}[t]{\dimexpr(\textwidth-\columnsep)/2\relax}
-\vspace{0pt}
-\centering
-\includegraphics[width=\linewidth]{\PaperRoot/figures/cel_landscape.pdf}
-\caption{Four-direction CeL landscape for the same target. The cross marks the target; white arrows show unit descent in normalised onset--pitch coordinates. All 120 displayed directions point towards the target.}
-\label{fig:landscapes}
-\end{minipage}
-\end{figure*}
+\end{figure}
 
 Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, where
 $H_L$ is the loss-filter transfer function, $z$ the transform variable, and
@@ -356,9 +345,8 @@ sublattice with the target omitted, leaving 120 directions. A direction is
 target-directed when its dot product with the target displacement is positive
 in the normalised onset--pitch coordinates.
 
-Figure~\ref{fig:landscapes} shows the four-direction CeL surface and directions.
-Figure~\ref{fig:loss-sweeps} additionally shows conditional slices with either
-pitch or onset fixed, using 3201 equally spaced samples per axis. Both figures
+Figure~\ref{fig:loss-sweeps} shows conditional slices with either
+pitch or onset fixed, using 3201 equally spaced samples per axis. These slices
 use Sec.~\ref{sec:renderer}'s synthesis configuration. Target and candidate
 share this configuration, isolating loss geometry from renderer mismatch. This
 is one full-range diagnostic case, not evidence of target invariance or a
@@ -419,7 +407,7 @@ In the loss order $L_1$, $L_2$, \gls{mss}, \gls{sot}, \gls{tfw}, and \gls{bicul}
 renderer gives 60.0\%, 49.2\%, 42.5\%, 51.7\%, 75.8\%, and 100.0\%
 target-directed descent, respectively. Thus \gls{bicul} is the only objective with
 120/120 target-directed directions in this registered renderer and diagnostic
-case; Fig.~\ref{fig:landscapes} does not imply a renderer-independent ranking.
+case; this diagnostic does not imply a renderer-independent ranking.
 
 \subsection{Experiment II: Phrase Recovery}
 Table~\ref{tab:pilot-compact} reports all nine configurations; Fig.~\ref{fig:lsd} shows the original eight
