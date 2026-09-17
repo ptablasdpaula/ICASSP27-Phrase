@@ -1,0 +1,285 @@
+{
+  "job_id": "27248959",
+  "signature": "cfef0caec91cd6532fc6d3c4a198e49aa59f0ffddf41f6fb6149019bf10061fb",
+  "backend": "CUDA float64",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "all_saved_comparisons": 105984,
+  "all_saved_loss_gradient_evaluations": 1165824,
+  "summed_shard_seconds": 1350.1457662926987,
+  "peak_host_rss_kib": 1491240,
+  "benchmarks": {
+    "gradient-assessment/benchmark-b4.json": [
+      {
+        "events": 1,
+        "batch": 4,
+        "candidates": 32,
+        "seconds": 7.7878889087587595,
+        "seconds_per_candidate": 0.24337152839871123,
+        "peak_rss_kib": 805456
+      },
+      {
+        "events": 2,
+        "batch": 4,
+        "candidates": 32,
+        "seconds": 9.244969222694635,
+        "seconds_per_candidate": 0.28890528820920736,
+        "peak_rss_kib": 832948
+      },
+      {
+        "events": 4,
+        "batch": 4,
+        "candidates": 32,
+        "seconds": 10.57421007938683,
+        "seconds_per_candidate": 0.33044406498083845,
+        "peak_rss_kib": 832948
+      }
+    ],
+    "gradient-assessment/benchmark-b8.json": [
+      {
+        "events": 1,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 8.152890024706721,
+        "seconds_per_candidate": 0.25477781327208504,
+        "peak_rss_kib": 1247996
+      },
+      {
+        "events": 2,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 10.19015210494399,
+        "seconds_per_candidate": 0.3184422532794997,
+        "peak_rss_kib": 1247996
+      },
+      {
+        "events": 4,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 12.0758603438735,
+        "seconds_per_candidate": 0.3773706357460469,
+        "peak_rss_kib": 1247996
+      }
+    ],
+    "gradient-assessment-gpu/benchmark-b128.json": [
+      {
+        "events": 1,
+        "batch": 128,
+        "candidates": 256,
+        "seconds": 2.0921520683914423,
+        "seconds_per_candidate": 0.008172469017154071,
+        "peak_rss_kib": 1470176,
+        "device": "cuda",
+        "gpu_peak_bytes": 6462441984,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 2,
+        "batch": 128,
+        "candidates": 256,
+        "seconds": 3.9534054258838296,
+        "seconds_per_candidate": 0.01544298994485871,
+        "peak_rss_kib": 1473588,
+        "device": "cuda",
+        "gpu_peak_bytes": 6918611456,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 4,
+        "batch": 128,
+        "candidates": 256,
+        "seconds": 5.9075955506414175,
+        "seconds_per_candidate": 0.023076545119693037,
+        "peak_rss_kib": 1475812,
+        "device": "cuda",
+        "gpu_peak_bytes": 7747780608,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      }
+    ],
+    "gradient-assessment-gpu/benchmark-b16.json": [
+      {
+        "events": 1,
+        "batch": 16,
+        "candidates": 32,
+        "seconds": 1.6415562443435192,
+        "seconds_per_candidate": 0.051298632635734975,
+        "peak_rss_kib": 1449124,
+        "device": "cuda",
+        "gpu_peak_bytes": 850596352,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 2,
+        "batch": 16,
+        "candidates": 32,
+        "seconds": 2.1678636465221643,
+        "seconds_per_candidate": 0.06774573895381764,
+        "peak_rss_kib": 1451396,
+        "device": "cuda",
+        "gpu_peak_bytes": 880648704,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 4,
+        "batch": 16,
+        "candidates": 32,
+        "seconds": 2.546483856625855,
+        "seconds_per_candidate": 0.07957762051955797,
+        "peak_rss_kib": 1451396,
+        "device": "cuda",
+        "gpu_peak_bytes": 925380096,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      }
+    ],
+    "gradient-assessment-gpu/benchmark-b256.json": [
+      {
+        "events": 1,
+        "batch": 256,
+        "candidates": 256,
+        "seconds": 1.3250320795923471,
+        "seconds_per_candidate": 0.005175906560907606,
+        "peak_rss_kib": 1476964,
+        "device": "cuda",
+        "gpu_peak_bytes": 12831439360,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 2,
+        "batch": 256,
+        "candidates": 256,
+        "seconds": 3.1373217152431607,
+        "seconds_per_candidate": 0.012255162950168597,
+        "peak_rss_kib": 1479044,
+        "device": "cuda",
+        "gpu_peak_bytes": 13753276416,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 4,
+        "batch": 256,
+        "candidates": 256,
+        "seconds": 5.006487210281193,
+        "seconds_per_candidate": 0.01955659066516091,
+        "peak_rss_kib": 1483704,
+        "device": "cuda",
+        "gpu_peak_bytes": 15663369728,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      }
+    ],
+    "gradient-assessment-gpu/benchmark-b32.json": [
+      {
+        "events": 1,
+        "batch": 32,
+        "candidates": 64,
+        "seconds": 1.7120433393865824,
+        "seconds_per_candidate": 0.02675067717791535,
+        "peak_rss_kib": 1449080,
+        "device": "cuda",
+        "gpu_peak_bytes": 1680269824,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 2,
+        "batch": 32,
+        "candidates": 64,
+        "seconds": 2.3156216759234667,
+        "seconds_per_candidate": 0.03618158868630417,
+        "peak_rss_kib": 1449848,
+        "device": "cuda",
+        "gpu_peak_bytes": 1718804992,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 4,
+        "batch": 32,
+        "candidates": 64,
+        "seconds": 2.8970333272591233,
+        "seconds_per_candidate": 0.0452661457384238,
+        "peak_rss_kib": 1450616,
+        "device": "cuda",
+        "gpu_peak_bytes": 1849642496,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      }
+    ],
+    "gradient-assessment-gpu/benchmark-b64.json": [
+      {
+        "events": 1,
+        "batch": 64,
+        "candidates": 128,
+        "seconds": 1.8524578297510743,
+        "seconds_per_candidate": 0.014472326794930268,
+        "peak_rss_kib": 1448772,
+        "device": "cuda",
+        "gpu_peak_bytes": 3274733056,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 2,
+        "batch": 64,
+        "candidates": 128,
+        "seconds": 2.864226436242461,
+        "seconds_per_candidate": 0.022376769033144228,
+        "peak_rss_kib": 1449924,
+        "device": "cuda",
+        "gpu_peak_bytes": 3470105088,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 4,
+        "batch": 64,
+        "candidates": 128,
+        "seconds": 3.8533464651554823,
+        "seconds_per_candidate": 0.030104269259027205,
+        "peak_rss_kib": 1452656,
+        "device": "cuda",
+        "gpu_peak_bytes": 3919512576,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      }
+    ],
+    "gradient-assessment-gpu/benchmark-b8.json": [
+      {
+        "events": 1,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 3.664605602622032,
+        "seconds_per_candidate": 0.1145189250819385,
+        "peak_rss_kib": 1475152,
+        "device": "cuda",
+        "gpu_peak_bytes": 459935744,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 2,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 4.409164573065937,
+        "seconds_per_candidate": 0.13778639290831052,
+        "peak_rss_kib": 1475536,
+        "device": "cuda",
+        "gpu_peak_bytes": 476172800,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      },
+      {
+        "events": 4,
+        "batch": 8,
+        "candidates": 32,
+        "seconds": 4.872956678271294,
+        "seconds_per_candidate": 0.15227989619597793,
+        "peak_rss_kib": 1475920,
+        "device": "cuda",
+        "gpu_peak_bytes": 493787136,
+        "gpu": "NVIDIA A100-PCIE-40GB"
+      }
+    ]
+  },
+  "cpu_gpu_comparison": "omitted at user request",
+  "determinism": "CUDA reflection-padding backward is not guaranteed bitwise deterministic",
+  "gradient_coordinates": [
+    "log2(f/80) octaves",
+    "onset seconds"
+  ],
+  "source_hashes": {
+    "scripts/assess_gradients.py": "7a7322f720fa075b15dd4cba328a4e45292c2c02ec8fc8534ec67f7e958d9b91",
+    "/data/home/acw794/ICASSP27-Phrase/scripts/package_gradient_assessment.py": "b74ac905480d38e282f21a6458c7e88e7f665c785c04632bc2ac9e7c18f58459",
+    "jobs/gradient_assessment_gpu.sh": "a6fd599e772ff0f876a0ac560ad3ac62c53abe80d662a804dbaa823cf992af2a"
+  }
+}

@@ -3,6 +3,9 @@
 This experiment compares eleven losses using paired candidate phrases. It does
 not change the historical loss registry, recovery runs, or manuscript.
 
+Start with the [findings and limitations](findings.md), [figure](gradient-assessment.pdf),
+[PNG preview](gradient-assessment.png), and [full statistics](summary.csv).
+
 ## Design
 
 The seven columns are: one event with joint displacement; two/four events with
