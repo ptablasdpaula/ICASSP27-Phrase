@@ -34,6 +34,10 @@ LAYOUTS = {
             "bidirectional_cumulative_energy",
         ),
     ),
+    "comparison-spectral-sot-left": (
+        ("linear_mss", "smooth_mss", "sot_published_composite"),
+        ("linear_jtfot", "bidirectional_cumulative_energy"),
+    ),
     "comparison-spectral": (
         ("linear_mss", "smooth_mss"),
         ("sot_published_composite", "linear_jtfot", "bidirectional_cumulative_energy"),
