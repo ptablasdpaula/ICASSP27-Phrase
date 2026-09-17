@@ -1,7 +1,7 @@
 {
   "source": "raw-sweeps.npz",
   "source_sha256": "f8ec68f908cabe1984d271e849d0a22df2e73c3d359a039892774274df51e655",
-  "script_sha256": "bbd7fbc04692ab92585914d16ee3d614c9844f3111a7d0a5de2a3222a8cbc992",
+  "script_sha256": "d24503e11a5979fc899049b72dc0de3c98d04175e070c86d764c90ce5a0f15b3",
   "layouts": {
     "comparison-six-cel": [
       [
@@ -148,14 +148,27 @@
       ]
     }
   },
+  "compact_layout": {
+    "figure": "comparison-six-cel",
+    "closed_spines": true,
+    "wspace": 0.025,
+    "y_tick_labels": false,
+    "shared_y_label": "Normalised Loss [0-1]",
+    "endpoint_labels": "left aligned at left edge, right aligned at right edge",
+    "legends": "inside bottom left of each panel",
+    "shared_row_labels": [
+      "Time shift (s)",
+      "Frequency shift (octaves)"
+    ]
+  },
   "normalisation": "Unchanged saved independent min-max per loss and sweep",
   "points_per_curve": 3201,
   "smoothing": false,
   "downsampling": false,
   "manuscript_changed": false,
   "artifact_sha256": {
-    "comparison-six-cel.png": "8eeaa0d4367ecbc32554b71d4650fb33d82bdeab8d4cb5a0fe41653c8833cbb1",
-    "comparison-six-cel.pdf": "e40c19691e63765e761af6aa096e25c0cfc1c698f08a93e98ef47fba562994b2",
+    "comparison-six-cel.png": "9b0b9c2e43451a8dc14a9b416242ca8b66ebdb55d94540b2737533cfba34ed18",
+    "comparison-six-cel.pdf": "f9cb11925292cda48cb0daecc242597c16908208070f8502f9d7c84db2a8b260",
     "comparison-six-no-cel.png": "ff9df1d44af723f1910d8b522cedead787fd20689ae85d55cd36914bb272a9d4",
     "comparison-six-no-cel.pdf": "c41abb0c1462a0b7861262b684c51d0d77fb6283d2fb8cedf5dd6afbcc5ca6ae",
     "comparison-seven.png": "ea91953141dc27912376990411d4c37dee8400d10da70c668d1a183bf25fd91f",

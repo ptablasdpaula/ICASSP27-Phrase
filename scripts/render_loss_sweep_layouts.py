@@ -115,6 +115,7 @@ def main():
     for stem, groups in LAYOUTS.items():
         if args.layout and stem != args.layout:
             continue
+        compact = stem == "comparison-six-cel"
         columns = len(groups)
         fig, panels = plt.subplots(
             2, columns, figsize=(5.5 if columns == 1 else 10, 5.9), sharey=True, squeeze=False
@@ -144,10 +145,30 @@ def main():
                     yticks=[0, 0.5, 1],
                     xlabel="Onset displacement (s)" if row == 0 else "Pitch displacement (octaves)",
                 )
-                if col == 0:
+                if compact:
+                    ax.set_xlabel("")
+                    for spine in ax.spines.values():
+                        spine.set_visible(True)
+                    ax.tick_params(axis="y", labelleft=False, labelright=False, left=False)
+                    ticks = np.linspace(axes[row, 0], axes[row, -1], 5)
+                    ax.set_xticks(ticks, [f"{v:+.1f}" if v > 0 else f"{v:.1f}" for v in ticks])
+                    ax.get_xticklabels()[0].set_horizontalalignment("left")
+                    ax.get_xticklabels()[-1].set_horizontalalignment("right")
+                elif col == 0:
                     ax.set_ylabel("Normalised loss")
                 ax.grid(axis="y", alpha=0.18)
-                if row == 0:
+                if compact:
+                    ax.legend(
+                        loc="lower left",
+                        frameon=True,
+                        framealpha=0.9,
+                        facecolor="white",
+                        edgecolor="none",
+                        fontsize=9,
+                        handlelength=2.5,
+                        borderpad=0.4,
+                    )
+                elif row == 0:
                     ax.legend(
                         loc="lower center",
                         bbox_to_anchor=(0.5, 1.07),
@@ -165,6 +186,20 @@ def main():
             hspace=0.40,
             wspace=0.19,
         )
+        if compact:
+            fig.subplots_adjust(
+                left=0.065, right=0.98, top=0.975, bottom=0.105, hspace=0.34, wspace=0.025
+            )
+            fig.supylabel("Normalised Loss [0-1]", x=0.025, y=0.54, fontsize=11)
+            for row, label in enumerate(("Time shift (s)", "Frequency shift (octaves)")):
+                fig.text(
+                    0.5225,
+                    panels[row, 0].get_position().y0 - 0.065,
+                    label,
+                    ha="center",
+                    va="top",
+                    fontsize=10,
+                )
         for ext in ("png", "pdf"):
             path = OUTPUT / f"{stem}.{ext}"
             fig.savefig(path, dpi=180)
@@ -179,6 +214,16 @@ def main():
         "layouts": LAYOUTS,
         "styles": STYLE,
         "style_overrides": STYLE_OVERRIDES,
+        "compact_layout": {
+            "figure": "comparison-six-cel",
+            "closed_spines": True,
+            "wspace": 0.025,
+            "y_tick_labels": False,
+            "shared_y_label": "Normalised Loss [0-1]",
+            "endpoint_labels": "left aligned at left edge, right aligned at right edge",
+            "legends": "inside bottom left of each panel",
+            "shared_row_labels": ["Time shift (s)", "Frequency shift (octaves)"],
+        },
         "normalisation": "Unchanged saved independent min-max per loss and sweep",
         "points_per_curve": 3201,
         "smoothing": False,
