@@ -188,13 +188,13 @@ def main():
         )
         if compact:
             fig.subplots_adjust(
-                left=0.065, right=0.98, top=0.975, bottom=0.105, hspace=0.34, wspace=0.025
+                left=0.031, right=0.997, top=0.997, bottom=0.077, hspace=0.215, wspace=0.025
             )
-            fig.supylabel("Normalised Loss [0-1]", x=0.025, y=0.54, fontsize=11)
+            fig.supylabel("Normalised Loss [0-1]", x=0.003, y=0.537, fontsize=11)
             for row, label in enumerate(("Time shift (s)", "Frequency shift (octaves)")):
                 fig.text(
-                    0.5225,
-                    panels[row, 0].get_position().y0 - 0.065,
+                    0.514,
+                    panels[row, 0].get_position().y0 - 0.050,
                     label,
                     ha="center",
                     va="top",
@@ -217,6 +217,10 @@ def main():
         "compact_layout": {
             "figure": "comparison-six-cel",
             "closed_spines": True,
+            "margins": {"left": 0.031, "right": 0.997, "top": 0.997, "bottom": 0.077},
+            "hspace": 0.215,
+            "row_label_offset": 0.050,
+            "shared_y_label_x": 0.003,
             "wspace": 0.025,
             "y_tick_labels": False,
             "shared_y_label": "Normalised Loss [0-1]",
