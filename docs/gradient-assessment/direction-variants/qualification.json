@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "device": "cuda",
+  "gpu": "Tesla V100-PCIE-16GB",
+  "signature": "f46e68e0b077229487882caf7950d594dbc551252abc09d49a3a400877314078",
+  "source_hashes": {
+    "/data/home/acw794/ICASSP27-Phrase/scripts/assess_direction_variants.py": "ab3086839eecaa2f768b2717815f24074765514ce7bcdd51742e6cab25a0616a",
+    "scripts/screen_eight_directions.py": "8d51c3f85e8397b0de8d6453ece2a2d1c0aa4d2c98e87ed83da3e00f7dabd39d",
+    "src/gradient_assessment.py": "06e95f701e8afc1ae4fbfeb51fcedd010c2c2797e7ce2c4888824ae297e29805",
+    "src/losses.py": "082dee8505b242be0f612549225bd85116a1600c6873c2aef3b2955fc2cdeb03",
+    "src/synth.py": "55cc93cdd3a4cd6349d3b602c4066e9d0fe1ac0ff4f9adc04bdf2e9c401902f4",
+    "src/exciter.py": "ea65a2e1b047ae9f71946ae067fc9f7cb0322d491168dc679fd4ea4e5471dd7c",
+    "src/waveguide.py": "7c142f9cd3bce174be1f7e4ab567e1a43bd27b0434a34bb35819db3ad8338de5"
+  },
+  "checks": [
+    "diagonal elementary values equal CumulativeEnergyDistance",
+    "orthogonal elementary values equal the established AxisLoss",
+    "orthogonal values differ from diagonal values",
+    "orthogonal gradients differ from diagonal gradients"
+  ],
+  "direction_order": {
+    "diagonal": [
+      "right_up",
+      "right_down",
+      "left_up",
+      "left_down"
+    ],
+    "orthogonal": [
+      "up",
+      "down",
+      "right",
+      "left"
+    ]
+  }
+}
