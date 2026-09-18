@@ -275,10 +275,10 @@ diagnostic and comparison of \gls{df2} and literal \gls{dwg} implementations.}.
 % IEEEtran can place it at the top of page 4.
 \begin{table*}[!t]
 \centering
-\caption{\normalfont\textcolor{blue}{Median Hungarian-assigned pitch and onset
+\caption{\normalfont Median Hungarian-assigned pitch and onset
 errors over 150 target phrases per event count; lower is better. Ce$\mathcal L$
 configuration columns show the accumulation directions, linear-bin or
-log-frequency weighing, and whether accumulation decays with distance.}}
+log-frequency weighing, and whether accumulation decays with distance.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table_pending.tex}
 \end{table*}
@@ -384,18 +384,20 @@ each fit's lowest-loss iterate.
 \setlength{\abovecaptionskip}{0pt}
 \includegraphics[width=0.74\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
 \vspace{-5.0mm}
-\caption{\textcolor{blue}{Per-phrase \acrshort{lsd} distributions over the same
-targets; lower is better.}}
+\caption{Per-phrase \acrshort{lsd} distributions over the same targets; lower
+is better.}
 \label{fig:lsd}
 \end{figure}
 
 \section{Conclusion}
 We introduced \glspl{cel} for joint pluck-onset and pitch recovery. Across
 90,112 comparisons, they give the highest mean Joint gradient cosine at every
-cardinality and retain $.10$--$.14$ at eight events, against at most $.04$ for
+cardinality and retain $.10$--$.13$ at eight events, against at most $.04$ for
 the baselines. Their advantage also holds when only pitch or onset is unknown.
-\textcolor{blue}{The 6,750 matched fits will determine the best objective for
-pitch, onset, and spectral fidelity.}
+Across the 6,750 matched fits, decCe$\mathcal L$ gives the lowest median pitch
+error and \gls{lsd} from four to eight events. Its onset error is lowest at
+four events and remains within 3.7~ms of the best median at six and eight
+events.
 
 \clearpage
 \section*{Acknowledgment}

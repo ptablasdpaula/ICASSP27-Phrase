@@ -45,6 +45,7 @@ def atomic_text(path: Path, value: str) -> None:
         with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
             stream.write(value)
         os.replace(temporary, path)
+        os.chmod(path, 0o644)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -311,6 +312,7 @@ def write_per_phrase(rows: dict, lsd: dict, path: Path) -> None:
                             }
                         )
         os.replace(temporary, path)
+        os.chmod(path, 0o644)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -359,6 +361,7 @@ def write_summary(records: list[dict], path: Path) -> None:
             writer.writeheader()
             writer.writerows(records)
         os.replace(temporary, path)
+        os.chmod(path, 0o644)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -447,6 +450,7 @@ def save_figure(figure, path: Path) -> None:
         metadata = {"CreationDate": None, "ModDate": None} if path.suffix == ".pdf" else None
         figure.savefig(temporary, dpi=300, bbox_inches="tight", metadata=metadata)
         os.replace(temporary, path)
+        os.chmod(path, 0o644)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -543,11 +547,6 @@ def write_markdown(medians: dict, path: Path) -> None:
         "",
         "Medians across 150 target phrases; each phrase metric is the mean absolute error "
         "after octave-second Hungarian assignment.",
-        "",
-        "| Loss | "
-        + " | ".join(f"{cardinality} event" for cardinality in recovery.CARDINALITIES)
-        + " |",
-        "|---|" + "---:|" * len(recovery.CARDINALITIES),
     ]
     for metric, unit in (("pitch_mae_cents", "cents"), ("onset_mae_ms", "ms")):
         lines.extend(("", f"## {metric} ({unit})", ""))
