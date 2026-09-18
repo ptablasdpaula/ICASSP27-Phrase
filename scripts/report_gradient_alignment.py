@@ -93,7 +93,11 @@ def render(
     groups = [
         (
             (a + b) / 2,
-            {"joint": "Joint", "pitch": "Pitch", "time": "Time"}[columns[int(a + 0.5)][1]],
+            {
+                "joint": "Joint",
+                "pitch": "Known time",
+                "time": r"Known $f_0$",
+            }[columns[int(a + 0.5)][1]],
         )
         for a, b in zip(edges[:-1], edges[1:], strict=True)
     ]

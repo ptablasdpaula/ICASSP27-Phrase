@@ -81,7 +81,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \maketitle
 
 \begin{abstract}
-\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. On this work, we propose the use of \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines the pluck's pitch, in the process recovering musical phrases. In a single-pluck landscape, we find our proposed losses have gradients that point towards the target at 120 equally spaced coordinates. Across 6000 fits containing one to eight pluck phrase fits, our proposed losses improve joint onset--pitch recovery over traditional waveform, spectral pointwise and recently proposed \acrlong{ot} objectives. We believe these losses will further support unsupervised optimisation of onset timing, pitch and delay line length, and provide a PyTorch library for ease of use in future applications\footnote{\textcolor{red}{link to library should be here}}.
+\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 84,480 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the nine objectives reaching at least .10 single-event alignment across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing, pitch, and delay-line length, and provide a PyTorch library for future applications\footnote{\textcolor{red}{link to library should be here}}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -139,12 +139,6 @@ Hence, our contributions are twofold:
 \end{itemize}
 
 
-
-%(i)~\gls{bicul} for direct onset--pitch recovery;
-%(ii)~a registered single-pluck lattice on which \gls{bicul} alone directs all 120
-%displayed descents towards the target; and (iii)~a comparison of eight loss
-%configurations across 6000 phrase fits, with a diagnostic of the multi-event
-%effect of state reset.
 
 \section{Cumulative Energy Losses}
 \label{sec:losses}
@@ -211,7 +205,9 @@ nut-side delay $D_1$ and bridge-side delay $D_2$ on each rail.}
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_sweeps.pdf}
-\caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is independently min--max normalised over 3201 samples. Single-scale STFT is the mean absolute magnitude difference using the same 256-sample Hann window and 64-sample hop as CeL. Linear MSS denotes the linear-magnitude component of the SOT composite, without its mixing coefficient.}
+\caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time
+shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is
+independently min--max normalised over 3201 samples.}
 \label{fig:loss-sweeps}
 \end{figure}
 
@@ -260,235 +256,136 @@ loss landscapes at
 \url{https://ptablasdpaula.github.io/ICASSP27-Phrase} document onset placement, delay interpolation choices and the state-reset
 diagnostic and comparison of \gls{df2} and literal \gls{dwg} implementations.}.
 
-\section{Experiments and Methodology}
-
-
-
-\subsection{Loss Objectives}
-\label{sec:loss-objectives}
-We compare six base objectives. $L_1$ is mean absolute and $L_2$ mean
-squared sample error. Wang et al. introduced multi-resolution spectral
-comparison~\cite{wang2019nsf}; Engel et al. adopted it as \gls{mss} in
-\gls{ddsp}~\cite{engel2020ddsp}, and Schw\"ar and M\"uller later revisited its
-design~\cite{schwar2023mss}. Following the latter, \gls{mss} sums squared $L_2$
-distances between
-$\log(1+|\operatorname{STFT}|)$ magnitudes, where $|\cdot|$ is magnitude and
-$\log$ the natural logarithm. Its prime-length flat-top windows
-$\{17,31,67,127,257,509\}$ and hops $\{8,15,33,63,128,254\}$ limit leakage
-without aligning \gls{dft} bins. Torres et al.'s \gls{sot}~\cite{torres2024sot}
-combines frame-normalised \gls{fft}-512/hop-64 flat-top \gls{stft}-power transport with
-their unbalanced quantile cutoff and $0.05$ Hann-windowed linear-magnitude \gls{mss}.
-Fabiani et al.'s \gls{tfw}~\cite{fabiani2024jtfot} globally normalises a
-periodic-Hann \gls{fft}-256/hop-128 magnitude \gls{stft} and projects it along ten angles.
-We retain their scaling $\widetilde t=(10^3\,\mathrm{Hz/s})t$, making 1~s
-commensurate with 1000~Hz in the ground cost. Immediately after this canonical
-configuration, Experiment II tests a $1\,\mathrm{s}=1\,\mathrm{oct}$ variant
-that changes \gls{tfw} coordinates to
-$\log_2[\max(f,20)/20]$ octaves and seconds; $f$ is bin-centre Hz and the
-20-Hz floor gives a finite origin. The sixth base objective is
-Sec.~\ref{sec:losses}'s bidirectional variant, \gls{bicul}.
-Experiment I compares the six base objectives. Experiment II compares the
-original eight configurations and additionally reports Fade descriptively.
-
-\subsection{CeL variants}
-\label{sec:cel-variants}
-Our base configuration averages all four direction pairs and uses
-$\phi(u)=\sqrt{u}$. We test two separate modifications:
-
-\emph{\acrshort{logq}} applies perceptually motivated frequency weighting.
-For bin-centre frequency $f_k$, define $u_k=\log_2[\max(f_k,20)/20]$.
-Let $w^f_{d_f,k}$ and $w^t_{d_t,n}$ denote adjacent interval widths in octaves
-and seconds, following the accumulation directions. Replace the uniform RMS by
-\begin{equation*}
-\ell^{\rm LW}_q=\left[\frac{\sum_{k,n}
-w^f_{d_f,k}w^t_{d_t,n}E_q(k,n)^2}
-{\sum_{k,n}w^f_{d_f,k}w^t_{d_t,n}}\right]^{1/2}.
-\end{equation*}
-Endpoints without a neighbouring interval have zero weight. Equal octave spans
-receive equal total frequency weight; cumulative surfaces are unchanged.
-
-\emph{Fade} makes accumulation more local. Within each direction's rectangle,
-a contribution at absolute time and frequency separations $\Delta t$ and
-$\Delta f$ from the receiving bin is multiplied by
-$w(\Delta t;H_t)w(\Delta f;H_f)$, where
-\begin{equation*}
-w(d;H)=\max\!\left(0,1-\frac{\log(1+9d/H)}{\log 10}\right).
-\end{equation*}
-We fix $H_t=1$~s and $H_f=1000$~Hz throughout optimisation; each weight reaches
-zero at its horizon. The same weights modify target and candidate accumulation.
-Both variants retain the original total target power $m$, square-root features,
-and four-direction average. Fade uses uniform RMS, without \acrshort{logq};
-its logarithmic decay is distinct from octave-based error weighting.
-
+% Queue the double-column result while page 3 is still being composed so that
+% IEEEtran can place it at the top of page 4.
 \begin{table*}[!t]
 \centering
-\caption{\normalfont Median Hungarian-matched pitch and onset errors over 150
-phrases per event count; lower is better. Bold, underlined, and italic values
-indicate first, second, and third place among the original eight configurations.
-Fade is reported separately with 2.048 onset padding; the historical rows
-retain their original padding and are not ranked against Fade.}
+\caption{\normalfont\textcolor{blue}{Median Hungarian-assigned pitch and onset
+errors over 150 target phrases per event count; lower is better.}}
 \label{tab:pilot-compact}
-\input{\PaperRoot/figures/median_recovery_table.tex}
+\input{\PaperRoot/figures/median_recovery_table_pending.tex}
 \end{table*}
 
+\section{Experiments}
+\label{sec:experiments}
 
+\textbf{Synthetic data.}
+All experiments use the two-second, 4-kHz synthesis configuration in
+Sec.~\ref{sec:renderer}. An $N$-event phrase contains pitches
+$p=\log_2(f_0/80)\in[0,2]$~octaves and onsets $t\in[0.2,1.8]$~s, with
+$N\in\{1,2,4,6,8\}$. We use scrambled Latin hypercube sampling (LHS) to
+stratify the sampled coordinates~\cite{mckay1979comparison}; target onsets are
+separated by at least 50~ms, while candidate coordinates span the complete
+registered domain.
 
-\subsection{Experiment I: Gradient Alignment}
+\textbf{Metrics.}
+For an unordered prediction, the Hungarian method~\cite{kuhn1955hungarian}
+selects the event permutation $\pi$ minimising
+$\sum_i[(\hat p_i-p_{\pi(i)})^2+(\hat t_i-t_{\pi(i)})^2]$, so one octave and
+one second have equal assignment cost. This assignment supplies the
+within-phrase pitch and onset mean absolute errors, reported in cents and
+milliseconds, respectively. It also reorders the target for our phrase-wide
+gradient cosine: with $\boldsymbol\theta=(p_1,t_1,\ldots,p_N,t_N)$ and descent
+$\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$, we measure the cosine
+between $\mathbf d$ and
+$\boldsymbol\theta^\star_\pi-\boldsymbol\theta$. This scale-independent
+alignment follows the use of gradient cosine similarity to identify helpful
+directions~\cite{du2018gradient}; $1$, $0$, and $-1$ indicate descent directly
+towards, orthogonal to, and away from the assigned target. We report its mean
+and sample standard deviation across candidate phrases. As an
+objective-independent audio metric, \gls{lsd} is the \gls{rms} difference
+between periodic-Hann \acrshort{fft}-256/hop-64 log-magnitude spectra, using a
+common target-relative $-100$-dB magnitude floor.
+
+\textbf{Baselines.}
+We retain the cited losses and state only their adaptations to our 4-kHz
+inputs. Alongside waveform $L_1$ and $L_2$, SS uses periodic-Hann
+\acrshort{fft}-256/hop-64 magnitudes. LinMSS uses Hann-windowed FFT sizes 16,
+32, 64, 128, 256, and 512 with quarter-length hops~\cite{wang2019nsf,engel2020ddsp}.
+SmoMSS uses the time-scaled flat-top window/hop pairs 17/8, 31/15, 67/33,
+127/63, 257/128, and 509/254~\cite{schwar2023mss}. \Gls{sot} uses flat-top
+\acrshort{fft}-512/hop-64 transport and its $0.05$-weighted LinMSS
+component~\cite{torres2024sot}. Both \gls{tfw} variants use globally normalised
+periodic-Hann \acrshort{fft}-256/hop-128 magnitudes and ten projections: the
+published coordinates set $1$~s${}=1000$~Hz, while our log-frequency adaptation
+sets $1$~s${}=1$~octave through
+$\log_2[\max(f,20)/20]$~\cite{fabiani2024jtfot}.
+
+\textbf{CeL variants.}
+The base Ce$\mathcal L$ averages all four diagonal direction pairs, uses
+$\phi(u)=\sqrt{u}$, and applies a uniform \gls{rms}. logCe$\mathcal L$ instead
+uses Log-Weighing: octave and time-bin widths weight the final \gls{rms}, so
+equal octave spans receive equal total frequency weight while the cumulative
+surfaces remain unchanged. decCe$\mathcal L$ retains uniform \gls{rms} but
+makes accumulation local by multiplying contributions at separations
+$\Delta t$ and $\Delta f$ by
+$w(\Delta t;1\,\mathrm{s})w(\Delta f;1000\,\mathrm{Hz})$, where
+$w(d;H)=\max\{0,1-\log(1+9d/H)/\log 10\}$. Finally, tlogCe$\mathcal L$ applies
+Log-Weighing to only the two forward-time pairs
+$(\rightarrow,\uparrow)$ and $(\rightarrow,\downarrow)$.
+
+\subsection{Gradient Analysis}
 \label{sec:gradient-diagnostic}
-This experiment asks a local question before any optimiser update: how closely
-does a loss's descent direction align with the onset--pitch displacement that
-recovers a target phrase? Figure~\ref{fig:loss-sweeps} first visualises the
-centred 160-Hz, 1.0-s case using 3201-point conditional slices. Its companion
-11-by-11 target-excluded lattice gives the 120 single-event directions reported
-below. The phrase-level experiment in
-Fig.~\ref{fig:gradient-alignment} then samples the full registered domain. All
-targets and candidates share Sec.~\ref{sec:renderer}'s synthesis configuration
-and $2.048\times$ onset padding, isolating loss geometry from synthesis mismatch. No
-gradient step is taken.
-
-We compare twelve losses on the same candidates. Besides $L_1$ and $L_2$, SS is
-the mean absolute difference between periodic-Hann \acrshort{fft}-256/hop-64
-magnitudes. LinMSS sums this linear-magnitude difference over Hann windows
-$\{512,256,128,64,32,16\}$ with quarter-window hops; SmoMSS denotes the smooth
-\acrshort{mss} defined in Sec.~\ref{sec:loss-objectives}. The remaining rows are
-\acrshort{sot}, linear- and log-frequency \acrshort{tfw}, and four \gls{cel}
-variants. Ce$\mathcal{L}$, logCe$\mathcal{L}$, and decCe$\mathcal{L}$ denote
-the base, log-weighted, and fixed-decay configurations, respectively;
-tlogCe$\mathcal{L}$ applies Log-Weighting while retaining only the two
-forward-time direction pairs $(\rightarrow,\uparrow)$ and
-$(\rightarrow,\downarrow)$. All rows use identical candidate parameters;
-shared spectral representations are reused within each evaluation batch.
-
-We parameterise pitch as $p=\log_2(f_0/80)$ octaves and onset as $t$ in seconds.
-The one-event target is fixed at $(p,t)=(1,1)$; at each of two, four, six, and
-eight events, 32 target phrases have uniform $p\in[0,2]$ and
-$t\in[0.2,1.8]$, subject to 50-ms target-onset separation. A scrambled joint
-Latin hypercube samples all $2N$ candidate coordinates over the same ranges.
-Pitch and Time conditions project that design by restoring the other coordinate
-to its target value; Joint conditions retain both perturbations. Joint is tested
-at $N\in\{1,2,4,6,8\}$ and the conditional cases at
+We ask how closely each loss's descent direction aligns with the displacement
+that recovers a target phrase, before taking an optimiser step. The one-event
+target is fixed at 160~Hz and 1.0~s. For each larger cardinality, 32 target
+phrases sample the registered ranges with 50-ms onset separation. A scrambled
+joint LHS samples all $2N$ candidate coordinates. The \emph{Joint} condition
+retains both perturbations; \emph{Known time} restores target onsets and varies
+only pitch; \emph{Known $f_0$} restores target pitches and varies only onset.
+Joint is tested at $N\in\{1,2,4,6,8\}$ and both conditional cases at
 $N\in\{1,2,4\}$.
 
-Each condition starts with 256 candidates per target. An independent repeat on
-the first eight targets increases this to 512, then at most 1024, when any
-loss's componentwise success rate changes by more than two percentage points.
-The resulting counts are 1024 for Joint-1 and Time-1, 512 for Joint-2 and
-Pitch-1/2, and 256 otherwise, giving 84,480 paired candidate--target
-comparisons. Samples are paired across losses. The single-target Time-1 baseline
-reaches the cap with residual sensitivity for some comparison losses; Ce$\mathcal{L}$,
-logCe$\mathcal{L}$, and decCe$\mathcal{L}$ differ by less than $10^{-4}$ in
-mean cosine between repeats.
-
-For each candidate, unrestricted Hungarian matching minimises
-$\sum_i[(p_i-p^\star_{\pi(i)})^2+(t_i-t^\star_{\pi(i)})^2]$; hence one octave
-and one second have equal matching cost. Let $\boldsymbol\theta$ concatenate all
-candidate coordinates and $\boldsymbol\theta^\star_\pi$ the reordered target.
-For descent $\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$, we report
-\begin{equation*}
-c_{\rm phrase}=
-\frac{\mathbf d^\top(\boldsymbol\theta^\star_\pi-\boldsymbol\theta)}
-{\lVert\mathbf d\rVert_2
- \lVert\boldsymbol\theta^\star_\pi-\boldsymbol\theta\rVert_2}.
-\end{equation*}
-All gradient components are retained, so movement in a coordinate held correct
-by a conditional design reduces alignment. Matching remains unrestricted and
-can also reassign events. We average candidate-phrase cosines and report their
-sample standard deviation; it describes variation across candidates, not
-uncertainty in the mean. Thus $1$, $0$, and $-1$ indicate descent directly
-towards, orthogonal to, and directly away from the matched target, respectively.
+Each condition begins with 256 candidates per target and doubles to 512 or
+1024 where an independent repeat changes any loss's componentwise success rate
+by more than two percentage points. This gives 84,480 paired candidate--target
+comparisons, shared across the eight baselines and four Ce$\mathcal L$
+variants above. Hungarian matching remains unrestricted in the conditional
+cases, and all gradient components are retained, so movement in a known
+coordinate reduces alignment.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
-\caption{Whole-phrase gradient alignment; cells show candidate mean $\pm$
-standard deviation, and higher is better. Column numbers give event count;
-column groups identify perturbed coordinates. Colours retain the full
-$[-1,1]$ cosine normalisation.}
+\includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
+\caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation;
+higher is better. Columns give event count; colours span $[-1,1]$.}
 \label{fig:gradient-alignment}
 \end{figure}
 
-\subsection{Experiment II: Phrase Recovery}
-Seed 2027 generates 150 scrambled-Latin-hypercube targets at each of one, two,
-four, six, and eight events. Pitches are log-mapped to 80--320~Hz; onsets span
-0.2--1.8~s with at least 50~ms separation.
+\subsection{Musical Phrase Recovery}
+Seed 2027 generates 150 scrambled-LHS targets at each cardinality. Every
+candidate begins with all pitches at 160~Hz and onsets at equal-cell centres
+over 0.2--1.8~s; independent logits constrain both coordinates to their
+registered ranges. We retain the nine objectives whose one-event Joint mean
+cosine rounds to at least $.10$: SS, LinMSS, SmoMSS, \gls{tfw},
+log-\gls{tfw}, Ce$\mathcal L$, logCe$\mathcal L$, decCe$\mathcal L$, and
+tlogCe$\mathcal L$.
 
-All candidate pitches start at 160~Hz and onsets at equal-cell centres over
-0.2--1.8~s; independent logits bound coordinates to those same onset and pitch
-ranges. Adam uses learning rate 0.05, default moments/epsilon, and no weight
-decay. Initial-loss division conditions step scale only; reported values remain
-raw. A relative raw-loss decrease of $10^{-4}$ resets patience. At patience 100
-and 200, we restore the strict best, multiply the learning rate by 0.3 (floor
-$10^{-5}$), and clear optimiser state; we stop at patience 250 or 3000 updates
-and retain the best. Thus 150 targets $\times$ 8 losses $\times$ 5 event
-counts${}={}$6000 historical fits. Fade adds 750 fits on the same targets and
-optimisation schedule, using the updated 2.048 onset padding; Table~\ref{tab:pilot-compact}
-reports it separately pending matched-padding baseline reruns.
+Each of the resulting 6,750 fits uses Adam with learning rate $.05$, default
+moments and epsilon, and zero weight decay. Division by each phrase's initial
+loss conditions the step scale while leaving reported losses raw. An
+independent ReduceLROnPlateau scheduler uses factor $.5$, patience 200, relative
+improvement threshold $10^{-4}$, and minimum learning rate $10^{-5}$.
+Early stopping uses its own 1000-update patience, with a 20,000-update cap. We
+report the final iterate without rollback or optimiser-state reset.
 
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
-\includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
+\includegraphics[width=0.74\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
 \vspace{-5.0mm}
-\caption{Per-phrase \acrshort{lsd} distributions over the same targets; lower is better.}
+\caption{\textcolor{blue}{Per-phrase \acrshort{lsd} distributions over the same
+targets; lower is better.}}
 \label{fig:lsd}
 \end{figure}
 
-Let $i$ index an unordered prediction and $j$ a target. Their assignment cost is
-\begin{equation*}
-d_{ij}=\left[\frac{\log_2(\hat f_{0,i}/f_{0,j})}{2}\right]^2+
-\left[\frac{\hat t_i-t_j}{1.6}\right]^2.
-\end{equation*}
-Hats mark predictions; $f_0$ is in Hz and $t$ in seconds; 2 octaves and 1.6~s
-are the full ranges, making $d_{ij}$ dimensionless. The Hungarian
-method~\cite{kuhn1955hungarian} finds the one-to-one pairing minimising
-$\sum d_{ij}$. Table~\ref{tab:pilot-compact} reports its errors and
-Fig.~\ref{fig:lsd} the audio-error distributions.
-
-Across phrases, we report medians of within-phrase pitch \gls{mae} (cents) and onset
-\gls{mae} (ms). Periodic-Hann \gls{fft}-256/hop-64 \gls{lsd} is objective-independent.
-
-Fade is excluded from the following historical family comparison.
-Post hoc, each phrase's \gls{bicul}-family score averages \gls{bicul} and \gls{logq}; its
-\gls{tfw}-family score averages canonical \gls{tfw} and the $1\,\mathrm{s}=1\,\mathrm{oct}$
-variant. For each count--metric cell, the paired two-sided Wilcoxon signed-rank
-test ranks the magnitudes of the 150 family-score differences and compares
-positive with negative rank sums to assess whether the differences are centred
-at zero~\cite{wilcoxon1945individual}. Five counts $\times$ three metrics give 15
-$p$-values, jointly adjusted by Holm's procedure~\cite{holm1979simple}.
-
-\section{Results}
-\subsection{Experiment I: Single-event Gradient Diagnostic}
-In the loss order $L_1$, $L_2$, \gls{mss}, \gls{sot}, \gls{tfw}, and \gls{bicul}, the fixed
-renderer gives 60.0\%, 49.2\%, 42.5\%, 51.7\%, 75.8\%, and 100.0\%
-target-directed descent, respectively. Thus \gls{bicul} is the only objective with
-120/120 target-directed directions in this registered renderer and diagnostic
-case; this diagnostic does not imply a renderer-independent ranking.
-
-\subsection{Experiment II: Phrase Recovery}
-Table~\ref{tab:pilot-compact} reports all nine configurations; Fig.~\ref{fig:lsd} shows the original eight
-\gls{lsd} distributions. Among the original configurations, both \gls{bicul} variants are essentially exact at one and two
-events. A \gls{bicul} variant has the lowest median pitch error at every count and
-onset error through four; published linear-Hz \gls{tfw} has the lowest onset error
-at six and eight.
-
-Across these 15 tests, median paired family differences favour \gls{bicul}; 14
-have $p_{\mathrm{Holm}}\leq0.0069$, with only six-event onset above 0.05
-($-10.5$~ms; $p_{\mathrm{Holm}}=0.186$).
-
 \section{Conclusion}
-We introduced \gls{bicul} for pluck-onset and pitch recovery. With fixed
-Fourier--Thiran rendering, it gives 120/120 target-directed descents; reset
-smooths the three-event \gls{df2} sweeps. Across 6000 fits, \gls{bicul} strengthens joint
-recovery, with \gls{logq} improving descriptive results. At four events, \gls{logq}
-\gls{bicul}'s median pitch error (19.1 cents) is
-comparable to reported \glspl{jnd}~\cite{holmes2022pitch}, while its onset error
-(6.75 ms) is below reported guitar-context timing \glspl{jnd}~\cite{camara2026timing};
-from six events, both errors exceed those perceptual scales, with pitch error
-above one semitone. This contextual comparison does not establish perceptual
-equivalence between \gls{jnd} experiments and phrase-level mean absolute errors.
-
-Future work should test reset generality, expressive techniques, higher sample
-rates, and persistent state.
+We introduced \glspl{cel} for joint pluck-onset and pitch recovery. Across
+84,480 comparisons, they give the highest mean Joint gradient cosine at every
+cardinality and retain $.10$--$.14$ at eight events, against at most $.04$ for
+the baselines. Their advantage also holds when only pitch or onset is unknown.
+\textcolor{blue}{The 6,750 matched fits will determine the best objective for
+pitch, onset, and spectral fidelity.}
 
 \clearpage
 \section*{Acknowledgment}
@@ -497,7 +394,6 @@ Artificial Intelligence and Music (grant EP/S022694/1). This research utilised
 Queen Mary's Apocrita \gls{hpc} facility, supported by QMUL Research-IT
 (\url{https://doi.org/10.5281/zenodo.438045}), using NVIDIA V100 and A100 \glspl{gpu}.
 
-\IEEEtriggeratref{16}
 \bibliographystyle{IEEEtran}
 \typeout{ICASSP bibliography database: \PaperRoot/references.bib}
 \bibliography{\PaperRoot/references}

@@ -1,6 +1,6 @@
 # Mean whole-phrase cosine ± SD
 
-| Loss | Joint: 1 | Joint: 2 | Joint: 4 | Joint: 6 | Joint: 8 | Pitch: 1 | Pitch: 2 | Pitch: 4 | Time: 1 | Time: 2 | Time: 4 |
+| Loss | Joint: 1 | Joint: 2 | Joint: 4 | Joint: 6 | Joint: 8 | Known time: 1 | Known time: 2 | Known time: 4 | Known f0: 1 | Known f0: 2 | Known f0: 4 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | L1 | .04 ± .66 | .01 ± .44 | .01 ± .31 | .01 ± .25 | .00 ± .22 | .06 ± .21 | .02 ± .24 | .00 ± .21 | .01 ± .94 | .00 ± .57 | .01 ± .37 |
 | L2 | -.01 ± .65 | .02 ± .41 | .01 ± .29 | .00 ± .25 | .01 ± .21 | .05 ± .16 | .02 ± .24 | .00 ± .22 | .01 ± .96 | .00 ± .56 | .00 ± .36 |

@@ -69,7 +69,7 @@ def main():
         labels=labels,
     )
     headers = [
-        f"{ {'joint': 'Joint', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
+        f"{ {'joint': 'Joint', 'pitch': 'Known time', 'time': 'Known f0'}[c] }: {n}"
         for n, c in EXTENDED_COLUMNS
     ]
     lines = [
