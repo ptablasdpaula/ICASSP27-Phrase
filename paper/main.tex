@@ -352,6 +352,39 @@ share this configuration, isolating loss geometry from renderer mismatch. This
 is one full-range diagnostic case, not evidence of target invariance or a
 population estimate.
 
+We extend this single-event view with a paired phrase-level diagnostic over the
+full registered parameter domain. One centred target is used at one event; 32
+targets are sampled at each of two, four, six, and eight events. Each target has
+at least 256 Latin-hypercube candidates, increased to at most 1024 where an
+independent repeat exceeded the pre-registered two-percentage-point sensitivity
+threshold. Let $\boldsymbol\theta$ concatenate candidate pitch in octaves and
+onset in seconds, and let $\boldsymbol\theta^\star_\pi$ be the target reordered
+by unrestricted Hungarian matching, with one second weighted equally to one
+octave. For descent $\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$, we report
+the whole-phrase cosine
+\begin{equation*}
+c_{\rm phrase}=
+\frac{\mathbf d^\top(\boldsymbol\theta^\star_\pi-\boldsymbol\theta)}
+{\lVert\mathbf d\rVert_2
+ \lVert\boldsymbol\theta^\star_\pi-\boldsymbol\theta\rVert_2}.
+\end{equation*}
+Thus $1$, $0$, and $-1$ indicate descent directly towards, orthogonal to, and
+directly away from the matched target, respectively. Joint candidates vary
+pitch and onset; Pitch and Time candidates initially vary only the named
+coordinate, although matching remains unrestricted.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
+\caption{Whole-phrase gradient alignment over candidate phrases; cells show
+mean $\pm$ standard deviation, and higher is better. Column numbers give event
+count. SS is a single-scale \acrshort{stft} magnitude loss; LinMSS and SmoMSS
+are linear-magnitude and smooth \acrshort{mss}; log denotes log-frequency
+geometry or weighting; decCe$\mathcal{L}$ is the fixed-decay variant. Colours
+retain the full $[-1,1]$ cosine normalisation.}
+\label{fig:gradient-alignment}
+\end{figure}
+
 \subsection{Experiment II: Phrase Recovery}
 Seed 2027 generates 150 scrambled-Latin-hypercube targets at each of one, two,
 four, six, and eight events. Pitches are log-mapped to 80--320~Hz; onsets span
