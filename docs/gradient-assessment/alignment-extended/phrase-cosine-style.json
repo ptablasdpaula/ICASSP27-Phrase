@@ -1,0 +1,13 @@
+{
+  "cmap": "turbo_r",
+  "vmin": -0.01257216139857644,
+  "vmax": 1.0,
+  "ticks": [
+    0,
+    0.5,
+    1
+  ],
+  "observed_max": 0.9887646656135813,
+  "annotations": "mean \u00b1 sample SD across candidate phrases; leading zero omitted",
+  "source": "summary.csv"
+}

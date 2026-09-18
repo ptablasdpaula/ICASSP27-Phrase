@@ -86,3 +86,16 @@ Colour encodes cosine only. Cosines omit the leading zero (including negatives,
 e.g. −.01); values rounding to zero display .00. This is a presentation of the
 existing summary.csv results, with no new gradients or changed scores.
 Reproduce with `scripts/render_gradient_cosine_positive.py` using the project Python.
+
+
+## Current phrase-cosine styling
+
+The primary [phrase-cosine figure](phrase-cosine.png) again shows mean ± SD,
+with the leading zero omitted in both numbers. It uses Matplotlib's `turbo_r`
+with a linear colour range from the lowest observed mean (−0.012572...) to +1;
+ticks mark 0, .5 and 1. Negative means are retained without clipping. Colour
+encodes mean only, not SD. This replaces the original full-range RdBu styling
+for this figure; other metric figures retain their previous scales.
+The percentage-combination figure remains available as an alternative.
+Reproduce the current figure with `scripts/render_gradient_cosine_sd.py` using
+the project Python. Exact colour limits are in phrase-cosine-style.json.

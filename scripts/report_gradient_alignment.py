@@ -69,7 +69,9 @@ def compact_cosine(value):
     return f"{value:z.2f}".replace("0.", ".", 1) if abs(value) < 0.995 else f"{value:.2f}"
 
 
-def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None):
+def render(
+    output, metric, means, sds, columns=COLUMNS, positive_percent=None, observed_turbo=False
+):
     width = len(columns)
     boundaries = [i - 0.5 for i in range(1, width) if columns[i][1] != columns[i - 1][1]]
     edges = [-0.5, *boundaries, width - 0.5]
@@ -88,8 +90,8 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None):
     fig.subplots_adjust(left=0.245 if width == 7 else 0.18, right=0.985, top=0.87, bottom=0.17)
     im = ax.imshow(
         means,
-        cmap="cividis" if percentage else "RdBu",
-        vmin=0 if percentage else -1,
+        cmap="turbo_r" if observed_turbo else "cividis" if percentage else "RdBu",
+        vmin=float(means.min()) if observed_turbo else 0 if percentage else -1,
         vmax=100 if percentage else 1,
         aspect="auto",
     )
@@ -103,13 +105,17 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None):
         for j in range(width):
             value = means[i, j]
             color = "white" if (value < 48 if percentage else abs(value) > 0.55) else "black"
+            if observed_turbo:
+                rgb = np.array(im.cmap(im.norm(value))[:3])
+                linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
+                color = "black" if linear @ [0.2126, 0.7152, 0.0722] > 0.179 else "white"
             ax.text(
                 j,
                 i if percentage else i - 0.15,
                 f"{value:.1f}"
                 if percentage
                 else compact_cosine(value)
-                if positive_percent is not None
+                if positive_percent is not None or observed_turbo
                 else f"{value:.2f}",
                 ha="center",
                 va="center",
@@ -122,6 +128,8 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None):
                     i + 0.23,
                     f"({positive_percent[i, j]:.1f}%)"
                     if positive_percent is not None
+                    else f"±{compact_cosine(sds[i, j])}"
+                    if observed_turbo
                     else f"±{sds[i, j]:.2f}",
                     ha="center",
                     va="center",
@@ -141,12 +149,18 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None):
         im,
         cax=cax,
         orientation="horizontal",
-        ticks=[0, 25, 50, 75, 100] if percentage else [-1, -0.5, 0, 0.5, 1],
+        ticks=[0, 0.5, 1]
+        if observed_turbo
+        else [0, 25, 50, 75, 100]
+        if percentage
+        else [-1, -0.5, 0, 0.5, 1],
     )
     cb.set_label(
         METRICS[metric] + ("; (positive phrases %)" if positive_percent is not None else ""),
         labelpad=2,
     )
+    if observed_turbo:
+        cb.set_ticklabels(["0", ".5", "1"])
     cb.ax.tick_params(length=2, pad=2)
     cb.ax.get_xticklabels()[0].set_horizontalalignment("left")
     cb.ax.get_xticklabels()[-1].set_horizontalalignment("right")
