@@ -79,7 +79,7 @@ def render(
     anchored_style=False,
     cmap_name=None,
     output_stem=None,
-    observed_range=False,
+    cropped_colorbar=False,
     compact_layout=False,
 ):
     width = len(columns)
@@ -119,8 +119,8 @@ def render(
         ],
         N=1025,
     )
-    styled = anchored_style or cmap_name is not None or observed_range
-    lower = float(means.min()) if observed_range else 0 if percentage else -1
+    styled = anchored_style or cmap_name is not None or cropped_colorbar
+    lower = 0 if percentage else -1
     im = ax.imshow(
         means,
         cmap=(
@@ -139,7 +139,7 @@ def render(
     ax.set_yticks(range(11), LABELS)
     if compact_layout:
         for label in ax.get_yticklabels():
-            label.set_rotation(18)
+            label.set_rotation(-18)
             label.set_ha("right")
             label.set_rotation_mode("anchor")
     ax.set_xticks(range(width), [str(n) for n, _ in columns])
@@ -200,8 +200,8 @@ def render(
         im,
         cax=cax,
         orientation="horizontal",
-        ticks=[lower, 0.5, 1]
-        if observed_range
+        ticks=[0, 0.5, 1]
+        if cropped_colorbar
         else [-1, -0.5, 0, 0.5, 1]
         if styled
         else [0, 25, 50, 75, 100]
@@ -212,8 +212,9 @@ def render(
         METRICS[metric] + ("; (positive phrases %)" if positive_percent is not None else ""),
         labelpad=2,
     )
-    if observed_range:
-        cb.set_ticklabels([compact_cosine(lower), ".5", "1"])
+    if cropped_colorbar:
+        cb.ax.set_xlim(-0.1, 1)
+        cb.set_ticklabels(["0", ".5", "1"])
     elif styled:
         cb.set_ticklabels(["−1", "−.5", "0", ".5", "1"])
     cb.ax.tick_params(length=2, pad=2)

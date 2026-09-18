@@ -92,12 +92,13 @@ Reproduce with `scripts/render_gradient_cosine_positive.py` using the project Py
 
 The primary [phrase-cosine figure](phrase-cosine.png) again shows mean ± SD,
 with the leading zero omitted in both numbers. It restores Matplotlib's original
-deep-red-to-deep-blue `RdBu` scale and stretches it across the means actually
-observed, from −.012572... to 1. The colour bar marks its lower endpoint, .5
-and 1; negative means are retained without clipping. Colour encodes mean only,
-not SD. Loss names are abbreviated, the joint groups are labelled `Joint`, and
-slightly inclined row labels allow tighter outer margins. The colour bar sits
-immediately beneath the table.
+deep-red-to-deep-blue `RdBu` scale with its full −1-to-1 normalization. The
+visible colour bar is cropped to −.1 through 1 because the observed means reach
+only −.012572..., and it marks 0, .5 and 1. The cells remain normalized against
+the full range; negative means are neither clipped nor rescaled. Colour encodes
+mean only, not SD. Loss names are abbreviated, the joint groups are labelled
+`Joint`, and clockwise-inclined row labels allow tighter outer margins. The
+colour bar sits immediately beneath the table.
 The percentage-combination figure remains available as an alternative.
 Reproduce the current figure with `scripts/render_gradient_cosine_sd.py` using
 the project Python. Exact colour limits are in phrase-cosine-style.json.

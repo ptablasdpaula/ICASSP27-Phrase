@@ -31,7 +31,7 @@ def main():
         sds,
         EXTENDED_COLUMNS,
         cmap_name="RdBu",
-        observed_range=True,
+        cropped_colorbar=True,
         compact_layout=True,
     )
     headers = [
@@ -52,14 +52,15 @@ def main():
         json.dumps(
             dict(
                 cmap="RdBu",
-                vmin=float(means.min()),
+                vmin=-1.0,
                 observed_min=float(means.min()),
                 vmax=1.0,
-                ticks=[float(means.min()), 0.5, 1],
+                colorbar_xlim=[-0.1, 1.0],
+                ticks=[0, 0.5, 1],
                 observed_max=float(means.max()),
                 annotations="mean ± sample SD across candidate phrases; leading zero omitted",
                 layout=(
-                    "4.35 by 3.45 inches; 18-degree row labels; tight outer margins; "
+                    "4.35 by 3.45 inches; -18-degree row labels; tight outer margins; "
                     "colour bar nearly touches the table"
                 ),
                 source="summary.csv",
