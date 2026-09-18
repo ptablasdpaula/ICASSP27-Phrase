@@ -298,6 +298,8 @@ def report(root: Path, output: Path, paper_figure: Path | None) -> None:
     output.mkdir(parents=True, exist_ok=True)
     write_csv(output / "phrase-cosine.csv", rows)
     write_csv(output / "quality.csv", quality)
+    save_json(output / "design.json", design_metadata())
+    save_json(output / "qualification.json", json.loads((root / "qualification.json").read_text()))
     headers = [
         f"{ {'joint': 'Joint', 'pitch': 'Known time', 'time': 'Known f0'}[kind] }: {events}"
         for events, kind in COLUMNS
@@ -332,6 +334,7 @@ def report(root: Path, output: Path, paper_figure: Path | None) -> None:
         {
             **design_metadata(),
             "source_hashes": signature()[1],
+            "report_source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "raw_artifacts": artifacts,
             "eligible_pairs_per_loss": total_pairs,
             "metric": "whole-phrase cosine after unrestricted Hungarian matching",
