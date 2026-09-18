@@ -88,11 +88,18 @@ def render(
     plt.rcParams.update({"font.size": 7, "pdf.fonttype": 42})
     fig, ax = plt.subplots(figsize=(3.5 if width == 7 else 4.9, 3.65))
     fig.subplots_adjust(left=0.245 if width == 7 else 0.18, right=0.985, top=0.87, bottom=0.17)
+    from matplotlib import colormaps
     from matplotlib.colors import LinearSegmentedColormap
 
+    turbo = colormaps["turbo_r"]
     anchored_cmap = LinearSegmentedColormap.from_list(
-        "cosine_red_yellow_green_blue",
-        [(0.0, "#d73027"), (0.5, "#fff3a1"), (0.75, "#66bd63"), (1.0, "#2166ac")],
+        "cosine_shifted_turbo",
+        [
+            (0.0, turbo(0.0)),
+            (0.5, turbo(0.38)),
+            (0.75, turbo(0.58)),
+            (1.0, turbo(0.85)),
+        ],
         N=1025,
     )
     im = ax.imshow(

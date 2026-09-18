@@ -42,8 +42,9 @@ def main():
     (output / "phrase-cosine-style.json").write_text(
         json.dumps(
             dict(
-                cmap="cosine_red_yellow_green_blue",
-                colour_anchors={"-1": "#d73027", "0": "#fff3a1", "0.5": "#66bd63", "1": "#2166ac"},
+                cmap="cosine_shifted_turbo",
+                source_cmap="turbo_r",
+                source_positions={"-1": 0.0, "0": 0.38, "0.5": 0.58, "1": 0.85},
                 vmin=-1.0,
                 observed_min=float(means.min()),
                 vmax=1.0,
