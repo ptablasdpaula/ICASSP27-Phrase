@@ -1,4 +1,4 @@
-"""Render saved phrase cosine ± SD with an observed-range reversed turbo map."""
+"""Render saved phrase cosine ± SD with an full-range reversed turbo map."""
 
 import csv
 import json
@@ -24,7 +24,7 @@ def main():
             row = rows[events, condition, loss]
             means[i, j], sds[i, j] = float(row["mean"]), float(row["candidate_sd"])
     assert np.isfinite(means).all() and np.isfinite(sds).all()
-    render(output, "phrase-cosine", means, sds, EXTENDED_COLUMNS, observed_turbo=True)
+    render(output, "phrase-cosine", means, sds, EXTENDED_COLUMNS, turbo_style=True)
     headers = [
         f"{ {'joint': 'Both', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
         for n, c in EXTENDED_COLUMNS
@@ -43,9 +43,10 @@ def main():
         json.dumps(
             dict(
                 cmap="turbo_r",
-                vmin=float(means.min()),
+                vmin=-1.0,
+                observed_min=float(means.min()),
                 vmax=1.0,
-                ticks=[0, 0.5, 1],
+                ticks=[-1, -0.5, 0, 0.5, 1],
                 observed_max=float(means.max()),
                 annotations="mean ± sample SD across candidate phrases; leading zero omitted",
                 source="summary.csv",
