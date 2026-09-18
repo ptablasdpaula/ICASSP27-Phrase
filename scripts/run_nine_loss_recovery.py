@@ -1,8 +1,10 @@
 """Matched nine-loss phrase recovery with per-phrase relative plateaus.
 
-Each array shard processes ten frozen targets for one loss/cardinality on CUDA.
+Each array shard processes a small frozen target batch for one loss/cardinality
+on CUDA.  The largest Smooth MSS cells use five-target shards so even a full
+20,000-update run remains safely below the one-hour queue limit.
 The vectorised optimiser implements independent Adam and ReduceLROnPlateau state
-for every phrase; inactive rows remain masked until the shard is complete.
+for every phrase and drops completed rows from later renderer calls.
 """
 
 from __future__ import annotations
@@ -51,9 +53,31 @@ LOSSES = (
     "tlog_cel",
 )
 LABELS = ("SS", "LinMSS", "SmoMSS", "TFW2", "logTFW2", "CeL", "logCeL", "decCeL", "tlogCeL")
-TARGETS_PER_SHARD = 10
-SHARDS_PER_CELL = 150 // TARGETS_PER_SHARD
-TOTAL_SHARDS = len(LOSSES) * len(CARDINALITIES) * SHARDS_PER_CELL
+TARGETS_PER_CELL = 150
+DEFAULT_TARGETS_PER_SHARD = 10
+# V100 timing puts these ten-target cells too close to the one-hour walltime.
+TARGETS_PER_SHARD_OVERRIDE = {
+    ("smooth_mss", 4): 5,
+    ("smooth_mss", 6): 5,
+    ("smooth_mss", 8): 5,
+}
+
+
+def _shard_specs():
+    rows = []
+    for loss in LOSSES:
+        for cardinality in CARDINALITIES:
+            count = TARGETS_PER_SHARD_OVERRIDE.get((loss, cardinality), DEFAULT_TARGETS_PER_SHARD)
+            if TARGETS_PER_CELL % count:
+                raise ValueError("targets per cell must divide evenly into shards")
+            rows.extend(
+                (loss, cardinality, begin, count) for begin in range(0, TARGETS_PER_CELL, count)
+            )
+    return tuple(rows)
+
+
+SHARD_SPECS = _shard_specs()
+TOTAL_SHARDS = len(SHARD_SPECS)
 
 
 @dataclass(frozen=True)
@@ -171,13 +195,12 @@ class PairedObjective:
                 rows.append(x.flip(axes) if axes else x)
         return torch.stack(rows, 1)
 
-    def __call__(self, audio):
+    def __call__(self, audio, indices=None):
         name = self.name
         if name == "single_stft":
+            reference = self.reference if indices is None else self.reference[indices]
             return (
-                (self._mag(audio, 256, 64, self.window256, False) - self.reference)
-                .abs()
-                .mean((-2, -1))
+                (self._mag(audio, 256, 64, self.window256, False) - reference).abs().mean((-2, -1))
             )
         if name in {"linear_mss", "smooth_mss"}:
             out = audio.new_zeros(len(audio))
@@ -187,6 +210,8 @@ class PairedObjective:
                 else (SMOOTH_WINDOWS, SMOOTH_HOPS)
             )
             for n, h, w, ref in zip(ns, hs, self.windows, self.references, strict=True):
+                if indices is not None:
+                    ref = ref[indices]
                 mag = self._mag(audio, n, h, w, True, "reflect")
                 out += (
                     (mag - ref).abs().mean((-2, -1))
@@ -197,16 +222,16 @@ class PairedObjective:
         if name in {"linear_jtfot", "log_jtfot"}:
             mag = self._mag(audio, 256, 128, self.window256, True)
             x = mag.flatten(1) / mag.sum((-2, -1))[:, None]
-            y = self.reference.flatten(1) / self.reference.sum((-2, -1))[:, None]
+            reference = self.reference if indices is None else self.reference[indices]
+            y = reference.flatten(1) / reference.sum((-2, -1))[:, None]
             return _wasserstein_projected(x[:, self.order], y[:, self.order], self.positions).mean(
                 -1
             )
         power = self._mag(audio, 256, 64, self.window256, False).square()
         surfaces = self._decayed(power) if name == "dec_cel" else self._cumulative(power)
-        error = (
-            torch.sqrt((surfaces / self.mass[:, None, None, None]).clamp_min(1e-12))
-            - self.references
-        )
+        mass = self.mass if indices is None else self.mass[indices]
+        references = self.references if indices is None else self.references[indices]
+        error = torch.sqrt((surfaces / mass[:, None, None, None]).clamp_min(1e-12)) - references
         if name in {"log_cel", "tlog_cel"}:
             terms = torch.linalg.vector_norm((error * self.sqrt_weights[None]).flatten(2), dim=-1)
         else:
@@ -247,76 +272,99 @@ def fit(target_audio, cardinality, name, synth):
     stop_bad = torch.zeros(batch, dtype=torch.long, device=raw.device)
     reductions = torch.zeros(batch, dtype=torch.long, device=raw.device)
     active = torch.ones(batch, dtype=torch.bool, device=raw.device)
-    initial_loss = scheduler_best = strict_best = None
-    best_raw = raw.detach().clone()
+    initial_loss = scheduler_best = strict_best = final_loss = None
     events = [[] for _ in range(batch)]
     objective = PairedObjective(target_audio, name)
     beta1, beta2 = SCHEDULE.betas
-    while bool(active.any()):
-        f0, onset = decode(raw)
-        values = objective(synth(f0, onset))
+    active_count = batch
+    while active_count:
+        indices = active.nonzero().flatten()
+        selected_raw = raw[indices]
+        f0, onset = decode(selected_raw)
+        values = objective(synth(f0, onset), indices)
         if initial_loss is None:
             initial_loss = values.detach().clone()
             scheduler_best = values.detach().clone()
             strict_best = values.detach().clone()
+            final_loss = values.detach().clone()
+            keep = torch.ones_like(values, dtype=torch.bool)
         else:
             detached = values.detach()
-            strict = detached < strict_best
-            strict_best = torch.where(strict, detached, strict_best)
-            best_raw = torch.where(strict[:, None, None], raw.detach(), best_raw)
-            meaningful = detached < scheduler_best * (1 - SCHEDULE.threshold)
-            scheduler_best = torch.where(meaningful, detached, scheduler_best)
-            plateau_bad = torch.where(
-                active & meaningful, torch.zeros_like(plateau_bad), plateau_bad + active.long()
+            final_loss[indices] = detached
+            strict = detached < strict_best[indices]
+            strict_best[indices] = torch.where(strict, detached, strict_best[indices])
+            meaningful = detached < scheduler_best[indices] * (1 - SCHEDULE.threshold)
+            scheduler_best[indices] = torch.where(meaningful, detached, scheduler_best[indices])
+            plateau_bad[indices] = torch.where(
+                meaningful, torch.zeros_like(plateau_bad[indices]), plateau_bad[indices] + 1
             )
-            stop_bad = torch.where(
-                active & meaningful, torch.zeros_like(stop_bad), stop_bad + active.long()
+            stop_bad[indices] = torch.where(
+                meaningful, torch.zeros_like(stop_bad[indices]), stop_bad[indices] + 1
             )
             # Match torch.optim.lr_scheduler.ReduceLROnPlateau: reduction
             # occurs when num_bad_epochs > patience, not at equality.
-            reducible = (
-                active
-                & (plateau_bad > SCHEDULE.plateau_patience)
-                & (lr > SCHEDULE.minimum_lr + 1e-15)
+            reducible = (plateau_bad[indices] > SCHEDULE.plateau_patience) & (
+                lr[indices] > SCHEDULE.minimum_lr + 1e-15
             )
             if bool(reducible.any()):
-                old = lr.clone()
-                lr = torch.where(
-                    reducible, torch.clamp(lr * SCHEDULE.factor, min=SCHEDULE.minimum_lr), lr
+                reduced_indices = indices[reducible]
+                old = lr[reduced_indices].clone()
+                lr[reduced_indices] = torch.clamp(
+                    lr[reduced_indices] * SCHEDULE.factor, min=SCHEDULE.minimum_lr
                 )
-                reductions += reducible.long()
+                reductions[reduced_indices] += 1
                 # ReduceLROnPlateau resets only its own bad-epoch count.  The
                 # independent early-stopping count deliberately continues.
-                plateau_bad = torch.where(reducible, torch.zeros_like(plateau_bad), plateau_bad)
-                for i in reducible.nonzero().flatten().tolist():
+                plateau_bad[reduced_indices] = 0
+                for local, i in zip(
+                    reducible.nonzero().flatten().tolist(),
+                    reduced_indices.tolist(),
+                    strict=True,
+                ):
                     events[i].append(
                         {
                             "update": int(updates[i]),
-                            "old_lr": float(old[i]),
+                            "old_lr": float(old[local]),
                             "new_lr": float(lr[i]),
                             "best_loss": float(strict_best[i]),
                         }
                     )
-            stop = active & (stop_bad > SCHEDULE.stop_patience)
-            stop |= active & (updates >= SCHEDULE.maximum_updates)
-            active &= ~stop
-        if not bool(active.any()):
-            break
-        scaled = torch.where(active, values / initial_loss, torch.zeros_like(values)).sum()
-        (gradient,) = torch.autograd.grad(scaled, raw)
-        mask = active[:, None, None]
-        first = torch.where(mask, beta1 * first + (1 - beta1) * gradient, first)
-        second = torch.where(mask, beta2 * second + (1 - beta2) * gradient.square(), second)
-        updates += active.long()
-        step = updates.clamp_min(1).to(torch.float64)[:, None, None]
+            stop = (stop_bad[indices] > SCHEDULE.stop_patience) | (
+                updates[indices] >= SCHEDULE.maximum_updates
+            )
+            keep = ~stop
+            stopped_indices = indices[stop]
+            active[stopped_indices] = False
+            active_count -= len(stopped_indices)
+        if not bool(keep.any()):
+            continue
+        step_indices = indices[keep]
+        scaled = (values[keep] / initial_loss[step_indices]).sum()
+        (all_selected_gradient,) = torch.autograd.grad(scaled, selected_raw)
+        gradient = all_selected_gradient[keep]
+        first[step_indices] = beta1 * first[step_indices] + (1 - beta1) * gradient
+        second[step_indices] = beta2 * second[step_indices] + (1 - beta2) * gradient.square()
+        updates[step_indices] += 1
+        step = updates[step_indices].to(torch.float64)[:, None, None]
         delta = (
-            lr[:, None, None]
-            * (first / (1 - beta1**step))
-            / (torch.sqrt(second / (1 - beta2**step)) + SCHEDULE.epsilon)
+            lr[step_indices, None, None]
+            * (first[step_indices] / (1 - beta1**step))
+            / (torch.sqrt(second[step_indices] / (1 - beta2**step)) + SCHEDULE.epsilon)
         )
-        raw = torch.where(mask, raw - delta, raw).detach().requires_grad_(True)
-    f0, onset = decode(best_raw)
-    return f0.detach(), onset.detach(), strict_best, initial_loss, updates, reductions, events
+        next_raw = raw.detach().clone()
+        next_raw[step_indices] -= delta
+        raw = next_raw.requires_grad_(True)
+    f0, onset = decode(raw)
+    return (
+        f0.detach(),
+        onset.detach(),
+        final_loss,
+        strict_best,
+        initial_loss,
+        updates,
+        reductions,
+        events,
+    )
 
 
 def signature():
@@ -326,19 +374,17 @@ def signature():
 
 
 def shard_coordinates(shard):
-    cell, block = divmod(shard, SHARDS_PER_CELL)
-    loss_index, cardinality_index = divmod(cell, len(CARDINALITIES))
-    return LOSSES[loss_index], CARDINALITIES[cardinality_index], block * TARGETS_PER_SHARD
+    return SHARD_SPECS[shard]
 
 
 def run(shard, device="cuda"):
-    name, cardinality, begin = shard_coordinates(shard)
+    name, cardinality, begin, target_count = shard_coordinates(shard)
     sig, hashes = signature()
     outpath = (
         ROOT
         / "raw"
         / name
-        / f"C{cardinality:02d}-T{begin:04d}-{begin + TARGETS_PER_SHARD - 1:04d}.json.gz"
+        / f"C{cardinality:02d}-T{begin:04d}-{begin + target_count - 1:04d}.json.gz"
     )
     outpath.parent.mkdir(parents=True, exist_ok=True)
     if outpath.exists():
@@ -352,7 +398,7 @@ def run(shard, device="cuda"):
     metadata, phrases = zip(
         *(
             load_target(cardinality, i + 1, device=device)
-            for i in range(begin, begin + TARGETS_PER_SHARD)
+            for i in range(begin, begin + target_count)
         ),
         strict=True,
     )
@@ -364,7 +410,7 @@ def run(shard, device="cuda"):
             torch.stack([p.onset_seconds for p in phrases]),
         )
     started = time.perf_counter()
-    f0, onset, best, initial, updates, reductions, lr_events = fit(
+    f0, onset, final, strict_best, initial, updates, reductions, lr_events = fit(
         target_audio, cardinality, name, synth
     )
     rows = []
@@ -376,11 +422,15 @@ def run(shard, device="cuda"):
             {
                 "target_id": meta.target_id,
                 "target": asdict(meta),
-                "best_f0_hz": f0[i].cpu().tolist(),
-                "best_onset_seconds": onset[i].cpu().tolist(),
+                "final_f0_hz": f0[i].cpu().tolist(),
+                "final_onset_seconds": onset[i].cpu().tolist(),
                 "initial_loss": float(initial[i]),
-                "best_loss": float(best[i]),
+                "final_loss": float(final[i]),
+                "strict_best_loss": float(strict_best[i]),
                 "updates": int(updates[i]),
+                "stopped_by": (
+                    "maximum_updates" if updates[i] >= SCHEDULE.maximum_updates else "patience"
+                ),
                 "lr_reductions": int(reductions[i]),
                 "lr_events": lr_events[i],
                 "metrics": metrics,
@@ -395,8 +445,9 @@ def run(shard, device="cuda"):
         "loss": name,
         "label": LABELS[LOSSES.index(name)],
         "cardinality": cardinality,
-        "target_range": [begin, begin + TARGETS_PER_SHARD],
+        "target_range": [begin, begin + target_count],
         "schedule": asdict(SCHEDULE),
+        "reported_iterate": "final iterate; no rollback",
         "matching": "squared octaves plus squared seconds; one octave equals one second",
         "target_minimum_separation_seconds": 0.05,
         "renderer": synth.provenance(),

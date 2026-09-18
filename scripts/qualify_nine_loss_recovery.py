@@ -70,6 +70,14 @@ def qualify(device):
         (ga,) = torch.autograd.grad(actual.sum(), candidate, retain_graph=True)
         (gr,) = torch.autograd.grad(reference.sum(), candidate, retain_graph=True)
         torch.testing.assert_close(ga, gr, rtol=2e-8, atol=2e-10)
+
+        # Completed rows are removed during a production fit.  Verify that
+        # selecting a live row also selects the matching cached target state.
+        subset_candidate = candidate[1:2].detach().requires_grad_(True)
+        subset = PairedObjective(target, name)(
+            subset_candidate, torch.tensor([1], device=target.device)
+        )
+        torch.testing.assert_close(subset, reference[1:2], rtol=2e-9, atol=2e-11)
         checks.append({"loss": name, "value_max_abs": float((actual - reference).abs().max())})
 
     # Confirm the chosen bad-epoch convention against PyTorch itself.

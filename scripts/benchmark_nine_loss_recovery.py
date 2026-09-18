@@ -15,7 +15,7 @@ from icassp27_phrase.targets import load_target
 from run_nine_loss_recovery import LOSSES, PairedObjective, decode, encode, signature
 
 
-def benchmark(warmup: int, measured: int, batch: int) -> None:
+def benchmark(warmup: int, measured: int, batch: int, output: Path) -> None:
     device = "cuda"
     require_df2_backend(device)
     synth = PhraseSynth().to(device)
@@ -78,9 +78,8 @@ def benchmark(warmup: int, measured: int, batch: int) -> None:
         "batch": batch,
         "rows": rows,
     }
-    path = Path("results/nine-loss-recovery/benchmark.json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
 
 
 if __name__ == "__main__":
@@ -90,6 +89,9 @@ if __name__ == "__main__":
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--measured", type=int, default=12)
     parser.add_argument("--batch", type=int, default=10)
+    parser.add_argument(
+        "--output", type=Path, default=Path("results/nine-loss-recovery/benchmark.json")
+    )
     args = parser.parse_args()
     torch.set_num_threads(1)
-    benchmark(args.warmup, args.measured, args.batch)
+    benchmark(args.warmup, args.measured, args.batch, args.output)
