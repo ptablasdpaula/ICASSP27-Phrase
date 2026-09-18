@@ -143,50 +143,60 @@ Hence, our contributions are twofold:
 \section{Cumulative Energy Losses}
 \label{sec:losses}
 
-We propose a new family of losses, \Glspl{cel}, that compare accumulated
-spectral power, exposing displacement through changes between the original
-and shifted energy. Let $P_{k,n}$ and $\hat P_{k,n}$ denote target and candidate
-\gls{stft} power at frequency bin $k$ and frame $n$, using a periodic Hann
+We propose \Glspl{cel}, which expose energy displacement by comparing
+accumulated spectral power. For target and candidate waveforms $x,\hat x$, let
+$P=\Phi(x),\hat P=\Phi(\hat x)\in\mathbb R_+^{K\times N}$, where
+$\Phi(x)_{k,n}=|\operatorname{STFT}(x)_{k,n}|^2$. We use a periodic Hann
 window, a 256-point \gls{fft}, and a 64-sample hop.
 
-For a chosen accumulation direction in time, $d_t$, we read frames from
-first to last ($\rightarrow$) or last to first ($\leftarrow$). Similarly,
-the frequency direction $d_f$ reads bins from low to high ($\uparrow$)
-or high to low ($\downarrow$). A direction pair $q=(d_t,d_f)$ combines
-one choice for each axis, giving four possible pairs.
-For each pair, the cumulative-sum operator $C^t_{d_t}$ replaces each bin's
-power by the sum of that power and all preceding frames at the same frequency
-in the chosen time direction. The operator $C^f_{d_f}$ performs the corresponding cumulative sum
-along frequency. Applying both operators gives the target and candidate
-cumulative-power surfaces, $S_q$ and $\hat S_q$:
+For $q=(d_t,d_f)\in\{\rightarrow,\leftarrow\}\times\{\uparrow,\downarrow\}$,
+write $a\preceq_d b$ for $a\leq b$ when $d\in\{\rightarrow,\uparrow\}$ and
+$a\geq b$ otherwise. The directional cumulative-power surfaces are
 \begin{equation*}
-S_q=C^f_{d_f}(C^t_{d_t}(P)),\qquad
-\hat S_q=C^f_{d_f}(C^t_{d_t}(\hat P)).
+S_q(P)_{k,n}=\sum_{i\preceq_{d_f}k}\sum_{j\preceq_{d_t}n}P_{i,j},
+\qquad \hat S_q=S_q(\hat P).
 \end{equation*}
-Each surface is a two-dimensional image used to compute the loss. Its value
-at $(k,n)$ contains the power in the rectangle from the chosen starting
-corner to that bin inclusive, as shown in Fig.~\ref{fig:cumulative-surfaces}.
+Each value contains the power in the rectangle from the selected corner to
+$(k,n)$, as shown in Fig.~\ref{fig:cumulative-surfaces}. Let
+$m=\sum_{k,n}P_{k,n}>0$. For equal total power, the normalised surfaces are
+four quadrant CDF/cumulative-tail combinations; for example, if
+$(\mathsf F,\mathsf T)\sim P/m$, then
+$S_{(\rightarrow,\uparrow)}(P)_{k,n}/m
+=\Pr(\mathsf F\leq f_k,\mathsf T\leq t_n)$. Otherwise, the common target scale
+retains total-power error. Their uniform average is invariant to reversal of
+either axis.
 
-
-
-To compare these images, we divide both by the nonzero total target power
-$m=\sum_{k,n}P_{k,n}=\max S_q$ and apply a pointwise feature transformation
-$\phi$. For each direction pair, let $E_q(k,n)$ be the candidate-minus-target
-feature error and $\ell_q$ its \gls{rms} over all bins and frames. For a selected
-set of direction pairs $\mathcal Q$, the scalar loss $\mathcal{L}_{\mathcal Q}$
-averages these directional errors\footnote{Although a full mathematical
- equivalence is outside the scope of this work, we note that for 1D unit-mass
- distributions on a uniform grid, our \Glspl{cel} with a single accumulation direction
- and $\phi(u)=u$ yield the Cram\'er distance up to fixed grid and RMS
- normalisation. In turn, this relates \Glspl{cel} to the $1$-Wasserstein distance, which uses $L_1$ on Cumulative Distribution Functions, instead of Cram\'er's L2 \cite{szekely2013energy}\cite[Remark~2.30]{peyre2019computational}.};
-$|\mathcal Q|$ is the number of pairs:
+For pointwise $\phi:\mathbb R_+\rightarrow\mathbb R$ and any nonempty direction
+set $\mathcal Q$, define
 \begin{equation*}
 \begin{aligned}
-E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
-\mathcal{L}_{\mathcal Q}&=\frac{1}{|\mathcal Q|}\sum_{q\in\mathcal Q}\ell_q,
-\qquad\ell_q=\operatorname{RMS}(E_q).
+\ell_q&=\|\phi(\hat S_q/m)-\phi(S_q/m)\|_{w_q,2},\\
+\mathcal L_{\mathcal Q}(x,\hat x)&=
+\frac1{|\mathcal Q|}\sum_{q\in\mathcal Q}\ell_q.
 \end{aligned}
 \end{equation*}
+Here $\|A\|_{w_q,2}^2=\sum_{k,n}w_{q,k,n}|A_{k,n}|^2$, with nonnegative
+weights summing to one. Uniform $w_{q,k,n}=1/(KN)$ gives \gls{rms};
+Log-Weighing uses time--log-frequency cell areas. Evaluated variants use
+$\phi(u)=\sqrt{\max(u,10^{-12})}$.
+
+For unit-mass $p,\hat p$ on $z_k=z_0+k\Delta$, let
+$F_p(k)=\sum_{i\leq k}p_i$. One-axis accumulation with $\phi(u)=u$ satisfies
+\begin{equation*}
+\begin{aligned}
+d_{\rm C}^2(p,\hat p)&:=\int_{\mathbb R}|F_p(z)-F_{\hat p}(z)|^2\,dz\\
+&=\Delta\sum_{k=0}^{K-1}|F_p(k)-F_{\hat p}(k)|^2
+=K\Delta\ell_{\uparrow}^2.
+\end{aligned}
+\end{equation*}
+Thus $\ell_{\uparrow}=d_{\rm C}/\sqrt{K\Delta}$ exactly; reverse accumulation
+gives the same sum through the cumulative tails. After unit normalisation of
+each slice, frequency-only and time-only accumulation give scaled RMSs of
+per-frame and per-bin Cram\'er distances, respectively. The diagonal surfaces
+instead yield two-dimensional quadrant-CDF discrepancies. The one-dimensional
+$1$-Wasserstein distance applies $L_1$ to the same CDF residual for which
+Cram\'er uses $L_2$
+\cite{szekely2013energy}\cite[Remark~2.30]{peyre2019computational}.
 
 
 \section{Differentiable Plucked-String Musical Phrases}
