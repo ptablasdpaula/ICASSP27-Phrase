@@ -271,8 +271,8 @@ errors over 150 target phrases per event count; lower is better.}}
 
 \textbf{Synthetic data.}
 All experiments use the two-second, 4-kHz synthesis configuration in
-Sec.~\ref{sec:renderer}. An $N$-event phrase contains pitches
-$p=\log_2(f_0/80)\in[0,2]$~octaves and onsets $t\in[0.2,1.8]$~s, with
+Sec.~\ref{sec:renderer}. An $N$-event phrase contains fundamental frequencies
+$f_0\in[80,320]$~Hz and onsets $t\in[0.2,1.8]$~s, with
 $N\in\{1,2,4,6,8\}$. We use scrambled Latin hypercube sampling (LHS) to
 stratify the sampled coordinates~\cite{mckay1979comparison}; target onsets are
 separated by at least 50~ms, while candidate coordinates span the complete
@@ -281,13 +281,15 @@ registered domain.
 \textbf{Metrics.}
 For an unordered prediction, the Hungarian method~\cite{kuhn1955hungarian}
 selects the event permutation $\pi$ minimising
-$\sum_i[(\hat p_i-p_{\pi(i)})^2+(\hat t_i-t_{\pi(i)})^2]$, so one octave and
-one second have equal assignment cost. This assignment supplies the
+$\sum_i\{[\log_2(\hat f_{0,i}/f_{0,\pi(i)})]^2+
+(\hat t_i-t_{\pi(i)})^2\}$, so one octave and one second have equal assignment
+cost. This assignment supplies the
 within-phrase pitch and onset mean absolute errors, reported in cents and
 milliseconds, respectively. It also reorders the target for our phrase-wide
-gradient cosine: with $\boldsymbol\theta=(p_1,t_1,\ldots,p_N,t_N)$ and descent
-$\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$, we measure the cosine
-between $\mathbf d$ and
+gradient cosine. We express each event as
+$(\log_2(f_{0,i}/80),t_i)$, concatenate these octave--second pairs into
+$\boldsymbol\theta$, and measure the cosine between the descent
+$\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$ and
 $\boldsymbol\theta^\star_\pi-\boldsymbol\theta$. This scale-independent
 alignment follows the use of gradient cosine similarity to identify helpful
 directions~\cite{du2018gradient}; $1$, $0$, and $-1$ indicate descent directly
