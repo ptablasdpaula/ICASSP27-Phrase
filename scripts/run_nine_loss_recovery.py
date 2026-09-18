@@ -86,7 +86,6 @@ class Schedule:
     factor: float = 0.5
     plateau_patience: int = 200
     threshold: float = 1e-4
-    minimum_lr: float = 1e-5
     stop_patience: int = 1000
     maximum_updates: int = 20_000
     betas: tuple[float, float] = (0.9, 0.999)
@@ -94,6 +93,7 @@ class Schedule:
 
 
 SCHEDULE = Schedule()
+PLATEAU_EPSILON = 1e-8
 
 
 def encode(f0: torch.Tensor, onset: torch.Tensor) -> torch.Tensor:
@@ -272,12 +272,23 @@ def append_lr_events(events, indices, old_lr, lr, updates, strict_best):
         )
 
 
+def retain_strict_best(strict_best, best_raw, indices, values, selected_raw):
+    """Retain each active phrase's parameters at its strict lowest loss."""
+    detached = values.detach()
+    strict = detached < strict_best[indices]
+    improved_indices = indices[strict]
+    strict_best[improved_indices] = detached[strict]
+    best_raw[improved_indices] = selected_raw[strict].detach()
+    return strict
+
+
 def fit(target_audio, cardinality, name, synth):
     batch = len(target_audio)
     initial = initial_candidate(cardinality, device=target_audio.device)
     f0 = initial.f0_hz.expand(batch, -1)
     onset = initial.onset_seconds.expand(batch, -1)
     raw = encode(f0, onset).clone().requires_grad_(True)
+    best_raw = raw.detach().clone()
     first, second = torch.zeros_like(raw), torch.zeros_like(raw)
     updates = torch.zeros(batch, dtype=torch.long, device=raw.device)
     lr = torch.full((batch,), SCHEDULE.initial_lr, dtype=torch.float64, device=raw.device)
@@ -304,8 +315,7 @@ def fit(target_audio, cardinality, name, synth):
         else:
             detached = values.detach()
             final_loss[indices] = detached
-            strict = detached < strict_best[indices]
-            strict_best[indices] = torch.where(strict, detached, strict_best[indices])
+            retain_strict_best(strict_best, best_raw, indices, detached, selected_raw)
             meaningful = detached < scheduler_best[indices] * (1 - SCHEDULE.threshold)
             scheduler_best[indices] = torch.where(meaningful, detached, scheduler_best[indices])
             plateau_bad[indices] = torch.where(
@@ -316,20 +326,20 @@ def fit(target_audio, cardinality, name, synth):
             )
             # Match torch.optim.lr_scheduler.ReduceLROnPlateau: reduction
             # occurs when num_bad_epochs > patience, not at equality.
-            reducible = (plateau_bad[indices] > SCHEDULE.plateau_patience) & (
-                lr[indices] > SCHEDULE.minimum_lr + 1e-15
-            )
-            if bool(reducible.any()):
-                reduced_indices = indices[reducible]
-                old = lr[reduced_indices].clone()
-                lr[reduced_indices] = torch.clamp(
-                    lr[reduced_indices] * SCHEDULE.factor, min=SCHEDULE.minimum_lr
-                )
-                reductions[reduced_indices] += 1
+            due = plateau_bad[indices] > SCHEDULE.plateau_patience
+            if bool(due.any()):
+                due_indices = indices[due]
+                old = lr[due_indices].clone()
+                proposed = old * SCHEDULE.factor
+                changed = old - proposed > PLATEAU_EPSILON
+                reduced_indices = due_indices[changed]
+                if len(reduced_indices):
+                    lr[reduced_indices] = proposed[changed]
+                    reductions[reduced_indices] += 1
+                    append_lr_events(events, reduced_indices, old[changed], lr, updates, strict_best)
                 # ReduceLROnPlateau resets only its own bad-epoch count.  The
                 # independent early-stopping count deliberately continues.
-                plateau_bad[reduced_indices] = 0
-                append_lr_events(events, reduced_indices, old, lr, updates, strict_best)
+                plateau_bad[due_indices] = 0
             stop = (stop_bad[indices] > SCHEDULE.stop_patience) | (
                 updates[indices] >= SCHEDULE.maximum_updates
             )
@@ -355,7 +365,7 @@ def fit(target_audio, cardinality, name, synth):
         next_raw = raw.detach().clone()
         next_raw[step_indices] -= delta
         raw = next_raw.requires_grad_(True)
-    f0, onset = decode(raw)
+    f0, onset = decode(best_raw)
     return (
         f0.detach(),
         onset.detach(),
@@ -423,11 +433,11 @@ def run(shard, device="cuda"):
             {
                 "target_id": meta.target_id,
                 "target": asdict(meta),
-                "final_f0_hz": f0[i].cpu().tolist(),
-                "final_onset_seconds": onset[i].cpu().tolist(),
+                "reported_f0_hz": f0[i].cpu().tolist(),
+                "reported_onset_seconds": onset[i].cpu().tolist(),
                 "initial_loss": float(initial[i]),
-                "final_loss": float(final[i]),
-                "strict_best_loss": float(strict_best[i]),
+                "reported_loss": float(strict_best[i]),
+                "terminal_loss": float(final[i]),
                 "updates": int(updates[i]),
                 "stopped_by": (
                     "maximum_updates" if updates[i] >= SCHEDULE.maximum_updates else "patience"
@@ -438,7 +448,7 @@ def run(shard, device="cuda"):
             }
         )
     payload = {
-        "schema": "nine-loss-recovery-v1",
+        "schema": "nine-loss-recovery-v2",
         "signature": sig,
         "source_hashes": hashes,
         "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
@@ -448,7 +458,7 @@ def run(shard, device="cuda"):
         "cardinality": cardinality,
         "target_range": [begin, begin + target_count],
         "schedule": asdict(SCHEDULE),
-        "reported_iterate": "final iterate; no rollback",
+        "reported_iterate": "strict lowest-loss iterate",
         "matching": "squared octaves plus squared seconds; one octave equals one second",
         "target_minimum_separation_seconds": 0.05,
         "renderer": synth.provenance(),

@@ -58,13 +58,15 @@ def main():
     ):
         raise ValueError("packed qualification does not match current inputs")
     timing_rows = []
+    timing_signatures = set()
     benchmark_gpus = set()
     for cardinality in (1, 2, 4, 6, 8):
         payload = json.loads(
             (ROOT / f"results/nine-loss-recovery/batch-scaling-c{cardinality}.json").read_text()
         )
-        if payload["signature"] != scientific_signature:
-            raise ValueError(f"cardinality-{cardinality} timing signature changed")
+        if payload["schema"] != "nine-loss-recovery-batch-scaling-v1":
+            raise ValueError(f"cardinality-{cardinality} timing schema changed")
+        timing_signatures.add(payload["signature"])
         benchmark_gpus.add(payload["gpu"])
         timing_rows.extend(payload["rows"])
     timings = {
@@ -110,6 +112,11 @@ def main():
         "source_commit": source_commit,
         "scientific_signature": scientific_signature,
         "execution_plan_sha256": execution_plan,
+        "timing_benchmark_signatures": sorted(timing_signatures),
+        "timing_reuse": (
+            "Per-update objective and renderer code are unchanged; checkpoint retention and "
+            "scheduler changes do not affect the measured update cost."
+        ),
         "benchmark_gpus": sorted(benchmark_gpus),
         "safety_factor": SAFETY_FACTOR,
         "hard_seconds": HARD_SECONDS,

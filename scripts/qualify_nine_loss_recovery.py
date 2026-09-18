@@ -16,6 +16,7 @@ from run_nine_loss_recovery import (
     SCHEDULE,
     PairedObjective,
     append_lr_events,
+    retain_strict_best,
     signature,
 )
 from test_fading_diagonal import fade_matrix, surfaces
@@ -96,7 +97,6 @@ def qualify(device):
         patience=SCHEDULE.plateau_patience,
         threshold=SCHEDULE.threshold,
         threshold_mode="rel",
-        min_lr=SCHEDULE.minimum_lr,
     )
     scheduler.step(1.0)
     for _ in range(SCHEDULE.plateau_patience):
@@ -116,6 +116,27 @@ def qualify(device):
     append_lr_events(events, indices, old_lr, live_lr, updates, best)
     assert events[1][0]["old_lr"] == 0.05 and events[1][0]["update"] == 201
     assert events[5][0]["old_lr"] == 0.025 and events[5][0]["update"] == 402
+
+    # Check noncontiguous per-row lowest-loss parameter retention.
+    best_loss = torch.tensor(
+        [1.0, 0.4, 1.0, 1.0, 1.0, 0.2], dtype=torch.float64, device=device
+    )
+    best_raw = torch.zeros((6, 2, 2), dtype=torch.float64, device=device)
+    selected = torch.stack(
+        (
+            torch.full((2, 2), 1.0, dtype=torch.float64, device=device),
+            torch.full((2, 2), 5.0, dtype=torch.float64, device=device),
+        )
+    )
+    retain_strict_best(
+        best_loss,
+        best_raw,
+        indices,
+        torch.tensor([0.3, 0.25], dtype=torch.float64, device=device),
+        selected,
+    )
+    assert best_loss[1] == 0.3 and best_loss[5] == 0.2
+    assert bool((best_raw[1] == 1).all()) and bool((best_raw[5] == 0).all())
 
     sig, hashes = signature()
     payload = {

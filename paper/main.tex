@@ -358,20 +358,16 @@ higher is better. Columns give event count; colours span $[-1,1]$.}
 
 \subsection{Musical Phrase Recovery}
 Seed 2027 generates 150 scrambled-LHS targets at each cardinality. Every
-candidate begins with all pitches at 160~Hz and onsets at equal-cell centres
-over 0.2--1.8~s; independent logits constrain both coordinates to their
+candidate begins with all pitches at 160~Hz and onsets isochronously spaced
+within 0.2--1.8~s; independent logits constrain both coordinates to their
 registered ranges. We retain the nine objectives whose one-event Joint mean
-cosine rounds to at least $.10$: SS, LinMSS, SmoMSS, \gls{tfw},
-log-\gls{tfw}, Ce$\mathcal L$, logCe$\mathcal L$, decCe$\mathcal L$, and
-tlogCe$\mathcal L$.
+cosine rounds to at least $.10$.
 
-Each of the resulting 6,750 fits uses Adam with learning rate $.05$, default
-moments and epsilon, and zero weight decay. Division by each phrase's initial
-loss conditions the step scale while leaving reported losses raw. An
-independent ReduceLROnPlateau scheduler uses factor $.5$, patience 200, relative
-improvement threshold $10^{-4}$, and minimum learning rate $10^{-5}$.
-Early stopping uses its own 1000-update patience, with a 20,000-update cap. We
-report the final iterate without rollback or optimiser-state reset.
+Each of the resulting 6,750 fits uses Adam with learning rate $.05$. Division
+by each phrase's initial loss conditions the step scale while leaving reported
+losses raw. ReduceLROnPlateau uses factor $.5$ and patience 200. Independent
+early stopping uses a 1000-update patience, with a 20,000-update cap. We report
+each fit's lowest-loss iterate.
 
 \begin{figure}[t]
 \centering
