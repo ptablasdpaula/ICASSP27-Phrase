@@ -346,16 +346,18 @@ targets and candidates share Sec.~\ref{sec:renderer}'s synthesis configuration
 and $2.048\times$ onset padding, isolating loss geometry from synthesis mismatch. No
 gradient step is taken.
 
-We compare eleven losses on the same candidates. Besides $L_1$ and $L_2$, SS is
+We compare twelve losses on the same candidates. Besides $L_1$ and $L_2$, SS is
 the mean absolute difference between periodic-Hann \acrshort{fft}-256/hop-64
 magnitudes. LinMSS sums this linear-magnitude difference over Hann windows
 $\{512,256,128,64,32,16\}$ with quarter-window hops; SmoMSS denotes the smooth
 \acrshort{mss} defined in Sec.~\ref{sec:loss-objectives}. The remaining rows are
-\acrshort{sot}, linear- and log-frequency \acrshort{tfw}, and the base,
-log-weighted, and fixed-decay \gls{cel} variants, abbreviated Ce$\mathcal{L}$,
-logCe$\mathcal{L}$, and decCe$\mathcal{L}$. Each candidate waveform and shared
-spectral representation is computed once before taking the eleven separate
-gradients.
+\acrshort{sot}, linear- and log-frequency \acrshort{tfw}, and four \gls{cel}
+variants. Ce$\mathcal{L}$, logCe$\mathcal{L}$, and decCe$\mathcal{L}$ denote
+the base, log-weighted, and fixed-decay configurations, respectively;
+tlogCe$\mathcal{L}$ applies Log-Weighting while retaining only the two
+forward-time direction pairs $(\rightarrow,\uparrow)$ and
+$(\rightarrow,\downarrow)$. All rows use identical candidate parameters;
+shared spectral representations are reused within each evaluation batch.
 
 We parameterise pitch as $p=\log_2(f_0/80)$ octaves and onset as $t$ in seconds.
 The one-event target is fixed at $(p,t)=(1,1)$; at each of two, four, six, and
@@ -373,8 +375,9 @@ loss's componentwise success rate changes by more than two percentage points.
 The resulting counts are 1024 for Joint-1 and Time-1, 512 for Joint-2 and
 Pitch-1/2, and 256 otherwise, giving 84,480 paired candidate--target
 comparisons. Samples are paired across losses. The single-target Time-1 baseline
-reaches the cap with residual sensitivity for some comparison losses; the three
-\gls{cel} rows differ by less than $10^{-4}$ in mean cosine between repeats.
+reaches the cap with residual sensitivity for some comparison losses; Ce$\mathcal{L}$,
+logCe$\mathcal{L}$, and decCe$\mathcal{L}$ differ by less than $10^{-4}$ in
+mean cosine between repeats.
 
 For each candidate, unrestricted Hungarian matching minimises
 $\sum_i[(p_i-p^\star_{\pi(i)})^2+(t_i-t^\star_{\pi(i)})^2]$; hence one octave

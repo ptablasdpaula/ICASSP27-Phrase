@@ -15,5 +15,8 @@
   "observed_max": 0.9887646656135813,
   "annotations": "mean \u00b1 sample SD across candidate phrases; leading zero omitted",
   "layout": "4.35 by 3.45 inches; -18-degree row labels; tight outer margins; colour bar nearly touches the table",
-  "source": "summary.csv"
+  "source": [
+    "alignment-extended/summary.csv",
+    "log-decay-directions/summary.csv: forward_log"
+  ]
 }

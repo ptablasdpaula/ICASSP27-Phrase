@@ -99,6 +99,10 @@ the full range; negative means are neither clipped nor rescaled. Colour encodes
 mean only, not SD. Loss names are abbreviated, the joint groups are labelled
 `Joint`, and clockwise-inclined row labels allow tighter outer margins. The
 colour bar sits immediately beneath the table.
+The displayed table appends tlogCeL, the forward-time Log-Weighed CeL result
+from the matched [direction/decay experiment](../log-decay-directions/README.md),
+to the eleven original rows. Targets, candidates, matching, and accepted sample
+counts are identical.
 The percentage-combination figure remains available as an alternative.
 Reproduce the current figure with `scripts/render_gradient_cosine_sd.py` using
 the project Python. Exact colour limits are in phrase-cosine-style.json.

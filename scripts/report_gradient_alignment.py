@@ -81,7 +81,12 @@ def render(
     output_stem=None,
     cropped_colorbar=False,
     compact_layout=False,
+    labels=None,
 ):
+    labels = LABELS if labels is None else labels
+    row_count = means.shape[0]
+    if sds.shape != means.shape or len(labels) != row_count:
+        raise ValueError("means, SDs and row labels must have matching dimensions")
     width = len(columns)
     boundaries = [i - 0.5 for i in range(1, width) if columns[i][1] != columns[i - 1][1]]
     edges = [-0.5, *boundaries, width - 0.5]
@@ -136,7 +141,7 @@ def render(
         vmax=100 if percentage else 1,
         aspect="auto",
     )
-    ax.set_yticks(range(11), LABELS)
+    ax.set_yticks(range(row_count), labels)
     if compact_layout:
         for label in ax.get_yticklabels():
             label.set_rotation(-18)
@@ -147,7 +152,7 @@ def render(
     ax.tick_params(length=0, pad=3)
     for center, title in groups:
         ax.text(center, -1.25, title, ha="center", va="bottom", clip_on=False)
-    for i in range(11):
+    for i in range(row_count):
         for j in range(width):
             value = means[i, j]
             color = "white" if (value < 48 if percentage else abs(value) > 0.55) else "black"
@@ -183,7 +188,7 @@ def render(
                     color=color,
                 )
     ax.set_xticks(np.arange(-0.5, width), minor=True)
-    ax.set_yticks(np.arange(-0.5, 11), minor=True)
+    ax.set_yticks(np.arange(-0.5, row_count), minor=True)
     ax.grid(which="minor", color="white", alpha=0.4, linewidth=0.4)
     ax.tick_params(which="minor", length=0)
     for boundary in boundaries:
