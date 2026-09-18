@@ -333,55 +333,74 @@ retain their original padding and are not ranked against Fade.}
 
 
 
-\subsection{Experiment I: Single-event Gradient Diagnostic}
+\subsection{Experiment I: Gradient Alignment}
 \label{sec:gradient-diagnostic}
-\textcolor{red}{The single-event diagnostic and Fade recovery runs use 2.048x onset padding. The original eight phrase-recovery configurations still await reruns at this setting.}
-We use a centred 160-Hz, 1.0-s target and a target-inclusive 25-by-25 lattice.
-Time is linear over $\pm0.8$~s and pitch logarithmic over $\pm1$ octave, so
-this relative lattice spans the complete registered candidate ranges
-0.2--1.8~s and 80--320~Hz. Surfaces are independently min--max normalised.
-Unit descent directions $-\nabla\mathcal L$ are evaluated on an 11-by-11
-sublattice with the target omitted, leaving 120 directions. A direction is
-target-directed when its dot product with the target displacement is positive
-in the normalised onset--pitch coordinates.
+This experiment asks a local question before any optimiser update: how closely
+does a loss's descent direction align with the onset--pitch displacement that
+recovers a target phrase? Figure~\ref{fig:loss-sweeps} first visualises the
+centred 160-Hz, 1.0-s case using 3201-point conditional slices. Its companion
+11-by-11 target-excluded lattice gives the 120 single-event directions reported
+below. The phrase-level experiment in
+Fig.~\ref{fig:gradient-alignment} then samples the full registered domain. All
+targets and candidates share Sec.~\ref{sec:renderer}'s synthesis configuration
+and $2.048\times$ onset padding, isolating loss geometry from synthesis mismatch. No
+gradient step is taken.
 
-Figure~\ref{fig:loss-sweeps} shows conditional slices with either
-pitch or onset fixed, using 3201 equally spaced samples per axis. These slices
-use Sec.~\ref{sec:renderer}'s synthesis configuration. Target and candidate
-share this configuration, isolating loss geometry from renderer mismatch. This
-is one full-range diagnostic case, not evidence of target invariance or a
-population estimate.
+We compare eleven losses on the same candidates. Besides $L_1$ and $L_2$, SS is
+the mean absolute difference between periodic-Hann \acrshort{fft}-256/hop-64
+magnitudes. LinMSS sums this linear-magnitude difference over Hann windows
+$\{512,256,128,64,32,16\}$ with quarter-window hops; SmoMSS denotes the smooth
+\acrshort{mss} defined in Sec.~\ref{sec:loss-objectives}. The remaining rows are
+\acrshort{sot}, linear- and log-frequency \acrshort{tfw}, and the base,
+log-weighted, and fixed-decay \gls{cel} variants, abbreviated Ce$\mathcal{L}$,
+logCe$\mathcal{L}$, and decCe$\mathcal{L}$. Each candidate waveform and shared
+spectral representation is computed once before taking the eleven separate
+gradients.
 
-We extend this single-event view with a paired phrase-level diagnostic over the
-full registered parameter domain. One centred target is used at one event; 32
-targets are sampled at each of two, four, six, and eight events. Each target has
-at least 256 Latin-hypercube candidates, increased to at most 1024 where an
-independent repeat exceeded the pre-registered two-percentage-point sensitivity
-threshold. Let $\boldsymbol\theta$ concatenate candidate pitch in octaves and
-onset in seconds, and let $\boldsymbol\theta^\star_\pi$ be the target reordered
-by unrestricted Hungarian matching, with one second weighted equally to one
-octave. For descent $\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$, we report
-the whole-phrase cosine
+We parameterise pitch as $p=\log_2(f_0/80)$ octaves and onset as $t$ in seconds.
+The one-event target is fixed at $(p,t)=(1,1)$; at each of two, four, six, and
+eight events, 32 target phrases have uniform $p\in[0,2]$ and
+$t\in[0.2,1.8]$, subject to 50-ms target-onset separation. A scrambled joint
+Latin hypercube samples all $2N$ candidate coordinates over the same ranges.
+Pitch and Time conditions project that design by restoring the other coordinate
+to its target value; Joint conditions retain both perturbations. Joint is tested
+at $N\in\{1,2,4,6,8\}$ and the conditional cases at
+$N\in\{1,2,4\}$.
+
+Each condition starts with 256 candidates per target. An independent repeat on
+the first eight targets increases this to 512, then at most 1024, when any
+loss's componentwise success rate changes by more than two percentage points.
+The resulting counts are 1024 for Joint-1 and Time-1, 512 for Joint-2 and
+Pitch-1/2, and 256 otherwise, giving 84,480 paired candidate--target
+comparisons. Samples are paired across losses. The single-target Time-1 baseline
+reaches the cap with residual sensitivity for some comparison losses; the three
+\gls{cel} rows differ by less than $10^{-4}$ in mean cosine between repeats.
+
+For each candidate, unrestricted Hungarian matching minimises
+$\sum_i[(p_i-p^\star_{\pi(i)})^2+(t_i-t^\star_{\pi(i)})^2]$; hence one octave
+and one second have equal matching cost. Let $\boldsymbol\theta$ concatenate all
+candidate coordinates and $\boldsymbol\theta^\star_\pi$ the reordered target.
+For descent $\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$, we report
 \begin{equation*}
 c_{\rm phrase}=
 \frac{\mathbf d^\top(\boldsymbol\theta^\star_\pi-\boldsymbol\theta)}
 {\lVert\mathbf d\rVert_2
  \lVert\boldsymbol\theta^\star_\pi-\boldsymbol\theta\rVert_2}.
 \end{equation*}
-Thus $1$, $0$, and $-1$ indicate descent directly towards, orthogonal to, and
-directly away from the matched target, respectively. Joint candidates vary
-pitch and onset; Pitch and Time candidates initially vary only the named
-coordinate, although matching remains unrestricted.
+All gradient components are retained, so movement in a coordinate held correct
+by a conditional design reduces alignment. Matching remains unrestricted and
+can also reassign events. We average candidate-phrase cosines and report their
+sample standard deviation; it describes variation across candidates, not
+uncertainty in the mean. Thus $1$, $0$, and $-1$ indicate descent directly
+towards, orthogonal to, and directly away from the matched target, respectively.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
-\caption{Whole-phrase gradient alignment over candidate phrases; cells show
-mean $\pm$ standard deviation, and higher is better. Column numbers give event
-count. SS is a single-scale \acrshort{stft} magnitude loss; LinMSS and SmoMSS
-are linear-magnitude and smooth \acrshort{mss}; log denotes log-frequency
-geometry or weighting; decCe$\mathcal{L}$ is the fixed-decay variant. Colours
-retain the full $[-1,1]$ cosine normalisation.}
+\caption{Whole-phrase gradient alignment; cells show candidate mean $\pm$
+standard deviation, and higher is better. Column numbers give event count;
+column groups identify perturbed coordinates. Colours retain the full
+$[-1,1]$ cosine normalisation.}
 \label{fig:gradient-alignment}
 \end{figure}
 
