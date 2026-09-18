@@ -100,3 +100,8 @@ for this figure; other metric figures retain their previous scales.
 The percentage-combination figure remains available as an alternative.
 Reproduce the current figure with `scripts/render_gradient_cosine_sd.py` using
 the project Python. Exact colour limits are in phrase-cosine-style.json.
+
+A separate [Magma comparison](phrase-cosine-magma.png)
+([PDF](phrase-cosine-magma.pdf)) uses the same full −1-to-1 range, values and
+annotations. It leaves the shifted-Turbo primary figure unchanged and can be
+reproduced with `scripts/render_gradient_cosine_magma.py`.

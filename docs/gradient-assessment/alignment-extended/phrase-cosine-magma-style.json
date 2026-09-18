@@ -1,0 +1,14 @@
+{
+  "cmap": "magma",
+  "vmin": -1.0,
+  "vmax": 1.0,
+  "ticks": [
+    -1,
+    -0.5,
+    0,
+    0.5,
+    1
+  ],
+  "annotations": "mean \u00b1 sample SD; leading zero omitted",
+  "source": "summary.csv"
+}
