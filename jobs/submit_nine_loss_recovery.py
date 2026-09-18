@@ -41,13 +41,14 @@ def probe(partition, account):
         ],
         check=False,
     )
-    match = re.search(r"to start at (\S+).*in partition (\S+)", result.stdout)
+    diagnostic = "\n".join(part for part in (result.stdout, result.stderr) if part).strip()
+    match = re.search(r"to start at (\S+).*in partition (\S+)", diagnostic)
     if result.returncode or match is None:
         return {
             "partition": partition,
             "account": account,
             "available": False,
-            "diagnostic": result.stdout.strip(),
+            "diagnostic": diagnostic,
         }
     start = datetime.fromisoformat(match.group(1))
     if start.tzinfo is None:
@@ -58,7 +59,7 @@ def probe(partition, account):
         "available": True,
         "estimated_start": start.isoformat(),
         "estimated_start_epoch": start.timestamp(),
-        "diagnostic": result.stdout.strip(),
+        "diagnostic": diagnostic,
     }
 
 
