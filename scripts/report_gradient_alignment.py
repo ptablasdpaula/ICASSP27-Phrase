@@ -15,28 +15,28 @@ from icassp27_phrase.gradient_assessment import COLUMNS, NAMES, signature, targe
 LABELS = [
     r"$L_1$",
     r"$L_2$",
-    "Single STFT",
-    "Linear MSS",
-    "Smooth MSS",
+    "SS",
+    "LinMSS",
+    "SmoMSS",
     "SOT",
     r"$\mathrm{TF}\mathcal{W}_2$",
-    r"log-$\mathrm{TF}\mathcal{W}_2$",
+    r"log$\mathrm{TF}\mathcal{W}_2$",
     r"Ce$\mathcal{L}$",
-    r"Log-Ce$\mathcal{L}$",
-    r"Fade-Ce$\mathcal{L}$",
+    r"logCe$\mathcal{L}$",
+    r"decCe$\mathcal{L}$",
 ]
 TEXT_LABELS = [
     "L1",
     "L2",
-    "Single STFT",
-    "Linear MSS",
-    "Smooth MSS",
+    "SS",
+    "LinMSS",
+    "SmoMSS",
     "SOT",
     "TFW2",
-    "log-TFW2",
+    "logTFW2",
     "CeL",
-    "Log-CeL",
-    "Fade-CeL",
+    "logCeL",
+    "decCeL",
 ]
 METRICS = {
     "event-cosine": "Mean event cosine",
@@ -79,12 +79,17 @@ def render(
     anchored_style=False,
     cmap_name=None,
     output_stem=None,
+    observed_range=False,
+    compact_layout=False,
 ):
     width = len(columns)
     boundaries = [i - 0.5 for i in range(1, width) if columns[i][1] != columns[i - 1][1]]
     edges = [-0.5, *boundaries, width - 0.5]
     groups = [
-        ((a + b) / 2, {"joint": "Both", "pitch": "Pitch", "time": "Time"}[columns[int(a + 0.5)][1]])
+        (
+            (a + b) / 2,
+            {"joint": "Joint", "pitch": "Pitch", "time": "Time"}[columns[int(a + 0.5)][1]],
+        )
         for a, b in zip(edges[:-1], edges[1:], strict=True)
     ]
     import matplotlib
@@ -94,8 +99,12 @@ def render(
 
     percentage = metric == "phrase-descent"
     plt.rcParams.update({"font.size": 7, "pdf.fonttype": 42})
-    fig, ax = plt.subplots(figsize=(3.5 if width == 7 else 4.9, 3.65))
-    fig.subplots_adjust(left=0.245 if width == 7 else 0.18, right=0.985, top=0.87, bottom=0.17)
+    if compact_layout:
+        fig, ax = plt.subplots(figsize=(4.35, 3.45))
+        fig.subplots_adjust(left=0.105, right=0.995, top=0.905, bottom=0.145)
+    else:
+        fig, ax = plt.subplots(figsize=(3.5 if width == 7 else 4.9, 3.65))
+        fig.subplots_adjust(left=0.245 if width == 7 else 0.18, right=0.985, top=0.87, bottom=0.17)
     from matplotlib import colormaps
     from matplotlib.colors import LinearSegmentedColormap
 
@@ -110,7 +119,8 @@ def render(
         ],
         N=1025,
     )
-    styled = anchored_style or cmap_name is not None
+    styled = anchored_style or cmap_name is not None or observed_range
+    lower = float(means.min()) if observed_range else 0 if percentage else -1
     im = ax.imshow(
         means,
         cmap=(
@@ -122,11 +132,16 @@ def render(
             if percentage
             else "RdBu"
         ),
-        vmin=0 if percentage else -1,
+        vmin=lower,
         vmax=100 if percentage else 1,
         aspect="auto",
     )
     ax.set_yticks(range(11), LABELS)
+    if compact_layout:
+        for label in ax.get_yticklabels():
+            label.set_rotation(18)
+            label.set_ha("right")
+            label.set_rotation_mode("anchor")
     ax.set_xticks(range(width), [str(n) for n, _ in columns])
     ax.xaxis.tick_top()
     ax.tick_params(length=0, pad=3)
@@ -175,12 +190,19 @@ def render(
         ax.axvline(boundary, color="white", linewidth=1.1)
     for boundary in (1.5, 4.5, 7.5):
         ax.axhline(boundary, color="white", linewidth=1.1)
-    cax = fig.add_axes([0.245 if width == 7 else 0.18, 0.085, 0.74 if width == 7 else 0.805, 0.025])
+    if compact_layout:
+        cax = fig.add_axes([0.105, 0.112, 0.89, 0.02])
+    else:
+        cax = fig.add_axes(
+            [0.245 if width == 7 else 0.18, 0.085, 0.74 if width == 7 else 0.805, 0.025]
+        )
     cb = fig.colorbar(
         im,
         cax=cax,
         orientation="horizontal",
-        ticks=[-1, -0.5, 0, 0.5, 1]
+        ticks=[lower, 0.5, 1]
+        if observed_range
+        else [-1, -0.5, 0, 0.5, 1]
         if styled
         else [0, 25, 50, 75, 100]
         if percentage
@@ -190,7 +212,9 @@ def render(
         METRICS[metric] + ("; (positive phrases %)" if positive_percent is not None else ""),
         labelpad=2,
     )
-    if styled:
+    if observed_range:
+        cb.set_ticklabels([compact_cosine(lower), ".5", "1"])
+    elif styled:
         cb.set_ticklabels(["−1", "−.5", "0", ".5", "1"])
     cb.ax.tick_params(length=2, pad=2)
     cb.ax.get_xticklabels()[0].set_horizontalalignment("left")
@@ -283,7 +307,7 @@ def report(root, output, archive, extension=None):
             "",
             "| Loss | "
             + " | ".join(
-                f"{ {'joint': 'Both', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
+                f"{ {'joint': 'Joint', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
                 for n, c in columns
             )
             + " |",

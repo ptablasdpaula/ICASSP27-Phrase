@@ -1,23 +1,15 @@
 {
-  "cmap": "cosine_shifted_turbo",
-  "source_cmap": "turbo_r",
-  "source_positions": {
-    "-1": 0.0,
-    "0": 0.38,
-    "0.5": 0.58,
-    "1": 0.85
-  },
-  "vmin": -1.0,
+  "cmap": "RdBu",
+  "vmin": -0.01257216139857644,
   "observed_min": -0.01257216139857644,
   "vmax": 1.0,
   "ticks": [
-    -1,
-    -0.5,
-    0,
+    -0.01257216139857644,
     0.5,
     1
   ],
   "observed_max": 0.9887646656135813,
   "annotations": "mean \u00b1 sample SD across candidate phrases; leading zero omitted",
+  "layout": "4.35 by 3.45 inches; 18-degree row labels; tight outer margins; colour bar nearly touches the table",
   "source": "summary.csv"
 }

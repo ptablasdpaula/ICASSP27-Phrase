@@ -24,9 +24,18 @@ def main():
             row = rows[events, condition, loss]
             means[i, j], sds[i, j] = float(row["mean"]), float(row["candidate_sd"])
     assert np.isfinite(means).all() and np.isfinite(sds).all()
-    render(output, "phrase-cosine", means, sds, EXTENDED_COLUMNS, anchored_style=True)
+    render(
+        output,
+        "phrase-cosine",
+        means,
+        sds,
+        EXTENDED_COLUMNS,
+        cmap_name="RdBu",
+        observed_range=True,
+        compact_layout=True,
+    )
     headers = [
-        f"{ {'joint': 'Both', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
+        f"{ {'joint': 'Joint', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
         for n, c in EXTENDED_COLUMNS
     ]
     lines = [
@@ -42,15 +51,17 @@ def main():
     (output / "phrase-cosine-style.json").write_text(
         json.dumps(
             dict(
-                cmap="cosine_shifted_turbo",
-                source_cmap="turbo_r",
-                source_positions={"-1": 0.0, "0": 0.38, "0.5": 0.58, "1": 0.85},
-                vmin=-1.0,
+                cmap="RdBu",
+                vmin=float(means.min()),
                 observed_min=float(means.min()),
                 vmax=1.0,
-                ticks=[-1, -0.5, 0, 0.5, 1],
+                ticks=[float(means.min()), 0.5, 1],
                 observed_max=float(means.max()),
                 annotations="mean ± sample SD across candidate phrases; leading zero omitted",
+                layout=(
+                    "4.35 by 3.45 inches; 18-degree row labels; tight outer margins; "
+                    "colour bar nearly touches the table"
+                ),
                 source="summary.csv",
             ),
             indent=2,

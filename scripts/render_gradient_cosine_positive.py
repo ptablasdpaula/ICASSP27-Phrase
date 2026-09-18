@@ -44,7 +44,7 @@ def main():
         positive_percent=percentages,
     )
     header = [
-        f"{ {'joint': 'Both', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
+        f"{ {'joint': 'Joint', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
         for n, c in EXTENDED_COLUMNS
     ]
     lines = [
