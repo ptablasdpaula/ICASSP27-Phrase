@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from icassp27_phrase.fixed_gradient_assessment import (
+from fixed_gradient_assessment import (
     CANDIDATES_PER_TARGET,
     CARDINALITIES,
     COLUMNS,

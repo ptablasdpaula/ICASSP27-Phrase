@@ -8,10 +8,9 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from icassp27_phrase.gradient_assessment import NAMES as BASE_NAMES
+from icassp27_phrase.gradient_assessment import SCHEMA, SEED, SharedObjectives
 from scipy.stats import qmc
-
-from .gradient_assessment import NAMES as BASE_NAMES
-from .gradient_assessment import SCHEMA, SEED, SharedObjectives
 
 TARGETS_PER_CARDINALITY = 32
 CANDIDATES_PER_TARGET = 256
@@ -119,10 +118,10 @@ class FixedObjectives(SharedObjectives):
 
 def signature() -> tuple[str, dict[str, str]]:
     """Hash every scientific input used by the fixed assessment."""
-    directory = Path(__file__).parent
+    source = Path(__file__).parents[1] / "src"
     paths = [
         Path(__file__),
-        *(directory / name for name in (
+        *(source / name for name in (
             "gradient_assessment.py",
             "losses.py",
             "synth.py",

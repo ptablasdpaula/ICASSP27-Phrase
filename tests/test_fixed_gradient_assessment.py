@@ -1,7 +1,12 @@
 """Invariants for the paper's fixed LHS gradient design."""
 
+import sys
+from pathlib import Path
+
 import numpy as np
-from icassp27_phrase.fixed_gradient_assessment import (
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+from fixed_gradient_assessment import (  # noqa: E402
     CANDIDATES_PER_TARGET,
     CARDINALITIES,
     COLUMNS,
