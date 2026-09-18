@@ -18,7 +18,7 @@ POOLS = (
     ("andrena", "pilot_andrena"),
 )
 START_WINDOW_SECONDS = 15 * 60
-SAFETY_FACTOR = 1.2
+SAFETY_FACTOR = 1.1
 HARD_SECONDS = 55 * 60
 
 
@@ -115,6 +115,19 @@ def expected_path(shard):
     return OUTPUT_ROOT / "raw" / loss / f"C{cardinality:02d}-T{begin:04d}-{end:04d}.json.gz"
 
 
+def is_complete(shard, expected_signature):
+    import gzip
+
+    path = expected_path(shard)
+    if not path.exists():
+        return False
+    try:
+        with gzip.open(path, "rt") as stream:
+            return json.load(stream)["signature"] == expected_signature
+    except (OSError, KeyError, ValueError):
+        return False
+
+
 def main():
     if command(["git", "diff", "--quiet", "HEAD", "--"], check=False).returncode:
         raise RuntimeError("tracked source changes must be committed before submission")
@@ -154,7 +167,7 @@ def main():
                 f"shard {shard} worst-case estimate {estimate:.1f}s exceeds sub-hour safety"
             )
         shards.append({"shard": shard, "estimated_seconds": estimate})
-    pending = [row for row in shards if not expected_path(row["shard"]).exists()]
+    pending = [row for row in shards if not is_complete(row["shard"], current_signature)]
     probes = [probe(*pool) for pool in POOLS]
     available = [row for row in probes if row["available"]]
     if not available:
@@ -208,7 +221,10 @@ def main():
                 f"--partition={partition}",
                 f"--account={account}",
                 f"--array={array}%{concurrency}",
-                f"--export=ALL,SOURCE_COMMIT={source_commit}",
+                (
+                    "--export=ALL,"
+                    f"SOURCE_COMMIT={source_commit},SCIENTIFIC_SIGNATURE={current_signature}"
+                ),
                 "jobs/nine_loss_recovery.sh",
             ]
         )

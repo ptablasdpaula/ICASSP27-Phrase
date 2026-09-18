@@ -13,14 +13,16 @@ cd /data/home/acw794/ICASSP27-Phrase
 mkdir -p results/nine-loss-recovery/logs
 export PYTHONHOME="$PWD/.pixi/envs/default" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
-test "$(git rev-parse HEAD)" = "${SOURCE_COMMIT:?launcher must bind SOURCE_COMMIT}"
 "$PWD/.pixi/envs/default/bin/python" - <<'PY'
 import json
+import os
 from pathlib import Path
 import sys
 sys.path.insert(0, "scripts")
 from run_nine_loss_recovery import signature
 q = json.loads(Path("results/nine-loss-recovery/qualification-cuda.json").read_text())
-assert q["passed"] and q["signature"] == signature()[0]
+actual = signature()[0]
+assert q["passed"] and q["signature"] == actual
+assert actual == os.environ["SCIENTIFIC_SIGNATURE"]
 PY
 exec "$PWD/.pixi/envs/default/bin/python" scripts/run_nine_loss_recovery.py --shard "${SLURM_ARRAY_TASK_ID:?}"
