@@ -259,6 +259,19 @@ def assignment_metrics(f0, onset, target_f0, target_onset):
     }
 
 
+def append_lr_events(events, indices, old_lr, lr, updates, strict_best):
+    """Record compacted scheduler changes against their original batch rows."""
+    for previous, i in zip(old_lr.tolist(), indices.tolist(), strict=True):
+        events[i].append(
+            {
+                "update": int(updates[i]),
+                "old_lr": previous,
+                "new_lr": float(lr[i]),
+                "best_loss": float(strict_best[i]),
+            }
+        )
+
+
 def fit(target_audio, cardinality, name, synth):
     batch = len(target_audio)
     initial = initial_candidate(cardinality, device=target_audio.device)
@@ -316,19 +329,7 @@ def fit(target_audio, cardinality, name, synth):
                 # ReduceLROnPlateau resets only its own bad-epoch count.  The
                 # independent early-stopping count deliberately continues.
                 plateau_bad[reduced_indices] = 0
-                for local, i in zip(
-                    reducible.nonzero().flatten().tolist(),
-                    reduced_indices.tolist(),
-                    strict=True,
-                ):
-                    events[i].append(
-                        {
-                            "update": int(updates[i]),
-                            "old_lr": float(old[local]),
-                            "new_lr": float(lr[i]),
-                            "best_loss": float(strict_best[i]),
-                        }
-                    )
+                append_lr_events(events, reduced_indices, old, lr, updates, strict_best)
             stop = (stop_bad[indices] > SCHEDULE.stop_patience) | (
                 updates[indices] >= SCHEDULE.maximum_updates
             )

@@ -11,7 +11,13 @@ from icassp27_phrase.losses import CumulativeEnergyDistance
 from icassp27_phrase.runtime import require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
 from icassp27_phrase.targets import load_target
-from run_nine_loss_recovery import LOSSES, SCHEDULE, PairedObjective, signature
+from run_nine_loss_recovery import (
+    LOSSES,
+    SCHEDULE,
+    PairedObjective,
+    append_lr_events,
+    signature,
+)
 from test_fading_diagonal import fade_matrix, surfaces
 
 
@@ -98,6 +104,18 @@ def qualify(device):
     assert optimizer.param_groups[0]["lr"] == SCHEDULE.initial_lr
     scheduler.step(1.0)
     assert optimizer.param_groups[0]["lr"] == SCHEDULE.initial_lr * SCHEDULE.factor
+
+    # Exercise noncontiguous simultaneous reductions, the same compacted-row
+    # case used after some phrases in a batch have already stopped.
+    events = [[] for _ in range(6)]
+    indices = torch.tensor([1, 5], device=device)
+    old_lr = torch.tensor([0.05, 0.025], dtype=torch.float64, device=device)
+    live_lr = torch.tensor([0.0, 0.025, 0.0, 0.0, 0.0, 0.0125], device=device)
+    updates = torch.tensor([0, 201, 0, 0, 0, 402], device=device)
+    best = torch.tensor([0.0, 0.4, 0.0, 0.0, 0.0, 0.2], device=device)
+    append_lr_events(events, indices, old_lr, live_lr, updates, best)
+    assert events[1][0]["old_lr"] == 0.05 and events[1][0]["update"] == 201
+    assert events[5][0]["old_lr"] == 0.025 and events[5][0]["update"] == 402
 
     sig, hashes = signature()
     payload = {
