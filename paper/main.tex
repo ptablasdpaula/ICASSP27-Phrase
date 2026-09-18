@@ -81,7 +81,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \maketitle
 
 \begin{abstract}
-\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 84,480 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the nine objectives reaching at least .10 single-event alignment across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing, pitch, and delay-line length, and provide a PyTorch library for future applications\footnote{\textcolor{red}{link to library should be here}}.
+\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 90,112 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the nine objectives reaching at least .10 single-event alignment across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing, pitch, and delay-line length, and provide a PyTorch library for future applications\footnote{\textcolor{red}{link to library should be here}}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -290,10 +290,10 @@ log-frequency weighing, and whether accumulation decays with distance.}}
 All experiments use the two-second, 4-kHz synthesis configuration in
 Sec.~\ref{sec:renderer}. An $N$-event phrase contains fundamental frequencies
 $f_0\in[80,320]$~Hz and onsets $t\in[0.2,1.8]$~s, with
-$N\in\{1,2,4,6,8\}$. We use scrambled Latin hypercube sampling (LHS) to
-stratify the sampled coordinates~\cite{mckay1979comparison}; target onsets are
-separated by at least 50~ms, while candidate coordinates span the complete
-registered domain.
+$N\in\{1,2,4,6,8\}$. We use reproducibly scrambled Latin hypercube sampling
+(LHS) to stratify target coordinates and, in Gradient Analysis, candidate
+coordinates~\cite{mckay1979comparison}. Target onsets are separated by at
+least 50~ms, while candidates span the complete registered domain.
 
 \textbf{Metrics.}
 For an unordered prediction, the Hungarian method~\cite{kuhn1955hungarian}
@@ -346,28 +346,23 @@ $(\rightarrow,\uparrow)$ and $(\rightarrow,\downarrow)$.
 \subsection{Gradient Analysis}
 \label{sec:gradient-diagnostic}
 We ask how closely each loss's descent direction aligns with the displacement
-that recovers a target phrase, before taking an optimiser step. The one-event
-target is fixed at 160~Hz and 1.0~s. For each larger cardinality, 32 target
-phrases sample the registered ranges with 50-ms onset separation. A scrambled
-joint LHS samples all $2N$ candidate coordinates. The \emph{Joint} condition
-retains both perturbations; \emph{Known time} restores target onsets and varies
-only pitch; \emph{Known $f_0$} restores target pitches and varies only onset.
-Joint is tested at $N\in\{1,2,4,6,8\}$ and both conditional cases at
-$N\in\{1,2,4\}$.
-
-\textcolor{red}{Each condition begins with 256 candidates per target and doubles to 512 or
-1024 where an independent repeat changes any loss's componentwise success rate
-by more than two percentage points}. This gives 84,480 paired candidate--target
-comparisons, shared across the eight baselines and four Ce$\mathcal L$
-variants above. Hungarian matching remains unrestricted in the conditional
-cases, and all gradient components are retained, so movement in a known
-coordinate reduces alignment.
+that recovers a target phrase, before taking an optimiser step. For each
+cardinality, we generate 32 target phrases and 256 candidates per target from
+independently scrambled joint LHS designs. The \emph{Joint} condition retains
+both perturbations; \emph{Known time} restores target onsets and varies only
+pitch; \emph{Known $f_0$} restores target pitches and varies only onset. Joint
+is tested at $N\in\{1,2,4,6,8\}$ and both conditional cases at
+$N\in\{1,2,4\}$. Thus, every condition contains 8192 candidate--target pairs,
+giving 90,112 pairs per loss overall. Hungarian matching remains unrestricted
+in the conditional cases, and all gradient components are retained, so
+movement in a known coordinate reduces alignment.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
-\caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation;
-higher is better. Columns give event count; colours span $[-1,1]$.}
+\caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation over
+8192 candidate--target pairs per column; higher is better. Columns give event
+count; colours span $[-1,1]$.}
 \label{fig:gradient-alignment}
 \end{figure}
 
@@ -396,7 +391,7 @@ targets; lower is better.}}
 
 \section{Conclusion}
 We introduced \glspl{cel} for joint pluck-onset and pitch recovery. Across
-84,480 comparisons, they give the highest mean Joint gradient cosine at every
+90,112 comparisons, they give the highest mean Joint gradient cosine at every
 cardinality and retain $.10$--$.14$ at eight events, against at most $.04$ for
 the baselines. Their advantage also holds when only pitch or onset is unknown.
 \textcolor{blue}{The 6,750 matched fits will determine the best objective for
