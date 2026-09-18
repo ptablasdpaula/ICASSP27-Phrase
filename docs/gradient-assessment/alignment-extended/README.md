@@ -75,3 +75,14 @@ mean phrase cosine reached 0.084 for Single STFT, 0.047 for SOT and 0.048 for
 log-TFW2; all CeL variants differed by less than 0.0001. Thus the displayed
 single-event baseline values have visible sampling sensitivity even though the
 CeL results are stable. See extension-data/sampling.json for every check.
+
+## Combined presentation
+
+[Mean phrase cosine with positive-phrase percentages](phrase-cosine-positive.png)
+([PDF](phrase-cosine-positive.pdf), [Markdown](phrase-cosine-positive.md),
+[CSV](phrase-cosine-positive.csv)) places the mean cosine above the percentage
+of candidates with a positive summed phrase dot product, shown in parentheses.
+Colour encodes cosine only. Cosines omit the leading zero (including negatives,
+e.g. −.01); values rounding to zero display .00. This is a presentation of the
+existing summary.csv results, with no new gradients or changed scores.
+Reproduce with `scripts/render_gradient_cosine_positive.py` using the project Python.

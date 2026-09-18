@@ -64,7 +64,12 @@ def alignment(data):
     return {"event-cosine": event, "phrase-descent": positive, "phrase-cosine": cosine}
 
 
-def render(output, metric, means, sds, columns=COLUMNS):
+def compact_cosine(value):
+    """Omit the leading zero and suppress rounded negative zero."""
+    return f"{value:z.2f}".replace("0.", ".", 1) if abs(value) < 0.995 else f"{value:.2f}"
+
+
+def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None):
     width = len(columns)
     boundaries = [i - 0.5 for i in range(1, width) if columns[i][1] != columns[i - 1][1]]
     edges = [-0.5, *boundaries, width - 0.5]
@@ -101,7 +106,11 @@ def render(output, metric, means, sds, columns=COLUMNS):
             ax.text(
                 j,
                 i if percentage else i - 0.15,
-                f"{value:.1f}" if percentage else f"{value:.2f}",
+                f"{value:.1f}"
+                if percentage
+                else compact_cosine(value)
+                if positive_percent is not None
+                else f"{value:.2f}",
                 ha="center",
                 va="center",
                 fontsize=6.5,
@@ -111,7 +120,9 @@ def render(output, metric, means, sds, columns=COLUMNS):
                 ax.text(
                     j,
                     i + 0.23,
-                    f"±{sds[i, j]:.2f}",
+                    f"({positive_percent[i, j]:.1f}%)"
+                    if positive_percent is not None
+                    else f"±{sds[i, j]:.2f}",
                     ha="center",
                     va="center",
                     fontsize=5.2,
@@ -132,12 +143,16 @@ def render(output, metric, means, sds, columns=COLUMNS):
         orientation="horizontal",
         ticks=[0, 25, 50, 75, 100] if percentage else [-1, -0.5, 0, 0.5, 1],
     )
-    cb.set_label(METRICS[metric], labelpad=2)
+    cb.set_label(
+        METRICS[metric] + ("; (positive phrases %)" if positive_percent is not None else ""),
+        labelpad=2,
+    )
     cb.ax.tick_params(length=2, pad=2)
     cb.ax.get_xticklabels()[0].set_horizontalalignment("left")
     cb.ax.get_xticklabels()[-1].set_horizontalalignment("right")
-    fig.savefig(output / f"{metric}.pdf")
-    fig.savefig(output / f"{metric}.png", dpi=300)
+    stem = "phrase-cosine-positive" if positive_percent is not None else metric
+    fig.savefig(output / f"{stem}.pdf")
+    fig.savefig(output / f"{stem}.png", dpi=300)
     plt.close(fig)
 
 
