@@ -1,5 +1,11 @@
 {
-  "cmap": "turbo_r",
+  "cmap": "cosine_red_yellow_green_blue",
+  "colour_anchors": {
+    "-1": "#d73027",
+    "0": "#fff3a1",
+    "0.5": "#66bd63",
+    "1": "#2166ac"
+  },
   "vmin": -1.0,
   "observed_min": -0.01257216139857644,
   "vmax": 1.0,

@@ -69,7 +69,9 @@ def compact_cosine(value):
     return f"{value:z.2f}".replace("0.", ".", 1) if abs(value) < 0.995 else f"{value:.2f}"
 
 
-def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None, turbo_style=False):
+def render(
+    output, metric, means, sds, columns=COLUMNS, positive_percent=None, anchored_style=False
+):
     width = len(columns)
     boundaries = [i - 0.5 for i in range(1, width) if columns[i][1] != columns[i - 1][1]]
     edges = [-0.5, *boundaries, width - 0.5]
@@ -86,9 +88,16 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None, t
     plt.rcParams.update({"font.size": 7, "pdf.fonttype": 42})
     fig, ax = plt.subplots(figsize=(3.5 if width == 7 else 4.9, 3.65))
     fig.subplots_adjust(left=0.245 if width == 7 else 0.18, right=0.985, top=0.87, bottom=0.17)
+    from matplotlib.colors import LinearSegmentedColormap
+
+    anchored_cmap = LinearSegmentedColormap.from_list(
+        "cosine_red_yellow_green_blue",
+        [(0.0, "#d73027"), (0.5, "#fff3a1"), (0.75, "#66bd63"), (1.0, "#2166ac")],
+        N=1025,
+    )
     im = ax.imshow(
         means,
-        cmap="turbo_r" if turbo_style else "cividis" if percentage else "RdBu",
+        cmap=anchored_cmap if anchored_style else "cividis" if percentage else "RdBu",
         vmin=0 if percentage else -1,
         vmax=100 if percentage else 1,
         aspect="auto",
@@ -103,7 +112,7 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None, t
         for j in range(width):
             value = means[i, j]
             color = "white" if (value < 48 if percentage else abs(value) > 0.55) else "black"
-            if turbo_style:
+            if anchored_style:
                 rgb = np.array(im.cmap(im.norm(value))[:3])
                 linear = np.where(rgb <= 0.04045, rgb / 12.92, ((rgb + 0.055) / 1.055) ** 2.4)
                 color = "black" if linear @ [0.2126, 0.7152, 0.0722] > 0.179 else "white"
@@ -113,7 +122,7 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None, t
                 f"{value:.1f}"
                 if percentage
                 else compact_cosine(value)
-                if positive_percent is not None or turbo_style
+                if positive_percent is not None or anchored_style
                 else f"{value:.2f}",
                 ha="center",
                 va="center",
@@ -127,7 +136,7 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None, t
                     f"({positive_percent[i, j]:.1f}%)"
                     if positive_percent is not None
                     else f"±{compact_cosine(sds[i, j])}"
-                    if turbo_style
+                    if anchored_style
                     else f"±{sds[i, j]:.2f}",
                     ha="center",
                     va="center",
@@ -148,7 +157,7 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None, t
         cax=cax,
         orientation="horizontal",
         ticks=[-1, -0.5, 0, 0.5, 1]
-        if turbo_style
+        if anchored_style
         else [0, 25, 50, 75, 100]
         if percentage
         else [-1, -0.5, 0, 0.5, 1],
@@ -157,7 +166,7 @@ def render(output, metric, means, sds, columns=COLUMNS, positive_percent=None, t
         METRICS[metric] + ("; (positive phrases %)" if positive_percent is not None else ""),
         labelpad=2,
     )
-    if turbo_style:
+    if anchored_style:
         cb.set_ticklabels(["−1", "−.5", "0", ".5", "1"])
     cb.ax.tick_params(length=2, pad=2)
     cb.ax.get_xticklabels()[0].set_horizontalalignment("left")

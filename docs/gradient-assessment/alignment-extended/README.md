@@ -91,8 +91,8 @@ Reproduce with `scripts/render_gradient_cosine_positive.py` using the project Py
 ## Current phrase-cosine styling
 
 The primary [phrase-cosine figure](phrase-cosine.png) again shows mean ± SD,
-with the leading zero omitted in both numbers. It uses Matplotlib's `turbo_r`
-with the full linear cosine colour range from −1 (red) to +1 (blue/purple);
+with the leading zero omitted in both numbers. It uses a custom interpolated colour map
+anchored at −1 (red), 0 (yellow), .5 (green) and +1 (strong blue);
 ticks mark −1, −.5, 0, .5 and 1. Negative means are retained without clipping. Colour
 encodes mean only, not SD. This replaces the original full-range RdBu styling
 for this figure; other metric figures retain their previous scales.

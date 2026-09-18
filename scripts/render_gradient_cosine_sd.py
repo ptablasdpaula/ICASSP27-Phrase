@@ -1,4 +1,4 @@
-"""Render saved phrase cosine ± SD with an full-range reversed turbo map."""
+"""Render saved phrase cosine ± SD with explicit colour anchors."""
 
 import csv
 import json
@@ -24,7 +24,7 @@ def main():
             row = rows[events, condition, loss]
             means[i, j], sds[i, j] = float(row["mean"]), float(row["candidate_sd"])
     assert np.isfinite(means).all() and np.isfinite(sds).all()
-    render(output, "phrase-cosine", means, sds, EXTENDED_COLUMNS, turbo_style=True)
+    render(output, "phrase-cosine", means, sds, EXTENDED_COLUMNS, anchored_style=True)
     headers = [
         f"{ {'joint': 'Both', 'pitch': 'Pitch', 'time': 'Time'}[c] }: {n}"
         for n, c in EXTENDED_COLUMNS
@@ -42,7 +42,8 @@ def main():
     (output / "phrase-cosine-style.json").write_text(
         json.dumps(
             dict(
-                cmap="turbo_r",
+                cmap="cosine_red_yellow_green_blue",
+                colour_anchors={"-1": "#d73027", "0": "#fff3a1", "0.5": "#66bd63", "1": "#2166ac"},
                 vmin=-1.0,
                 observed_min=float(means.min()),
                 vmax=1.0,
