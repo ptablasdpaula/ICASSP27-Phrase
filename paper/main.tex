@@ -150,39 +150,44 @@ $P=\Phi(x),\hat P=\Phi(\hat x)\in\mathbb R_+^{K\times N}$, where
 $\Phi(x)_{k,n}=|\operatorname{STFT}(x)_{k,n}|^2$. We use a periodic Hann
 window, a 256-point \gls{fft}, and a 64-sample hop.
 
-For $q=(d_t,d_f)\in\{\rightarrow,\leftarrow\}\times\{\uparrow,\downarrow\}$,
-write $a\preceq_d b$ for $a\leq b$ when $d\in\{\rightarrow,\uparrow\}$ and
-$a\geq b$ otherwise. The directional cumulative-power surfaces are
+A direction pair $q=(d_t,d_f)$ indexes one of four cumulative views. In time,
+$\rightarrow$ includes frames $0,\ldots,n$ and $\leftarrow$ includes
+$n,\ldots,N-1$; in frequency, $\uparrow$ includes bins $0,\ldots,k$ and
+$\downarrow$ includes $k,\ldots,K-1$. Thus, the arrows give the starting corner
+and accumulation direction. Writing $a\preceq_d b$ for
+$a\leq b$ when $d\in\{\rightarrow,\uparrow\}$ and $a\geq b$ otherwise, the
+target and candidate surfaces are
 \begin{equation*}
 S_q(P)_{k,n}=\sum_{i\preceq_{d_f}k}\sum_{j\preceq_{d_t}n}P_{i,j},
 \qquad \hat S_q=S_q(\hat P).
 \end{equation*}
 Each value contains the power in the rectangle from the selected corner to
 $(k,n)$, as shown in Fig.~\ref{fig:cumulative-surfaces}. Let
-$m=\sum_{k,n}P_{k,n}>0$. For equal total power, the normalised surfaces are
-four quadrant CDF/cumulative-tail combinations; for example, if
-$(\mathsf F,\mathsf T)\sim P/m$, then
+$m=\sum_{k,n}P_{k,n}>0$ and define the discrete random frequency--time location
+$(\mathsf F,\mathsf T)$ by $\Pr(\mathsf F=f_k,\mathsf T=t_n)=P_{k,n}/m$.
+Then $S_q/m$ gives four quadrant combinations of \glspl{cdf} and cumulative
+tails~\cite{torres2024sot,peyre2019computational}; for example,
 $S_{(\rightarrow,\uparrow)}(P)_{k,n}/m
-=\Pr(\mathsf F\leq f_k,\mathsf T\leq t_n)$. Otherwise, the common target scale
-retains total-power error. Their uniform average is invariant to reversal of
-either axis.
+=\Pr(\mathsf F\leq f_k,\mathsf T\leq t_n)$. When candidate power equals $m$,
+$\hat S_q/m$ is analogous; otherwise, the common scale retains total-power
+error. Their uniform average is invariant to reversal of either axis.
 
-For pointwise $\phi:\mathbb R_+\rightarrow\mathbb R$ and any nonempty direction
-set $\mathcal Q$, define
+For a pointwise feature map $\phi:\mathbb R_+\rightarrow\mathbb R$, let
+$E_q$ be the candidate-minus-target surface error. For any nonempty set
+$\mathcal Q$ of direction pairs, define
 \begin{equation*}
 \begin{aligned}
-\ell_q&=\|\phi(\hat S_q/m)-\phi(S_q/m)\|_{w_q,2},\\
+E_q(k,n)&=\phi(\hat S_q(k,n)/m)-\phi(S_q(k,n)/m),\\
+\ell_q&=\left[\frac1{KN}\sum_{k,n}|E_q(k,n)|^2\right]^{1/2},\\
 \mathcal L_{\mathcal Q}(x,\hat x)&=
 \frac1{|\mathcal Q|}\sum_{q\in\mathcal Q}\ell_q.
 \end{aligned}
 \end{equation*}
-Here $\|A\|_{w_q,2}^2=\sum_{k,n}w_{q,k,n}|A_{k,n}|^2$, with nonnegative
-weights summing to one. Uniform $w_{q,k,n}=1/(KN)$ gives \gls{rms};
-Log-Weighing uses time--log-frequency cell areas. Evaluated variants use
-$\phi(u)=\sqrt{\max(u,10^{-12})}$.
 
+\textbf{Relation to the Cram\'er Distance.}
 For unit-mass $p,\hat p$ on $z_k=z_0+k\Delta$, let
-$F_p(k)=\sum_{i\leq k}p_i$. One-axis accumulation with $\phi(u)=u$ satisfies
+$F_p$ be the CDF and write $F_p(k):=F_p(z_k)=\sum_{i\leq k}p_i$. One-axis
+accumulation with $\phi(u)=u$ satisfies
 \begin{equation*}
 \begin{aligned}
 d_{\rm C}^2(p,\hat p)&:=\int_{\mathbb R}|F_p(z)-F_{\hat p}(z)|^2\,dz\\
@@ -190,13 +195,12 @@ d_{\rm C}^2(p,\hat p)&:=\int_{\mathbb R}|F_p(z)-F_{\hat p}(z)|^2\,dz\\
 =K\Delta\ell_{\uparrow}^2.
 \end{aligned}
 \end{equation*}
-Thus $\ell_{\uparrow}=d_{\rm C}/\sqrt{K\Delta}$ exactly; reverse accumulation
-gives the same sum through the cumulative tails. After unit normalisation of
-each slice, frequency-only and time-only accumulation give scaled RMSs of
-per-frame and per-bin Cram\'er distances, respectively. The diagonal surfaces
-instead yield two-dimensional quadrant-CDF discrepancies. The one-dimensional
-$1$-Wasserstein distance applies $L_1$ to the same CDF residual for which
-Cram\'er uses $L_2$
+Thus $\ell_{\uparrow}=d_{\rm C}/\sqrt{K\Delta}$ exactly, with reverse
+accumulation giving the same result. After unit normalisation of each slice,
+frequency-only and time-only accumulation yield scaled RMSs of per-frame and
+per-bin Cram\'er distances; diagonals instead yield two-dimensional
+quadrant-CDF discrepancies. The one-dimensional $1$-Wasserstein distance
+applies $L_1$ to the same CDF residual for which Cram\'er uses $L_2$
 \cite{szekely2013energy}\cite[Remark~2.30]{peyre2019computational}.
 
 
