@@ -21,7 +21,7 @@ from icassp27_phrase.targets import load_target
 ROOT = Path("results/phrase-recovery-16k-sot")
 LOSS = "sot_published_composite"
 LABEL = "SOT"
-TARGETS_PER_SHARD = 75
+TARGETS_PER_SHARD = 50
 SHARD_SPECS = tuple(
     (LOSS, cardinality, begin, TARGETS_PER_SHARD)
     for cardinality in CARDINALITIES
