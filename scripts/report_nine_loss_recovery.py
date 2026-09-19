@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate, aggregate, and render the fixed nine-loss recovery study."""
+"""Validate the full recovery archive and report the screened objectives."""
 
 from __future__ import annotations
 
@@ -28,6 +28,25 @@ QUALIFICATION = Path("results/phrase-recovery-16k/qualification-cuda.json")
 OUTPUT = Path("docs/phrase-recovery/16k")
 PAPER = Path("paper/figures")
 METRICS = ("pitch_mae_cents", "onset_mae_ms", "log_spectral_distance_db")
+REPORT_LOSSES = (
+    "single_stft",
+    "smooth_mss",
+    "log_jtfot",
+    "cel",
+    "log_cel",
+    "dec_cel",
+    "tlog_cel",
+)
+REPORT_LABELS = (
+    "SS",
+    "SmoMSS",
+    "logTFW2",
+    "CeL",
+    "logCeL",
+    "decCeL",
+    "tlogCeL",
+)
+EXCLUDED_AFTER_SCREEN = ("mss", "linear_jtfot")
 
 
 def sha256(path: Path) -> str:
@@ -59,6 +78,15 @@ def expected_keys() -> set[tuple[str, int, int]]:
     return {
         (loss, cardinality, target)
         for loss in recovery.LOSSES
+        for cardinality in recovery.CARDINALITIES
+        for target in range(recovery.TARGETS_PER_CELL)
+    }
+
+
+def reported_keys() -> set[tuple[str, int, int]]:
+    return {
+        (loss, cardinality, target)
+        for loss in REPORT_LOSSES
         for cardinality in recovery.CARDINALITIES
         for target in range(recovery.TARGETS_PER_CELL)
     }
@@ -200,7 +228,7 @@ def compute_lsd(rows: dict[tuple[str, int, int], dict], device: str) -> dict:
                 device=device,
             )
             target_audio = synth(target_f0, target_onset)
-            for loss in recovery.LOSSES:
+            for loss in REPORT_LOSSES:
                 group = [
                     rows[loss, cardinality, index]
                     for index in range(recovery.TARGETS_PER_CELL)
@@ -221,7 +249,7 @@ def compute_lsd(rows: dict[tuple[str, int, int], dict], device: str) -> dict:
                     if not math.isfinite(value) or value < 0:
                         raise FloatingPointError(f"invalid LSD for {(loss, cardinality, index)}")
                     values[loss, cardinality, index] = value
-    if set(values) != expected_keys():
+    if set(values) != reported_keys():
         raise ValueError("LSD pass did not cover every fit")
     return values
 
@@ -253,7 +281,7 @@ def write_per_phrase(rows: dict, lsd: dict, path: Path) -> None:
         with os.fdopen(descriptor, "w", newline="", encoding="utf-8") as stream:
             writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
             writer.writeheader()
-            for loss, label in zip(recovery.LOSSES, recovery.LABELS, strict=True):
+            for loss, label in zip(REPORT_LOSSES, REPORT_LABELS, strict=True):
                 for cardinality in recovery.CARDINALITIES:
                     for target in range(recovery.TARGETS_PER_CELL):
                         row = rows[loss, cardinality, target]
@@ -293,7 +321,7 @@ def write_per_phrase(rows: dict, lsd: dict, path: Path) -> None:
 def summarize(rows: dict, lsd: dict) -> tuple[list[dict], dict]:
     records = []
     medians = defaultdict(dict)
-    for loss, label in zip(recovery.LOSSES, recovery.LABELS, strict=True):
+    for loss, label in zip(REPORT_LOSSES, REPORT_LABELS, strict=True):
         for cardinality in recovery.CARDINALITIES:
             for metric in METRICS:
                 if metric == "log_spectral_distance_db":
@@ -352,9 +380,7 @@ def format_value(value: float) -> str:
 def render_table(medians: dict, path: Path) -> None:
     labels = (
         "SS",
-        "MSS",
         "SmoMSS",
-        r"$\mathrm{TF}\mathcal{W}_2$",
         r"log-$\mathrm{TF}\mathcal{W}_2$",
         r"Ce$\mathcal L$ (Ours)",
         r"logCe$\mathcal L$ (Ours)",
@@ -362,8 +388,6 @@ def render_table(medians: dict, path: Path) -> None:
         r"tlogCe$\mathcal L$ (Ours)",
     )
     configurations = (
-        ("--", "--", "--"),
-        ("--", "--", "--"),
         ("--", "--", "--"),
         ("--", "--", "--"),
         ("--", "--", "--"),
@@ -396,7 +420,7 @@ def render_table(medians: dict, path: Path) -> None:
         r"\midrule",
     ]
     for index, (loss, label, configuration) in enumerate(
-        zip(recovery.LOSSES, labels, configurations, strict=True)
+        zip(REPORT_LOSSES, labels, configurations, strict=True)
     ):
         cells = []
         for metric in ("pitch_mae_cents", "onset_mae_ms"):
@@ -407,7 +431,7 @@ def render_table(medians: dict, path: Path) -> None:
         lines.append(
             " & ".join((label, *configuration, *cells)) + r" \\"
         )
-        if index == 4:
+        if index == 2:
             lines.append(r"\addlinespace[1pt]")
     lines.extend((r"\bottomrule", r"\end{tabularx}", r"\endgroup"))
     atomic_text(path, "\n".join(lines) + "\n")
@@ -437,9 +461,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
 
     labels = (
         "SS",
-        "MSS",
         "SmoMSS",
-        r"$\mathrm{TF}\mathcal{W}_2$",
         r"log-$\mathrm{TF}\mathcal{W}_2$",
         r"Ce$\mathcal{L}$",
         r"logCe$\mathcal{L}$",
@@ -449,14 +471,14 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
     cmap = plt.get_cmap("magma")
     colors = dict(
         zip(
-            recovery.LOSSES,
-            [cmap(value) for value in np.linspace(0.08, 0.92, len(recovery.LOSSES))],
+            REPORT_LOSSES,
+            [cmap(value) for value in np.linspace(0.08, 0.92, len(REPORT_LOSSES))],
             strict=True,
         )
     )
     figure, axis = plt.subplots(figsize=(3.45, 2.58))
-    offsets = np.linspace(-0.36, 0.36, len(recovery.LOSSES))
-    for loss_index, loss in enumerate(recovery.LOSSES):
+    offsets = np.linspace(-0.36, 0.36, len(REPORT_LOSSES))
+    for loss_index, loss in enumerate(REPORT_LOSSES):
         for cardinality_index, cardinality in enumerate(recovery.CARDINALITIES):
             values = np.asarray([lsd[loss, cardinality, index] for index in range(150)])
             position = cardinality_index + offsets[loss_index]
@@ -492,7 +514,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
     axis.legend(
         handles=[
             Patch(facecolor=colors[loss], edgecolor="black", label=label)
-            for loss, label in zip(recovery.LOSSES, labels, strict=True)
+            for loss, label in zip(REPORT_LOSSES, labels, strict=True)
         ],
         ncol=3,
         loc="lower center",
@@ -515,7 +537,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
 
 def write_markdown(medians: dict, path: Path) -> None:
     lines = [
-        "# Nine-loss phrase recovery",
+        "# Screened phrase recovery",
         "",
         "Medians across 150 target phrases; each phrase metric is the mean absolute error "
         "after octave-second Hungarian assignment.",
@@ -530,7 +552,7 @@ def write_markdown(medians: dict, path: Path) -> None:
                 "|---|" + "---:|" * len(recovery.CARDINALITIES),
             )
         )
-        for loss, label in zip(recovery.LOSSES, recovery.LABELS, strict=True):
+        for loss, label in zip(REPORT_LOSSES, REPORT_LABELS, strict=True):
             values = " | ".join(
                 f"{medians[metric][loss, cardinality]:.6g}"
                 for cardinality in recovery.CARDINALITIES
@@ -561,11 +583,13 @@ def main() -> None:
     provenance = {
         "schema": "phrase-recovery-16k-report-v1",
         "created_utc": datetime.now(UTC).isoformat(),
-        "fit_count": len(rows),
-        "loss_count": len(recovery.LOSSES),
+        "fit_count": len(reported_keys()),
+        "validated_fit_count": len(rows),
+        "loss_count": len(REPORT_LOSSES),
         "target_phrases_per_condition": recovery.TARGETS_PER_CELL,
         "cardinalities": recovery.CARDINALITIES,
-        "losses": recovery.LOSSES,
+        "losses": REPORT_LOSSES,
+        "excluded_after_single_event_screen": EXCLUDED_AFTER_SCREEN,
         "reported_iterate": "strict lowest-loss iterate",
         "aggregation": (
             "median across phrases of within-phrase Hungarian-matched mean absolute error"
@@ -587,7 +611,8 @@ def main() -> None:
         json.dumps(
             {
                 "status": "complete",
-                "fits": len(rows),
+                "fits": len(reported_keys()),
+                "validated_fits": len(rows),
                 "shards": len(validation["raw_shards"]),
                 "aggregate_gpu_hours": validation["aggregate_gpu_hours"],
                 "artifacts": provenance["artifacts"],
