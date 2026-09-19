@@ -13,6 +13,7 @@ cd /data/home/acw794/ICASSP27-Phrase
 mkdir -p results/phrase-recovery-16k/logs
 export PYTHONHOME="$PWD/.pixi/envs/default" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 "$PWD/.pixi/envs/default/bin/python" - <<'PY'
 import os
 import sys

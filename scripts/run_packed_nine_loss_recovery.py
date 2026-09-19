@@ -19,9 +19,8 @@ ROOT = Path("results/phrase-recovery-16k")
 def targets_per_shard(loss: str, cardinality: int) -> int:
     if loss not in recovery.LOSSES or cardinality not in CARDINALITIES:
         raise ValueError("unsupported loss or cardinality")
-    # Andrena's A100 nodes and longer wall-time limit let each loss/cardinality
-    # cell share one target-bound objective and one vectorised optimiser.
-    return recovery.TARGETS_PER_CELL
+    # Two A100-safe vectorised shards cover each 150-target cell.
+    return recovery.TARGETS_PER_CELL // 2
 
 
 def build_specs():

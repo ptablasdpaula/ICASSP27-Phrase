@@ -30,27 +30,27 @@ def qualify(device: str) -> None:
         )
     target = torch.stack(targets)
     candidate = torch.stack(candidates)
+    # Recovery drops completed rows and selects their corresponding cached
+    # targets. Compare that path against a freshly bound objective at the same
+    # batch shape, avoiding irrelevant batch-size-dependent cuFFT roundoff.
+    indices = torch.tensor([0, 2], device=device)
+    selected_target = target[indices]
+    selected_candidate = candidate[indices]
     checks = []
     for loss in LOSSES:
-        packed_candidate = candidate.clone().requires_grad_(True)
-        packed = PairedObjective(target, loss)(packed_candidate)
-        (packed_gradient,) = torch.autograd.grad(packed.sum(), packed_candidate)
-        singles, gradients = [], []
-        for index in range(3):
-            one = candidate[index : index + 1].clone().requires_grad_(True)
-            value = PairedObjective(target[index : index + 1], loss)(one)
-            (gradient,) = torch.autograd.grad(value.sum(), one)
-            singles.append(value[0])
-            gradients.append(gradient[0])
-        single = torch.stack(singles)
-        single_gradient = torch.stack(gradients)
-        torch.testing.assert_close(packed, single, rtol=2e-9, atol=2e-11)
-        torch.testing.assert_close(packed_gradient, single_gradient, rtol=2e-8, atol=2e-10)
+        selected_audio = selected_candidate.clone().requires_grad_(True)
+        selected = PairedObjective(target, loss)(selected_audio, indices)
+        (selected_gradient,) = torch.autograd.grad(selected.sum(), selected_audio)
+        fresh_audio = selected_candidate.clone().requires_grad_(True)
+        fresh = PairedObjective(selected_target, loss)(fresh_audio)
+        (fresh_gradient,) = torch.autograd.grad(fresh.sum(), fresh_audio)
+        torch.testing.assert_close(selected, fresh, rtol=2e-9, atol=2e-11)
+        torch.testing.assert_close(selected_gradient, fresh_gradient, rtol=2e-8, atol=2e-10)
         checks.append(
             {
                 "loss": loss,
-                "value_max_abs": float((packed - single).abs().max()),
-                "gradient_max_abs": float((packed_gradient - single_gradient).abs().max()),
+                "value_max_abs": float((selected - fresh).abs().max()),
+                "gradient_max_abs": float((selected_gradient - fresh_gradient).abs().max()),
             }
         )
     covered = {

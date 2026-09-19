@@ -14,6 +14,7 @@ cd /data/home/acw794/ICASSP27-Phrase
 mkdir -p results/phrase-recovery-16k/logs
 export PYTHONHOME="$PWD/.pixi/envs/default" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 "$PWD/.pixi/envs/default/bin/python" - <<'PY'
 import os
 import sys
@@ -24,5 +25,5 @@ PY
 cardinalities=(1 2 4 6 8)
 cardinality=${cardinalities[${SLURM_ARRAY_TASK_ID:?}]}
 exec "$PWD/.pixi/envs/default/bin/python" scripts/benchmark_recovery_batch_scaling.py \
-  --cardinality "$cardinality" --batches 150 \
+  --cardinality "$cardinality" --batches 75 \
   --output "results/phrase-recovery-16k/batch-scaling-c${cardinality}.json"

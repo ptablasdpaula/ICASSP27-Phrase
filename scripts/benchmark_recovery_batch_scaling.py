@@ -61,6 +61,8 @@ def run(cardinality: int, batches: tuple[int, ...], output: Path) -> None:
             }
             rows.append(row)
             print(json.dumps(row), flush=True)
+            del objective, raw, f0, onset, value, gradient
+            torch.cuda.empty_cache()
     sig, hashes = signature()
     payload = {
         "schema": "phrase-recovery-16k-batch-scaling-v1",
@@ -79,7 +81,7 @@ def run(cardinality: int, batches: tuple[int, ...], output: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cardinality", type=int, required=True)
-    parser.add_argument("--batches", default="150")
+    parser.add_argument("--batches", default="75")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     torch.set_num_threads(1)
