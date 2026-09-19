@@ -74,7 +74,7 @@ def compute(device: str, batch_size: int) -> tuple[np.ndarray, np.ndarray, dict[
                 else:
                     f0 = 160.0 * 2.0**displacement
                     onset = torch.ones_like(displacement)
-                audio = synth(f0, onset)
+                audio = synth(f0.clamp(80.0, 320.0), onset.clamp(0.2, 1.8))
                 terms = objectives.values(audio)
                 for index, name in enumerate(NAMES):
                     values[row, index, begin : begin + len(displacement)] = (
