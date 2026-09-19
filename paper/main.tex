@@ -81,7 +81,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \maketitle
 
 \begin{abstract}
-\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 90,112 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the seven objectives whose single-event alignment rounds to at least .10 across 5,250 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing, pitch, and delay-line length, and provide a PyTorch library for future applications\footnote{The Ce$\mathcal L$s library is available at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0}.}.
+\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 90,112 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the seven objectives whose single-event alignment rounds to at least .10, plus two low-alignment transport controls, across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing, pitch, and delay-line length, and provide a PyTorch library for future applications\footnote{The Ce$\mathcal L$s library is available at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0}.}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -381,9 +381,11 @@ Seed 2029 generates 150 scrambled-LHS targets at each cardinality. Every
 candidate begins with all pitches at 160~Hz and onsets isochronously spaced
 within 0.2--1.8~s; independent logits constrain both coordinates to their
 registered ranges. We retain the seven objectives whose one-event Joint mean
-cosine rounds to at least $.10$.
+cosine rounds to at least $.10$. We additionally retain \gls{sot} and linear
+\gls{tfw} as low-alignment controls, testing whether the diagnostic predicts
+final optimisation.
 
-Each of the resulting 5,250 fits uses Adam with learning rate $.05$. Division
+Each of the resulting 6,750 fits uses Adam with learning rate $.05$. Division
 by each phrase's initial loss conditions the step scale while leaving reported
 losses raw. ReduceLROnPlateau uses factor $.5$ and patience 200. Independent
 early stopping uses a 1000-update patience, with a 20,000-update cap. We report
@@ -404,7 +406,7 @@ We introduced \glspl{cel} for joint pluck-onset and pitch recovery. Across
 90,112 comparisons, they give the highest mean Joint gradient cosine at every
 cardinality and retain $.10$--$.13$ at eight events, against at most $.04$ for
 the baselines. Their advantage also holds when only pitch or onset is unknown.
-Across the 5,250 matched fits, decCe$\mathcal L$ gives the lowest median pitch
+Across the 6,750 matched fits, decCe$\mathcal L$ gives the lowest median pitch
 error and \gls{lsd} from four to eight events. Its onset error is lowest at
 four events and remains within 3.7~ms of the best median at six and eight
 events.

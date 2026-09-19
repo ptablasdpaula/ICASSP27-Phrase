@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import run_nine_loss_recovery as recovery
 import run_packed_nine_loss_recovery as packed
+import run_sot_recovery_addon as sot_addon
 import torch
 from icassp27_phrase.metrics import log_spectral_distance, recovery_metrics
 from icassp27_phrase.runtime import require_df2_backend
@@ -25,12 +26,15 @@ from icassp27_phrase.synth import PhraseSynth
 
 RAW = Path("results/phrase-recovery-16k/raw")
 QUALIFICATION = Path("results/phrase-recovery-16k/qualification-cuda.json")
+SOT_QUALIFICATION = Path("results/phrase-recovery-16k-sot/qualification.json")
 OUTPUT = Path("docs/phrase-recovery/16k")
 PAPER = Path("paper/figures")
 METRICS = ("pitch_mae_cents", "onset_mae_ms", "log_spectral_distance_db")
 REPORT_LOSSES = (
     "single_stft",
     "smooth_mss",
+    "sot_published_composite",
+    "linear_jtfot",
     "log_jtfot",
     "cel",
     "log_cel",
@@ -40,13 +44,16 @@ REPORT_LOSSES = (
 REPORT_LABELS = (
     "SS",
     "SmoMSS",
+    "SOT",
+    "TFW2",
     "logTFW2",
     "CeL",
     "logCeL",
     "decCeL",
     "tlogCeL",
 )
-EXCLUDED_AFTER_SCREEN = ("mss", "linear_jtfot")
+LOW_ALIGNMENT_CONTROLS = ("sot_published_composite", "linear_jtfot")
+EXCLUDED_AFTER_SCREEN = ("mss",)
 
 
 def sha256(path: Path) -> str:
@@ -197,12 +204,110 @@ def validate() -> tuple[dict[tuple[str, int, int], dict], dict]:
     return rows, metadata
 
 
+def validate_sot() -> tuple[dict[tuple[str, int, int], dict], dict]:
+    paths = sorted((sot_addon.ROOT / "raw").glob("*/*.json.gz"))
+    if len(paths) != sot_addon.TOTAL_SHARDS:
+        raise ValueError(f"expected {sot_addon.TOTAL_SHARDS} SOT shards, found {len(paths)}")
+    qualification = json.loads(SOT_QUALIFICATION.read_text())
+    signature = qualification["scientific_signature"]
+    execution_plan = sot_addon.plan_hash()
+    if not qualification["passed"] or qualification["execution_plan_sha256"] != execution_plan:
+        raise ValueError("SOT qualification is missing or belongs to another execution plan")
+
+    rows: dict[tuple[str, int, int], dict] = {}
+    manifest = []
+    source_commits: Counter[str] = Counter()
+    gpus: Counter[str] = Counter()
+    stop_reasons: Counter[str] = Counter()
+    schedules: set[str] = set()
+    total_wall_seconds = 0.0
+    for path in paths:
+        with gzip.open(path, "rt") as stream:
+            payload = json.load(stream)
+        task = payload["addon_task"]
+        if path != sot_addon.expected_path(task):
+            raise ValueError(f"SOT task {task} is stored at an unexpected path")
+        loss, cardinality, begin, count = sot_addon.SHARD_SPECS[task]
+        if (payload["loss"], payload["cardinality"], payload["target_range"]) != (
+            loss,
+            cardinality,
+            [begin, begin + count],
+        ):
+            raise ValueError(f"SOT task coordinates changed in {path}")
+        if (
+            payload["schema"] != "phrase-recovery-16k-sot-addon-v1"
+            or payload["signature"] != signature
+            or payload["source_hashes"] != qualification["source_hashes"]
+            or payload["execution_plan"] != "sot-recovery-addon-v1"
+            or payload["execution_plan_sha256"] != execution_plan
+            or payload["addon_source_sha256"] != execution_plan
+            or len(payload["rows"]) != count
+        ):
+            raise ValueError(f"SOT provenance mismatch in {path}")
+        source_commits[payload["source_commit"]] += 1
+        gpus[payload["gpu"]] += 1
+        schedules.add(json.dumps(payload["schedule"], sort_keys=True))
+        total_wall_seconds += payload["wall_seconds"]
+        manifest.append({"path": str(path), "sha256": sha256(path), "task": task})
+        for offset, row in enumerate(payload["rows"]):
+            target = begin + offset
+            key = (loss, cardinality, target)
+            if key in rows:
+                raise ValueError(f"duplicate SOT fit {key}")
+            recomputed = recovery_metrics(
+                np.asarray(row["reported_f0_hz"]),
+                np.asarray(row["reported_onset_seconds"]),
+                np.asarray(row["target"]["f0_hz"]),
+                np.asarray(row["target"]["onset_seconds"]),
+            )
+            metrics = row["metrics"]
+            if (
+                row["target_id"] != f"C{cardinality:02d}-T{target:04d}"
+                or row["target"]["index"] != target + 1
+                or row["target"]["cardinality"] != cardinality
+                or recomputed["assignment"] != metrics["assignment"]
+                or recomputed["assignment_tied"] != metrics["assignment_tied"]
+                or abs(recomputed["pitch_mae_cents"] - metrics["pitch_mae_cents"]) > 1e-9
+                or abs(recomputed["onset_mae_ms"] - metrics["onset_mae_ms"]) > 1e-9
+            ):
+                raise ValueError(f"SOT row does not reproduce in {key}")
+            scalars = [row[name] for name in ("initial_loss", "reported_loss", "terminal_loss")]
+            if not all(math.isfinite(value) and value >= 0 for value in scalars):
+                raise FloatingPointError(f"invalid SOT objective value in {key}")
+            if row["reported_loss"] > min(row["initial_loss"], row["terminal_loss"]) + 1e-12:
+                raise ValueError(f"reported SOT iterate is not the retained strict best in {key}")
+            if not 0 < row["updates"] <= recovery.SCHEDULE.maximum_updates:
+                raise ValueError(f"invalid SOT update count in {key}")
+            if row["stopped_by"] not in {"patience", "maximum_updates"}:
+                raise ValueError(f"invalid SOT stopping reason in {key}")
+            stop_reasons[row["stopped_by"]] += 1
+            rows[key] = row
+
+    expected = {
+        (sot_addon.LOSS, cardinality, target)
+        for cardinality in recovery.CARDINALITIES
+        for target in range(recovery.TARGETS_PER_CELL)
+    }
+    if set(rows) != expected or len(schedules) != 1:
+        raise ValueError("SOT outputs do not cover every expected fit under one schedule")
+    return rows, {
+        "scientific_signature": signature,
+        "execution_plan_sha256": execution_plan,
+        "source_commits": dict(source_commits),
+        "gpus": dict(gpus),
+        "stop_reasons": dict(stop_reasons),
+        "aggregate_gpu_hours": total_wall_seconds / 3600,
+        "raw_shards": manifest,
+    }
+
+
 def verify_common_targets(rows: dict[tuple[str, int, int], dict]) -> None:
     reference_loss = recovery.LOSSES[0]
+    compared_losses = (*recovery.LOSSES[1:], sot_addon.LOSS)
     for cardinality in recovery.CARDINALITIES:
         for target in range(recovery.TARGETS_PER_CELL):
             reference = rows[reference_loss, cardinality, target]["target"]
-            for loss in recovery.LOSSES[1:]:
+            for loss in compared_losses:
                 if rows[loss, cardinality, target]["target"] != reference:
                     raise ValueError(f"target differs across losses at C{cardinality}, T{target}")
 
@@ -381,6 +486,8 @@ def render_table(medians: dict, path: Path) -> None:
     labels = (
         "SS",
         "SmoMSS",
+        "SOT",
+        r"$\mathrm{TF}\mathcal{W}_2$",
         r"log-$\mathrm{TF}\mathcal{W}_2$",
         r"Ce$\mathcal L$ (Ours)",
         r"logCe$\mathcal L$ (Ours)",
@@ -388,6 +495,8 @@ def render_table(medians: dict, path: Path) -> None:
         r"tlogCe$\mathcal L$ (Ours)",
     )
     configurations = (
+        ("--", "--", "--"),
+        ("--", "--", "--"),
         ("--", "--", "--"),
         ("--", "--", "--"),
         ("--", "--", "--"),
@@ -431,7 +540,7 @@ def render_table(medians: dict, path: Path) -> None:
         lines.append(
             " & ".join((label, *configuration, *cells)) + r" \\"
         )
-        if index == 2:
+        if index == 4:
             lines.append(r"\addlinespace[1pt]")
     lines.extend((r"\bottomrule", r"\end{tabularx}", r"\endgroup"))
     atomic_text(path, "\n".join(lines) + "\n")
@@ -462,6 +571,8 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
     labels = (
         "SS",
         "SmoMSS",
+        "SOT",
+        r"$\mathrm{TF}\mathcal{W}_2$",
         r"log-$\mathrm{TF}\mathcal{W}_2$",
         r"Ce$\mathcal{L}$",
         r"logCe$\mathcal{L}$",
@@ -566,7 +677,11 @@ def main() -> None:
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
     torch.set_num_threads(1)
-    rows, validation = validate()
+    rows, main_validation = validate()
+    sot_rows, sot_validation = validate_sot()
+    if set(rows) & set(sot_rows):
+        raise ValueError("SOT add-on duplicates a main recovery key")
+    rows.update(sot_rows)
     verify_common_targets(rows)
     lsd = compute_lsd(rows, args.device)
     OUTPUT.mkdir(parents=True, exist_ok=True)
@@ -589,6 +704,7 @@ def main() -> None:
         "target_phrases_per_condition": recovery.TARGETS_PER_CELL,
         "cardinalities": recovery.CARDINALITIES,
         "losses": REPORT_LOSSES,
+        "low_alignment_controls": LOW_ALIGNMENT_CONTROLS,
         "excluded_after_single_event_screen": EXCLUDED_AFTER_SCREEN,
         "reported_iterate": "strict lowest-loss iterate",
         "aggregation": (
@@ -598,7 +714,7 @@ def main() -> None:
             "RMS difference between centered periodic-Hann FFT-1024/hop-256 log-magnitude "
             "spectra with a common target-relative -100 dB floor"
         ),
-        "validation": validation,
+        "validation": {"main": main_validation, "sot_addon": sot_validation},
         "artifacts": {
             "per_phrase_csv": sha256(per_phrase_path),
             "summary_csv": sha256(summary_path),
@@ -613,8 +729,10 @@ def main() -> None:
                 "status": "complete",
                 "fits": len(reported_keys()),
                 "validated_fits": len(rows),
-                "shards": len(validation["raw_shards"]),
-                "aggregate_gpu_hours": validation["aggregate_gpu_hours"],
+                "shards": len(main_validation["raw_shards"])
+                + len(sot_validation["raw_shards"]),
+                "aggregate_gpu_hours": main_validation["aggregate_gpu_hours"]
+                + sot_validation["aggregate_gpu_hours"],
                 "artifacts": provenance["artifacts"],
             },
             indent=2,
