@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run and report the paper's fixed-LHS twelve-loss gradient assessment."""
+"""Run and report the paper's fixed-LHS thirteen-loss gradient assessment."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ from fixed_gradient_assessment import (
     CARDINALITIES,
     COLUMNS,
     NAMES,
+    SCHEMA,
     TARGETS_PER_CARDINALITY,
     FixedObjectives,
     candidates,
@@ -27,22 +28,23 @@ from fixed_gradient_assessment import (
     signature,
     targets,
 )
-from icassp27_phrase.gradient_assessment import SCHEMA, matching
 from icassp27_phrase.losses import CEL_DIRECTIONS
+from icassp27_phrase.metrics import hungarian_assignment, phrase_gradient_cosine
 from icassp27_phrase.runtime import configure_reproducibility, require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
-from report_gradient_alignment import alignment, compact_cosine, render
+from report_gradient_alignment import compact_cosine, render
 
-ROOT = Path("results/gradient-assessment-fixed-lhs")
-OUTPUT = Path("docs/gradient-assessment/fixed-lhs")
+ROOT = Path("results/gradient-assessment-16k")
+OUTPUT = Path("docs/gradient-assessment/16k")
 PAPER_FIGURE = Path("paper/figures/gradient_alignment.pdf")
 LABELS = (
     r"$L_1$",
     r"$L_2$",
     "SS",
-    "LinMSS",
+    "MSS",
     "SmoMSS",
     "SOT",
+    "SOT-NC",
     r"$\mathrm{TF}\mathcal{W}_2$",
     r"log$\mathrm{TF}\mathcal{W}_2$",
     r"Ce$\mathcal{L}$",
@@ -54,9 +56,10 @@ TEXT_LABELS = (
     "L1",
     "L2",
     "SS",
-    "LinMSS",
+    "MSS",
     "SmoMSS",
     "SOT",
+    "SOT-NC",
     "TFW2",
     "logTFW2",
     "CeL",
@@ -103,7 +106,7 @@ def checked_data(path: Path) -> dict[str, np.ndarray]:
     if str(data["signature"]) != signature()[0]:
         raise ValueError(f"stale shard: {path}")
     if (
-        str(data["schema"]) != f"{SCHEMA}-fixed-lhs-v1"
+        str(data["schema"]) != SCHEMA
         or count != CANDIDATES_PER_TARGET
         or dimensions != 2
         or tuple(data["names"]) != NAMES
@@ -130,7 +133,7 @@ def qualify(root: Path, device: str, batch: int) -> None:
             if events > 1:
                 assert np.diff(target[:, 1]).min() >= 0.05 - 1e-12
     name, target = target_registry[2][0]
-    design = candidates(name, target)["joint"][: min(batch, 4)]
+    design = candidates(name, target)["joint"][:batch]
     synth = PhraseSynth().to(device)
     coordinates = torch.tensor(target, dtype=torch.float64, device=device)
     with torch.no_grad():
@@ -153,14 +156,20 @@ def qualify(root: Path, device: str, batch: int) -> None:
                 "50-ms target onset separation",
                 "256 deterministic LHS candidates per target",
                 "forward directions are right_up and right_down",
-                "finite values and gradients for all twelve losses",
+                "finite values and gradients for all thirteen losses",
             ],
         },
     )
     save_json(root / "design.json", design_metadata())
 
 
-def compute_cardinality(root: Path, events: int, batch: int, device: str) -> None:
+def compute_cardinality(
+    root: Path,
+    events: int,
+    batch: int,
+    device: str,
+    target_index: int | None = None,
+) -> None:
     setup(device)
     qualification = json.loads((root / "qualification.json").read_text())
     if not qualification["passed"] or qualification["signature"] != signature()[0]:
@@ -168,7 +177,12 @@ def compute_cardinality(root: Path, events: int, batch: int, device: str) -> Non
     synth = PhraseSynth().to(device)
     started = time.perf_counter()
     completed = 0
-    for name, target in registry()[events]:
+    selected = registry()[events]
+    if target_index is not None:
+        if not 0 <= target_index < len(selected):
+            raise ValueError("target_index is outside the fixed target registry")
+        selected = [selected[target_index]]
+    for name, target in selected:
         design = candidates(name, target)
         target_coordinates = torch.tensor(target, dtype=torch.float64, device=device)
         with torch.no_grad():
@@ -192,12 +206,14 @@ def compute_cardinality(root: Path, events: int, batch: int, device: str) -> Non
                 value, gradient = objective.evaluate(synth, positions[begin : begin + batch])
                 values.append(value)
                 gradients.append(gradient)
-            assignments, ties = zip(*(matching(row, target) for row in positions), strict=True)
+            assignments, ties = zip(
+                *(hungarian_assignment(row, target) for row in positions), strict=True
+            )
             output.parent.mkdir(parents=True, exist_ok=True)
             temporary = output.with_suffix(".tmp.npz")
             np.savez_compressed(
                 temporary,
-                schema=f"{SCHEMA}-fixed-lhs-v1",
+                schema=SCHEMA,
                 signature=signature()[0],
                 target=target,
                 candidates=positions,
@@ -222,11 +238,17 @@ def compute_cardinality(root: Path, events: int, batch: int, device: str) -> Non
                 flush=True,
             )
     save_json(
-        root / f"execution-c{events}.json",
+        root
+        / (
+            f"execution-c{events}-t{target_index:03d}.json"
+            if target_index is not None
+            else f"execution-c{events}.json"
+        ),
         {
             "complete": True,
             "signature": signature()[0],
             "events": events,
+            "target_index": target_index,
             "new_pairs": completed,
             "seconds": time.perf_counter() - started,
             "batch": batch,
@@ -259,7 +281,13 @@ def report(root: Path, output: Path, paper_figure: Path | None) -> None:
             design = candidates(name, target)[condition]
             np.testing.assert_array_equal(data["target"], target)
             np.testing.assert_array_equal(data["candidates"], design)
-            values = alignment(data)["phrase-cosine"]
+            values = phrase_gradient_cosine(
+                data["gradients"],
+                data["candidates"],
+                data["target"],
+                data["assignments"],
+                data["ties"],
+            )
             blocks.append(values)
             quality.append(
                 {
@@ -341,8 +369,11 @@ def report(root: Path, output: Path, paper_figure: Path | None) -> None:
             "sd": "Across candidate phrases, ddof=1; descriptive, not a confidence interval",
             "renderer": PhraseSynth().provenance(),
             "execution": {
-                str(events): json.loads((root / f"execution-c{events}.json").read_text())
+                f"{events}-{index:03d}": json.loads(
+                    (root / f"execution-c{events}-t{index:03d}.json").read_text()
+                )
                 for events in CARDINALITIES
+                for index in range(TARGETS_PER_CARDINALITY)
             },
         },
     )
@@ -359,6 +390,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--paper-figure", type=Path, default=PAPER_FIGURE)
     parser.add_argument("--cardinality", type=int, choices=CARDINALITIES)
+    parser.add_argument("--target-index", type=int)
     parser.add_argument("--batch", type=int, default=64)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
     args = parser.parse_args()
@@ -369,7 +401,9 @@ def main() -> None:
     if args.command in ("compute", "all"):
         selected = CARDINALITIES if args.cardinality is None else (args.cardinality,)
         for events in selected:
-            compute_cardinality(args.root, events, args.batch, args.device)
+            compute_cardinality(
+                args.root, events, args.batch, args.device, args.target_index
+            )
     if args.command in ("report", "all"):
         report(args.root, args.output, args.paper_figure)
 

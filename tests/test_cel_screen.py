@@ -9,7 +9,7 @@ from icassp27_phrase.losses import CEL_NAMES, CumulativeEnergyDistance, build_lo
 
 
 def test_new_padding_and_independent_design():
-    assert ExciterConfig().fourier_fft_length == 16384
+    assert ExciterConfig().fourier_fft_length == 65536
     targets = design()
     assert len(targets) == 173
     for target in targets:
@@ -27,8 +27,8 @@ def test_new_padding_and_independent_design():
 )
 def test_legacy_value_and_gradient_equivalence(weighted, legacy):
     generator = torch.Generator().manual_seed(17)
-    target = torch.randn(8000, generator=generator, dtype=torch.float64)
-    candidate = torch.randn(2, 8000, generator=generator, dtype=torch.float64, requires_grad=True)
+    target = torch.randn(2048, generator=generator, dtype=torch.float64)
+    candidate = torch.randn(2, 2048, generator=generator, dtype=torch.float64, requires_grad=True)
     old = build_loss(legacy, target)(candidate)
     new = CumulativeEnergyDistance(target, log_weighing=weighted)(candidate)
     torch.testing.assert_close(new, old, rtol=1e-12, atol=1e-12)
@@ -39,8 +39,8 @@ def test_legacy_value_and_gradient_equivalence(weighted, legacy):
 
 def test_all_subsets_and_exact_match_gradients():
     generator = torch.Generator().manual_seed(18)
-    target = torch.randn(512, generator=generator, dtype=torch.float64)
-    candidate = torch.randn(512, generator=generator, dtype=torch.float64, requires_grad=True)
+    target = torch.randn(2048, generator=generator, dtype=torch.float64)
+    candidate = torch.randn(2048, generator=generator, dtype=torch.float64, requires_grad=True)
     elementary = CumulativeEnergyDistance(target).directional_distances(candidate).flatten()
     matrix = torch.tensor(subset_matrix(), dtype=torch.float64)
     expected = matrix @ elementary

@@ -67,7 +67,7 @@ def benchmark(warmup: int, measured: int, batch: int, output: Path) -> None:
             print(json.dumps(row), flush=True)
     sig, hashes = signature()
     payload = {
-        "schema": "nine-loss-recovery-benchmark-v1",
+        "schema": "phrase-recovery-16k-benchmark-v1",
         "created_utc": datetime.now(UTC).isoformat(),
         "signature": sig,
         "source_hashes": hashes,
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     parser.add_argument("--measured", type=int, default=12)
     parser.add_argument("--batch", type=int, default=10)
     parser.add_argument(
-        "--output", type=Path, default=Path("results/nine-loss-recovery/benchmark.json")
+        "--output", type=Path, default=Path("results/phrase-recovery-16k/benchmark.json")
     )
     args = parser.parse_args()
     torch.set_num_threads(1)

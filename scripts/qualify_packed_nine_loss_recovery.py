@@ -58,7 +58,7 @@ def qualify(device: str) -> None:
         for loss, cardinality, begin, count in SHARD_SPECS
         for target in range(begin, begin + count)
     }
-    if len(covered) != len(LOSSES) * 5 * 150 or TOTAL_SHARDS != 195:
+    if len(covered) != len(LOSSES) * 5 * 150:
         raise AssertionError("packed plan does not cover every target exactly once")
     sig, hashes = signature()
     payload = {
@@ -72,7 +72,7 @@ def qualify(device: str) -> None:
         "gpu": torch.cuda.get_device_name() if device == "cuda" else None,
         "checks": checks,
     }
-    path = Path("results/nine-loss-recovery-packed") / f"qualification-{device}.json"
+    path = Path("results/phrase-recovery-16k") / f"qualification-{device}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
     print(json.dumps(payload, indent=2))

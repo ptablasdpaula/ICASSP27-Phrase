@@ -17,7 +17,7 @@ class PhraseSynth(nn.Module):
 
     The default constructor is exactly the recovery renderer in the paper:
     FLAMO Fourier placement of the half-raised cosine, followed by the
-    Thiran-3/Thiran-1 waveguide with a hard reset at every event boundary.
+    Thiran-3/Thiran-3 waveguide with a hard reset at every event boundary.
     PhilTorch dispatches the DF2 recurrence to TorchLPC on both CPU and CUDA.
     """
 

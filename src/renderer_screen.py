@@ -198,7 +198,7 @@ def _target_audio(synth: PhraseSynth, device: torch.device) -> Tensor:
     with torch.no_grad():
         f0_hz, onset_seconds = physical_controls(coordinate)
         target = synth(f0_hz, onset_seconds)[0].detach()
-    if target.shape != (8_000,) or not bool(torch.isfinite(target).all()):
+    if target.shape != (32_000,) or not bool(torch.isfinite(target).all()):
         raise FloatingPointError("renderer produced a malformed target")
     return target
 

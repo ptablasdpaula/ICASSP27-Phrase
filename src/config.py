@@ -11,9 +11,9 @@ from torch import Tensor
 F0_BOUNDS_HZ = (80.0, 320.0)
 ONSET_BOUNDS_SECONDS = (0.2, 1.8)
 CARDINALITIES = (1, 2, 4, 6, 8)
-SAMPLE_RATE = 4_000
-SAMPLE_COUNT = 8_000
-MASTER_SEED = 2027
+SAMPLE_RATE = 16_000
+SAMPLE_COUNT = 32_000
+MASTER_SEED = 2029
 
 OnsetMethod = Literal["naive", "lagrange", "fourier", "thiran"]
 InterpolationMethod = Literal["linear", "lagrange", "fourier", "thiran"]
@@ -72,13 +72,13 @@ class ExciterConfig:
     duration_seconds: float = 0.010
     lagrange_order: int = 5
     thiran_order: int = 1
-    fourier_fft_length: int = 16_384
+    fourier_fft_length: int = 65_536
 
     def __post_init__(self) -> None:
         if self.method not in ("naive", "lagrange", "fourier", "thiran"):
             raise ValueError(f"unknown onset method {self.method!r}")
         if self.sample_rate != SAMPLE_RATE or self.sample_count < 1:
-            raise ValueError("the registered renderer is fixed at 4 kHz")
+            raise ValueError("the registered renderer is fixed at 16 kHz")
         if not (self.amplitude > 0.0 and self.duration_seconds > 0.0):
             raise ValueError("exciter amplitude and duration must be positive")
         if self.lagrange_order != 5 or self.thiran_order != 1:
@@ -116,7 +116,7 @@ class WaveguideConfig:
         if self.state_policy not in ("hard_reset", "persistent"):
             raise ValueError(f"unknown state policy {self.state_policy!r}")
         if self.sample_rate != SAMPLE_RATE or self.sample_count < 1:
-            raise ValueError("the registered renderer is fixed at 4 kHz")
+            raise ValueError("the registered renderer is fixed at 16 kHz")
         if (self.loop_gain, self.loop_pole, self.pluck_position) != (0.99, 0.2, 0.23):
             raise ValueError("the paper fixes g=0.99, a1=0.2, and beta=0.23")
         if self.phase_correction_iterations != 12:
@@ -144,7 +144,7 @@ class WaveguideConfig:
         if self.interpolation == "lagrange":
             return (5, 1)
         if self.interpolation == "thiran":
-            return (3, 1)
+            return (3, 3)
         return None
 
 

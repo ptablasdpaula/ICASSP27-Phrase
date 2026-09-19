@@ -1,4 +1,4 @@
-"""Frozen 150-target coordinate registry; audio is always rendered on demand."""
+"""Frozen held-out LHS target registry; audio is always rendered on demand."""
 
 from __future__ import annotations
 
@@ -33,9 +33,9 @@ class Target:
 def _registry() -> dict[tuple[int, int], Target]:
     path = files("icassp27_phrase").joinpath("data/targets.json")
     value: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
-    if value.get("schema") != "icassp27-phrase-targets-v1":
+    if value.get("schema") != "icassp27-phrase-targets-v2":
         raise ValueError("target registry has an unknown schema")
-    if value.get("seed") != 2027 or tuple(value.get("cardinalities", ())) != CARDINALITIES:
+    if value.get("seed") != 2029 or tuple(value.get("cardinalities", ())) != CARDINALITIES:
         raise ValueError("target registry changed its registered design")
     targets: dict[tuple[int, int], Target] = {}
     counts = {cardinality: 0 for cardinality in CARDINALITIES}

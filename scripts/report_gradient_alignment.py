@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 from assess_gradients import checked_data, save_json, scores_from, shard_path, write_csv
 from icassp27_phrase.gradient_assessment import COLUMNS, NAMES, signature, targets
+from icassp27_phrase.metrics import phrase_gradient_cosine
 
 LABELS = [
     r"$L_1$",
@@ -48,17 +49,14 @@ METRICS = {
 def alignment(data):
     """Return candidate × loss arrays, preserving archived exclusion conventions."""
     event = scores_from(data)["cosine"]
-    descent = -data["gradients"]
-    delta = (data["target"][data["assignments"]] - data["candidates"])[:, None]
-    dot = (descent * delta).sum(axis=(-2, -1))
-    norms = np.sqrt((descent**2).sum(axis=(-2, -1))) * np.sqrt((delta**2).sum(axis=(-2, -1)))
-    cosine = np.divide(dot, norms, out=np.zeros_like(dot), where=norms > 0)
-    cosine = np.clip(cosine, -1, 1)
-    valid = ~data["ties"] & (np.abs(delta[:, 0]) > 1e-12).any(axis=(-2, -1))
-    positive = (dot > 0).astype(float)
-    cosine[~valid] = np.nan
-    positive[~valid] = np.nan
-    np.testing.assert_array_equal(cosine[valid] > 0, positive[valid] > 0)
+    cosine = phrase_gradient_cosine(
+        data["gradients"],
+        data["candidates"],
+        data["target"],
+        data["assignments"],
+        data["ties"],
+    )
+    positive = np.where(np.isfinite(cosine), (cosine > 0).astype(float), np.nan)
     if data["target"].shape[0] == 1:
         np.testing.assert_allclose(event, cosine, atol=1e-14, equal_nan=True)
     return {"event-cosine": event, "phrase-descent": positive, "phrase-cosine": cosine}

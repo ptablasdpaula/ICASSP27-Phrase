@@ -13,37 +13,23 @@ import argparse
 import gzip
 import hashlib
 import json
-import math
 import subprocess
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-import numpy as np
 import torch
 from icassp27_phrase.config import CARDINALITIES, initial_candidate
-from icassp27_phrase.gradient_assessment import fade_matrix
-from icassp27_phrase.losses import (
-    SMOOTH_HOPS,
-    SMOOTH_WINDOWS,
-    SOT_MSS_HOPS,
-    SOT_MSS_WINDOWS,
-    CumulativeEnergyDistance,
-    _linear_projection_geometry,
-    _projection_geometry,
-    _stft,
-    _wasserstein_projected,
-    reverse_cumsum,
-)
+from icassp27_phrase.losses import PaperObjectives
+from icassp27_phrase.metrics import recovery_metrics
 from icassp27_phrase.runtime import require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
 from icassp27_phrase.targets import load_target
-from scipy.optimize import linear_sum_assignment
 
-ROOT = Path("results/nine-loss-recovery")
+ROOT = Path("results/phrase-recovery-16k")
 LOSSES = (
     "single_stft",
-    "linear_mss",
+    "mss",
     "smooth_mss",
     "linear_jtfot",
     "log_jtfot",
@@ -52,7 +38,7 @@ LOSSES = (
     "dec_cel",
     "tlog_cel",
 )
-LABELS = ("SS", "LinMSS", "SmoMSS", "TFW2", "logTFW2", "CeL", "logCeL", "decCeL", "tlogCeL")
+LABELS = ("SS", "MSS", "SmoMSS", "TFW2", "logTFW2", "CeL", "logCeL", "decCeL", "tlogCeL")
 TARGETS_PER_CELL = 150
 DEFAULT_TARGETS_PER_SHARD = 10
 # V100 timing puts these ten-target cells too close to the one-hour walltime.
@@ -107,156 +93,15 @@ def decode(raw: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     return 80.0 * 4.0 ** unit[..., 0], 0.2 + 1.6 * unit[..., 1]
 
 
-class PairedObjective:
-    """One loss for paired target/candidate rows."""
+class PairedObjective(PaperObjectives):
+    """One frozen paper objective for paired target/candidate rows."""
 
     def __init__(self, target: torch.Tensor, name: str):
+        super().__init__(target, (name,))
         self.name = name
-        self.target = target.detach()
-        self.window256 = torch.hann_window(
-            256, periodic=True, dtype=target.dtype, device=target.device
-        )
-        if name == "single_stft":
-            self.reference = self._mag(target, 256, 64, self.window256, False)
-        elif name == "linear_mss":
-            self.windows = [
-                torch.hann_window(n, periodic=True, dtype=target.dtype, device=target.device)
-                for n in SOT_MSS_WINDOWS
-            ]
-            self.references = [
-                self._mag(target, n, h, w, True, "reflect")
-                for n, h, w in zip(SOT_MSS_WINDOWS, SOT_MSS_HOPS, self.windows, strict=True)
-            ]
-        elif name == "smooth_mss":
-            import scipy.signal.windows
 
-            self.windows = [
-                torch.as_tensor(
-                    scipy.signal.windows.flattop(n, sym=False),
-                    dtype=target.dtype,
-                    device=target.device,
-                )
-                for n in SMOOTH_WINDOWS
-            ]
-            self.references = [
-                torch.log1p(self._mag(target, n, h, w, True, "reflect"))
-                for n, h, w in zip(SMOOTH_WINDOWS, SMOOTH_HOPS, self.windows, strict=True)
-            ]
-        elif name in {"linear_jtfot", "log_jtfot"}:
-            self.reference = self._mag(target, 256, 128, self.window256, True)
-            geometry = (
-                _linear_projection_geometry if name == "linear_jtfot" else _projection_geometry
-            )
-            self.order, self.positions = geometry(
-                self.reference.shape[-2],
-                self.reference.shape[-1],
-                4000,
-                256,
-                128,
-                str(target.device),
-                "float64",
-            )
-        else:
-            power = self._mag(target, 256, 64, self.window256, False).square()
-            self.mass = power.sum((-2, -1)).clamp_min(torch.finfo(target.dtype).tiny)
-            ordinary = name != "dec_cel"
-            if ordinary:
-                surfaces = self._cumulative(power)
-            else:
-                self.fade_f = fade_matrix(power.shape[-2], 4000 / 256, 1000).to(target.device)
-                self.fade_t = fade_matrix(power.shape[-1], 64 / 4000, 1).to(target.device)
-                surfaces = self._decayed(power)
-            self.references = torch.sqrt(
-                (surfaces / self.mass[:, None, None, None]).clamp_min(1e-12)
-            )
-            base = CumulativeEnergyDistance(target[0])
-            self.sqrt_weights = base.sqrt_weights.to(target.device)
-
-    @staticmethod
-    def _mag(audio, n, hop, window, center, pad="constant"):
-        return _stft(audio, n_fft=n, hop=hop, window=window, center=center, pad_mode=pad).abs()
-
-    @staticmethod
-    def _cumulative(power):
-        rows = []
-        for tr in (False, True):
-            x = reverse_cumsum(power, 2) if tr else power.cumsum(2)
-            for fr in (False, True):
-                rows.append(reverse_cumsum(x, 1) if fr else x.cumsum(1))
-        return torch.stack(rows, 1)
-
-    def _decayed(self, power):
-        rows = []
-        for tr in (False, True):
-            for fr in (False, True):
-                axes = tuple(a for a, r in ((-2, fr), (-1, tr)) if r)
-                x = power.flip(axes) if axes else power
-                x = self.fade_f @ x @ self.fade_t.T
-                rows.append(x.flip(axes) if axes else x)
-        return torch.stack(rows, 1)
-
-    def __call__(self, audio, indices=None):
-        name = self.name
-        if name == "single_stft":
-            reference = self.reference if indices is None else self.reference[indices]
-            return (
-                (self._mag(audio, 256, 64, self.window256, False) - reference).abs().mean((-2, -1))
-            )
-        if name in {"linear_mss", "smooth_mss"}:
-            out = audio.new_zeros(len(audio))
-            ns, hs = (
-                (SOT_MSS_WINDOWS, SOT_MSS_HOPS)
-                if name == "linear_mss"
-                else (SMOOTH_WINDOWS, SMOOTH_HOPS)
-            )
-            for n, h, w, ref in zip(ns, hs, self.windows, self.references, strict=True):
-                if indices is not None:
-                    ref = ref[indices]
-                mag = self._mag(audio, n, h, w, True, "reflect")
-                out += (
-                    (mag - ref).abs().mean((-2, -1))
-                    if name == "linear_mss"
-                    else (torch.log1p(mag) - ref).square().sum((-2, -1))
-                )
-            return out
-        if name in {"linear_jtfot", "log_jtfot"}:
-            mag = self._mag(audio, 256, 128, self.window256, True)
-            x = mag.flatten(1) / mag.sum((-2, -1))[:, None]
-            reference = self.reference if indices is None else self.reference[indices]
-            y = reference.flatten(1) / reference.sum((-2, -1))[:, None]
-            return _wasserstein_projected(x[:, self.order], y[:, self.order], self.positions).mean(
-                -1
-            )
-        power = self._mag(audio, 256, 64, self.window256, False).square()
-        surfaces = self._decayed(power) if name == "dec_cel" else self._cumulative(power)
-        mass = self.mass if indices is None else self.mass[indices]
-        references = self.references if indices is None else self.references[indices]
-        error = torch.sqrt((surfaces / mass[:, None, None, None]).clamp_min(1e-12)) - references
-        if name in {"log_cel", "tlog_cel"}:
-            terms = torch.linalg.vector_norm((error * self.sqrt_weights[None]).flatten(2), dim=-1)
-        else:
-            terms = torch.linalg.vector_norm(error.flatten(2), dim=-1) / math.sqrt(
-                error.shape[-2] * error.shape[-1]
-            )
-        return terms[:, :2].mean(-1) if name == "tlog_cel" else terms.mean(-1)
-
-
-def assignment_metrics(f0, onset, target_f0, target_onset):
-    p = np.log2(np.asarray(f0) / 80.0)
-    t = np.asarray(onset)
-    tp = np.log2(np.asarray(target_f0) / 80.0)
-    tt = np.asarray(target_onset)
-    cost = (p[:, None] - tp[None]) ** 2 + (t[:, None] - tt[None]) ** 2
-    _, assignment = linear_sum_assignment(cost)
-    old_cost = ((p[:, None] - tp[None]) / 2) ** 2 + ((t[:, None] - tt[None]) / 1.6) ** 2
-    _, old_assignment = linear_sum_assignment(old_cost)
-    return {
-        "pitch_mae_cents": float(np.abs(1200 * (p - tp[assignment])).mean()),
-        "onset_mae_ms": float(np.abs(1000 * (t - tt[assignment])).mean()),
-        "assignment": assignment.tolist(),
-        "legacy_assignment": old_assignment.tolist(),
-        "assignment_changed_from_legacy": bool(not np.array_equal(assignment, old_assignment)),
-    }
+    def __call__(self, audio: torch.Tensor, indices: torch.Tensor | None = None) -> torch.Tensor:
+        return self.values(audio, indices)[self.name]
 
 
 def append_lr_events(events, indices, old_lr, lr, updates, strict_best):
@@ -336,11 +181,13 @@ def fit(target_audio, cardinality, name, synth):
                 if len(reduced_indices):
                     lr[reduced_indices] = proposed[changed]
                     reductions[reduced_indices] += 1
-                    append_lr_events(events, reduced_indices, old[changed], lr, updates, strict_best)
+                    append_lr_events(
+                        events, reduced_indices, old[changed], lr, updates, strict_best
+                    )
                 # ReduceLROnPlateau resets only its own bad-epoch count.  The
                 # independent early-stopping count deliberately continues.
                 plateau_bad[due_indices] = 0
-            stop = (stop_bad[indices] > SCHEDULE.stop_patience) | (
+            stop = (stop_bad[indices] >= SCHEDULE.stop_patience) | (
                 updates[indices] >= SCHEDULE.maximum_updates
             )
             keep = ~stop
@@ -380,6 +227,7 @@ def fit(target_audio, cardinality, name, synth):
 
 def signature():
     paths = [Path(__file__), *sorted(Path("src").glob("*.py")), Path("src/data/targets.json")]
+    paths.extend(sorted(Path("external/cels/src/cels").glob("*.py")))
     hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     return hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest(), hashes
 
@@ -426,7 +274,7 @@ def run(shard, device="cuda"):
     )
     rows = []
     for i, meta in enumerate(metadata):
-        metrics = assignment_metrics(
+        metrics = recovery_metrics(
             f0[i].cpu().numpy(), onset[i].cpu().numpy(), meta.f0_hz, meta.onset_seconds
         )
         rows.append(
@@ -448,7 +296,7 @@ def run(shard, device="cuda"):
             }
         )
     payload = {
-        "schema": "nine-loss-recovery-v2",
+        "schema": "phrase-recovery-16k-v1",
         "signature": sig,
         "source_hashes": hashes,
         "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),

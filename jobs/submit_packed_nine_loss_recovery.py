@@ -12,10 +12,9 @@ from pathlib import Path
 from submit_nine_loss_recovery import POOLS, command, compress, limits, probe
 
 ROOT = Path(__file__).resolve().parents[1]
-RESULTS = ROOT / "results/nine-loss-recovery-packed"
-START_WINDOW_SECONDS = 15 * 60
+RESULTS = ROOT / "results/phrase-recovery-16k"
 SAFETY_FACTOR = 1.05
-HARD_SECONDS = 58 * 60
+POOL_LIMITS = {"gpushort": 58 * 60, "andrena": 12 * 60 * 60}
 
 
 def is_complete(task, expected_signature, expected_plan):
@@ -62,13 +61,15 @@ def main():
     benchmark_gpus = set()
     for cardinality in (1, 2, 4, 6, 8):
         payload = json.loads(
-            (ROOT / f"results/nine-loss-recovery/batch-scaling-c{cardinality}.json").read_text()
+            (RESULTS / f"batch-scaling-c{cardinality}.json").read_text()
         )
-        if payload["schema"] != "nine-loss-recovery-batch-scaling-v1":
+        if payload["schema"] != "phrase-recovery-16k-batch-scaling-v1":
             raise ValueError(f"cardinality-{cardinality} timing schema changed")
         timing_signatures.add(payload["signature"])
         benchmark_gpus.add(payload["gpu"])
         timing_rows.extend(payload["rows"])
+    if timing_signatures != {scientific_signature}:
+        raise ValueError("timing benchmarks do not match the current scientific inputs")
     timings = {
         (row["loss"], int(row["cardinality"]), int(row["batch"])): float(
             row["projected_minutes_20000_updates"]
@@ -80,8 +81,8 @@ def main():
     tasks = []
     for task, (loss, cardinality, _begin, count) in enumerate(SHARD_SPECS):
         estimate = timings[(loss, cardinality, count)]
-        if not math.isfinite(estimate) or estimate >= HARD_SECONDS:
-            raise RuntimeError(f"task {task} estimate {estimate:.1f}s exceeds packed limit")
+        if not math.isfinite(estimate) or estimate >= POOL_LIMITS["andrena"]:
+            raise RuntimeError(f"task {task} estimate {estimate:.1f}s exceeds Andrena limit")
         tasks.append({"task": task, "estimated_seconds": estimate})
     pending = [
         row for row in tasks if not is_complete(row["task"], scientific_signature, execution_plan)
@@ -90,16 +91,20 @@ def main():
     available = [row for row in probes if row["available"]]
     if not available:
         raise RuntimeError(f"no eligible GPU pool: {probes}")
-    earliest = min(row["estimated_start_epoch"] for row in available)
-    eligible = [
-        row for row in available if row["estimated_start_epoch"] <= earliest + START_WINDOW_SECONDS
-    ]
+    eligible = available
     qos = limits()
     assignments = {row["partition"]: [] for row in eligible}
     loads = {row["partition"]: 0.0 for row in eligible}
     for item in sorted(pending, key=lambda row: (-row["estimated_seconds"], row["task"])):
+        task_pools = [
+            row
+            for row in eligible
+            if item["estimated_seconds"] < POOL_LIMITS[row["partition"]]
+        ]
+        if not task_pools:
+            raise RuntimeError(f"task {item['task']} does not fit either queue limit")
         lane = min(
-            eligible,
+            task_pools,
             key=lambda row: (
                 loads[row["partition"]] / qos[row["partition"]],
                 row["partition"],
@@ -119,7 +124,7 @@ def main():
         ),
         "benchmark_gpus": sorted(benchmark_gpus),
         "safety_factor": SAFETY_FACTOR,
-        "hard_seconds": HARD_SECONDS,
+        "pool_time_limits_seconds": POOL_LIMITS,
         "task_count": len(tasks),
         "pending_tasks": len(pending),
         "probes": probes,
@@ -136,17 +141,22 @@ def main():
         array = compress(assignments[partition])
         if not array:
             continue
-        result = command(
-            [
-                "sbatch",
-                "--parsable",
-                f"--partition={partition}",
-                f"--account={account}",
-                f"--array={array}%{qos[partition]}",
-                f"--export=ALL,EXECUTION_PLAN_SHA256={execution_plan}",
-                "jobs/packed_nine_loss_recovery.sh",
-            ]
-        )
+        arguments = [
+            "sbatch",
+            "--parsable",
+            f"--partition={partition}",
+            f"--account={account}",
+            f"--time={POOL_LIMITS[partition] // 60}",
+            f"--array={array}%{qos[partition]}",
+            (
+                "--export=ALL,"
+                f"SOURCE_COMMIT={source_commit},EXECUTION_PLAN_SHA256={execution_plan}"
+            ),
+        ]
+        if partition == "gpushort":
+            arguments.append("--constraint=ampere")
+        arguments.append("jobs/packed_nine_loss_recovery.sh")
+        result = command(arguments)
         jobs[partition] = result.stdout.strip().split(";", 1)[0]
     plan["jobs"] = jobs
     (RESULTS / "submission.json").write_text(json.dumps(plan, indent=2) + "\n")

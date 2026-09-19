@@ -8,24 +8,24 @@
     "arrows": "landscape style, 4x length/head size, original shaft width",
     "colorbar": "one vertical shared linear scale; distinct reference powers",
     "direction_order": [
-      "Up-right",
-      "Down-right",
-      "Up-left",
-      "Down-left"
+      "right_up",
+      "right_down",
+      "left_up",
+      "left_down"
     ],
     "frequency_axis": "logarithmic, 20-1000 Hz; decade ticks; sums use all bins",
     "spectrogram": "linear power / peak STFT power, [0,1]",
     "surfaces": "linear S_q/m, shared [0,1] display scale"
   },
-  "power_sha256": "a7714cbdb2a8bec6ad6c485cf454f9df5bc8f9abd19179cf9bd681b4f4714665",
+  "power_sha256": "a8ecafaf757d58d2e0652051db1775b6204cbab96c7fbffe908f7c787e3c0cf0",
   "schema": "cumulative-surfaces-figure-v2",
-  "script_sha256": "dee6b5249b8faf1ef54f014a3f4fb0531634e87b31e1d10aaae03cd5b6444a34",
+  "script_sha256": "d7ba9da9fd91e9a715cbdc8bccca3b2f228c6a308d69b5d2896957d4d7ac972c",
   "stft": {
     "center": false,
-    "hop": 64,
-    "n_fft": 256,
+    "hop": 256,
+    "n_fft": 1024,
     "shape": [
-      129,
+      513,
       122
     ],
     "window": "periodic Hann"
@@ -37,32 +37,32 @@
     "initial_phase_radians": 0.0,
     "instantaneous_frequency": "f(t)=20*50**(t/2)",
     "phase": "2*pi*20*(exp(a*t)-1)/a, a=log(50)/2",
-    "sample_rate": 4000,
+    "sample_rate": 16000,
     "start_hz": 20.0,
     "type": "constant-amplitude logarithmic sinusoidal sweep"
   },
-  "target_audio_sha256": "14e7fb20827e176715cfa29d61328c19a19c3749f976f30f827dfc47b560f8c6",
+  "target_audio_sha256": "71aa7e86381a6c43d1efe52b8d438e90662078391fc2aa027b3daca8dea07bb4",
   "torch_version": "2.7.1+cu126",
   "validation": [
     {
-      "direction": "Up-right",
-      "maximum_reference_feature_error": 2.220446049250313e-16,
-      "surface_sha256": "eeb6c421399014525de32fbaf162c7f1ef625cb0c03986d999ef22c6c11eebe7"
-    },
-    {
-      "direction": "Down-right",
-      "maximum_reference_feature_error": 2.220446049250313e-16,
-      "surface_sha256": "b89853ae8810abcea547237c5fc960b4e17163cc2d6347341072e9904268f3f0"
-    },
-    {
-      "direction": "Up-left",
+      "direction": "right_up",
       "maximum_reference_feature_error": 0.0,
-      "surface_sha256": "de4181626cce902702117e7c61c07e481e6bda86e377a7b5932abc55e81ee055"
+      "surface_sha256": "03fde28d2dcde9dbda6ec55e7903bd1ac5c1edac7f12753704fb4b276e0fffe9"
     },
     {
-      "direction": "Down-left",
+      "direction": "right_down",
       "maximum_reference_feature_error": 0.0,
-      "surface_sha256": "18563689e3df90bda935eec07f4acecdb672fc032c42bbc988bb3e9ee729ca9e"
+      "surface_sha256": "60f171b139e7abf6d99d60af6f136a9ca2de0985d7ed4e49189a64fcd9aef6eb"
+    },
+    {
+      "direction": "left_up",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "fac49d9db974152194db90e5d45c9d0c5d61dd4656c62663d4268a70e99a61af"
+    },
+    {
+      "direction": "left_down",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "8e21a5b491ae50602a3970c1aefda1bf9d2cd8004034ca30f47dee95f5b79c5e"
     }
   ]
 }

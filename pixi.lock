@@ -171,6 +171,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f1/79/4a20b54ab0491485ccd8c077db2d39187c7f12b3e15485d38a7be37c81b4/uvicorn-0.52.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/05/9f82d090c8d2d861604147ef6dfb938a90b039f9358d5193f1df62558593/websockets-17.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: ./
+      - pypi: ./external/cels
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -266,6 +267,15 @@ packages:
   purls: []
   size: 991011
   timestamp: 1788221336073
+- pypi: ./external/cels
+  name: cels-audio
+  version: 0.1.0
+  sha256: 5e31323d3599267e50a34f8a7131872da7e2514653a75dfb2cd52911eeb083ed
+  requires_dist:
+  - torch>=2.1
+  - pytest>=8 ; extra == 'test'
+  - ruff>=0.12 ; extra == 'test'
+  requires_python: '>=3.10'
 - pypi: https://download.pytorch.org/whl/certifi-2022.12.7-py3-none-any.whl
   name: certifi
   version: 2022.12.7
@@ -675,8 +685,8 @@ packages:
   timestamp: 1788405531557
 - pypi: ./
   name: icassp27-phrase
-  version: 0.1.2
-  sha256: 5f04406c0c688985b9aa6f85a3a2d3774a5df7dd4f824c7f529c6406bf236714
+  version: 0.1.3
+  sha256: 21e57c1d9a56becd80a8bb13ca13a49837773c861b806f56a2e9f120488b812b
   requires_dist:
   - flamo==0.2.18
   - numba>=0.61,<0.67

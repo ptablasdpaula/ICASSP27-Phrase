@@ -81,7 +81,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \maketitle
 
 \begin{abstract}
-\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 90,112 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the nine objectives reaching at least .10 single-event alignment across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing, pitch, and delay-line length, and provide a PyTorch library for future applications\footnote{\textcolor{red}{link to library should be here}}.
+\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 90,112 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the nine objectives reaching at least .10 single-event alignment across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing, pitch, and delay-line length, and provide a PyTorch library for future applications\footnote{The Ce$\mathcal L$s library is available at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0}.}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -148,7 +148,7 @@ We propose \Glspl{cel}, which expose energy displacement by comparing
 accumulated spectral power. For target and candidate waveforms $x,\hat x$, let
 $P=\Phi(x),\hat P=\Phi(\hat x)\in\mathbb R_+^{K\times N}$, where
 $\Phi(x)_{k,n}=|\operatorname{STFT}(x)_{k,n}|^2$. We use a periodic Hann
-window, a 256-point \gls{fft}, and a 64-sample hop.
+window, a 1024-point \gls{fft}, and a 256-sample hop.
 
 A direction pair $q=(d_t,d_f)$ indexes one of four cumulative views. In time,
 $\rightarrow$ includes frames $0,\ldots,n$ and $\leftarrow$ includes
@@ -206,7 +206,7 @@ applies $L_1$ to the same CDF residual for which Cram\'er uses $L_2$
 
 \section{Differentiable Plucked-String Musical Phrases}
 \label{sec:renderer}
-We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings \cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$, where $f_s$ is the sample rate; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position arises as $D_2/(D_1+D_2)=0.23$ from the bridge. We synthesise two-second signals at $f_s=4$~kHz.
+We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings \cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$, where $f_s$ is the sample rate; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position arises as $D_2/(D_1+D_2)=0.23$ from the bridge. We synthesise two-second signals at $f_s=16$~kHz.
 
 \begin{figure}[!b]
 \centering
@@ -246,7 +246,16 @@ e_0(t)=\begin{cases}
 0,&\text{otherwise,}
 \end{cases}
 \end{equation*}
-where $e_0(t)$ is           amplitude at elapsed time $t$, $A_e=0.8$ its amplitude scale, and $T_e=10$~ms its duration. As a differentiable onset placement method, we use a Fourier phase-ramp delay for, using FLAMO~\cite{dalsanto2025flamo}. To place an onset by $\delta_o$ samples, we multiply the spectrum of $e_0$ by $e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per sample and $j^2=-1$. The excitation is zero-padded to an FFT length $2.048$ times the full signal length to reduce circular wrap-around~\cite[Ch.~7]{smith2007dft}. We constrain the DC and Nyquist bins to be real to preserve Hermitian symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before one inverse FFT, retaining the first two seconds as the summed excitation.
+where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its amplitude
+scale, and $T_e=10$~ms its duration. For differentiable onset placement, we
+use a Fourier phase-ramp delay implemented with FLAMO~\cite{dalsanto2025flamo}.
+To place an onset by $\delta_o$ samples, we multiply the spectrum of $e_0$ by
+$e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per
+sample and $j^2=-1$. The excitation is zero-padded to 65,536 samples, $2.048$
+times the full signal length, to reduce circular wrap-around~\cite[Ch.~7]{smith2007dft}.
+We constrain the DC and Nyquist bins to be real to preserve Hermitian
+symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before
+one inverse FFT, retaining the first two seconds as the summed excitation.
 
 For gradient-based $f_0$ optimisation, we use real-valued delays with Thiran
 all-pass interpolation.
@@ -255,10 +264,9 @@ DC~\cite[p.~49]{laakso1996splitting}.
 Each path combines an integer delay with an all-pass section. For an order-$M$
 section, the approximated delay must exceed $M-1$ samples for
 stability~\cite{laakso1996splitting}.
-We use orders 1 and 3 on the bridge-side and nut-side paths, respectively:
-at the upper end of our 80--320~Hz pitch range, the shorter path requires
-less than two samples, precluding a stable order-3 section. We iteratively
-adjust the delays to account for the all-pass and loss-filter phase at $f_0$.
+At 16~kHz, both paths support the order-3 sections used here throughout the
+80--320~Hz pitch range. We iteratively adjust their delays to account for the
+all-pass and loss-filter phase at $f_0$.
 
 Finally, we collapse the waveguide algebraically into a rational transfer
 function and evaluate it in \gls{df2} as required for PhilTorch with its TorchLPC
@@ -275,10 +283,10 @@ diagnostic and comparison of \gls{df2} and literal \gls{dwg} implementations.}.
 % IEEEtran can place it at the top of page 4.
 \begin{table*}[!t]
 \centering
-\caption{\normalfont Median Hungarian-assigned pitch and onset
+\caption{\normalfont\textcolor{blue}{Median Hungarian-assigned pitch and onset
 errors over 150 target phrases per event count; lower is better. Ce$\mathcal L$
 configuration columns show the accumulation directions, linear-bin or
-log-frequency weighing, and whether accumulation decays with distance.}
+log-frequency weighing, and whether accumulation decays with distance.}}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table_pending.tex}
 \end{table*}
@@ -287,7 +295,7 @@ log-frequency weighing, and whether accumulation decays with distance.}
 \label{sec:experiments}
 
 \textbf{Synthetic data.}
-All experiments use the two-second, 4-kHz synthesis configuration in
+All experiments use the two-second, 16-kHz synthesis configuration in
 Sec.~\ref{sec:renderer}. An $N$-event phrase contains fundamental frequencies
 $f_0\in[80,320]$~Hz and onsets $t\in[0.2,1.8]$~s, with
 $N\in\{1,2,4,6,8\}$. We use reproducibly scrambled Latin hypercube sampling
@@ -313,19 +321,21 @@ directions~\cite{du2018gradient}; $1$, $0$, and $-1$ indicate descent directly
 towards, orthogonal to, and away from the assigned target. We report its mean
 and sample standard deviation across candidate phrases. As an
 objective-independent audio metric, \gls{lsd} is the \gls{rms} difference
-between periodic-Hann \acrshort{fft}-256/hop-64 log-magnitude spectra, using a
+between periodic-Hann \acrshort{fft}-1024/hop-256 log-magnitude spectra, using a
 common target-relative $-100$-dB magnitude floor.
 
 \textbf{Baselines.}
-We retain the cited losses and state only their adaptations to our 4-kHz
+We retain the cited losses and state only their adaptations to our 16-kHz
 inputs. Alongside waveform $L_1$ and $L_2$, SS uses periodic-Hann
-\acrshort{fft}-256/hop-64 magnitudes. LinMSS uses Hann-windowed FFT sizes 16,
-32, 64, 128, 256, and 512 with quarter-length hops~\cite{wang2019nsf,engel2020ddsp}.
-SmoMSS uses the time-scaled flat-top window/hop pairs 17/8, 31/15, 67/33,
-127/63, 257/128, and 509/254~\cite{schwar2023mss}. \Gls{sot} uses flat-top
-\acrshort{fft}-512/hop-64 transport and its $0.05$-weighted LinMSS
-component~\cite{torres2024sot}. Both \gls{tfw} variants use globally normalised
-periodic-Hann \acrshort{fft}-256/hop-128 magnitudes and ten projections: the
+\acrshort{fft}-1024/hop-256 magnitudes. MSS sums linear- and log-magnitude
+$L_1$ terms over periodic-Hann FFT sizes 2048, 1024, 512, 256, 128, and 64,
+with quarter-length hops, end padding, and no centring~\cite{wang2019nsf,engel2020ddsp}.
+SmoMSS uses the flat-top window/hop pairs 67/32, 127/63, 257/128, 509/254,
+1021/510, and 2053/1026~\cite{schwar2023mss}. \Gls{sot} uses flat-top
+\acrshort{fft}-2048/hop-256 transport and its $0.05$-weighted linear MSS
+component; SOT-NC removes its asymmetric cumulative-mass cutoff and normalises
+the two spectra independently~\cite{torres2024sot}. Both \gls{tfw} variants use
+globally normalised periodic-Hann \acrshort{fft}-1024/hop-512 magnitudes and ten projections: the
 published coordinates set $1$~s${}=1000$~Hz, while our log-frequency adaptation
 sets $1$~s${}=1$~octave through
 $\log_2[\max(f,20)/20]$~\cite{fabiani2024jtfot}.
@@ -367,7 +377,7 @@ count; colours span $[-1,1]$.}
 \end{figure}
 
 \subsection{Musical Phrase Recovery}
-Seed 2027 generates 150 scrambled-LHS targets at each cardinality. Every
+Seed 2029 generates 150 scrambled-LHS targets at each cardinality. Every
 candidate begins with all pitches at 160~Hz and onsets isochronously spaced
 within 0.2--1.8~s; independent logits constrain both coordinates to their
 registered ranges. We retain the nine objectives whose one-event Joint mean

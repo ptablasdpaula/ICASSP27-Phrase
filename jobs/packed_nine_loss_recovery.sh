@@ -6,11 +6,11 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=24G
 #SBATCH --time=00:59:00
-#SBATCH --output=results/nine-loss-recovery-packed/logs/%A_%a.log
+#SBATCH --output=results/phrase-recovery-16k/logs/%A_%a.log
 
 set -euo pipefail
 cd /data/home/acw794/ICASSP27-Phrase
-mkdir -p results/nine-loss-recovery-packed/logs
+mkdir -p results/phrase-recovery-16k/logs
 export PYTHONHOME="$PWD/.pixi/envs/default" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 "$PWD/.pixi/envs/default/bin/python" - <<'PY'
@@ -21,7 +21,7 @@ import sys
 sys.path.insert(0, "scripts")
 from run_nine_loss_recovery import signature
 from run_packed_nine_loss_recovery import plan_hash
-q = json.loads(Path("results/nine-loss-recovery-packed/qualification-cuda.json").read_text())
+q = json.loads(Path("results/phrase-recovery-16k/qualification-cuda.json").read_text())
 assert q["passed"] and q["scientific_signature"] == signature()[0]
 assert q["execution_plan_sha256"] == plan_hash() == os.environ["EXECUTION_PLAN_SHA256"]
 PY

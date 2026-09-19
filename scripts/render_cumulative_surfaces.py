@@ -14,22 +14,27 @@ import torch
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from icassp27_phrase.losses import BidirectionalCumulativeEnergyDistance, reverse_cumsum
+from cels import CumulativeEnergyLoss, Direction, STFTPower
+from icassp27_phrase.config import SAMPLE_RATE
+from icassp27_phrase.losses import CEL_HOP, CEL_N_FFT
 from icassp27_phrase.runtime import configure_reproducibility
 from matplotlib.patches import FancyArrowPatch
 from render_loss_landscapes import LANDSCAPE_FIGURE_STYLE
 
 ROOT = Path(__file__).resolve().parents[1]
-SAMPLE_RATE = 4000
 DURATION_SECONDS = 2.0
 START_HZ = 20.0
 END_HZ = 1000.0
 DIRECTIONS = (
-    ("Up-right", False, False, (0.055, 0.055), (0.23, 0.23)),
-    ("Down-right", False, True, (0.055, 0.945), (0.23, 0.77)),
-    ("Up-left", True, False, (0.945, 0.055), (0.77, 0.23)),
-    ("Down-left", True, True, (0.945, 0.945), (0.77, 0.77)),
+    (Direction.RIGHT_UP, False, False, (0.055, 0.055), (0.23, 0.23)),
+    (Direction.RIGHT_DOWN, False, True, (0.055, 0.945), (0.23, 0.77)),
+    (Direction.LEFT_UP, True, False, (0.945, 0.055), (0.77, 0.23)),
+    (Direction.LEFT_DOWN, True, True, (0.945, 0.945), (0.77, 0.77)),
 )
+
+
+def reverse_cumsum(value: torch.Tensor, dim: int) -> torch.Tensor:
+    return torch.flip(torch.cumsum(torch.flip(value, (dim,)), dim), (dim,))
 
 
 def digest(data: bytes) -> str:
@@ -53,9 +58,16 @@ def main() -> None:
         # Integrate instantaneous frequency before taking the sine.
         phase = (2 * np.pi * START_HZ / rate) * torch.expm1(rate * times)
         target = torch.sin(phase)
-        loss = BidirectionalCumulativeEnergyDistance(target, sample_rate=SAMPLE_RATE)
-        # Use the actual loss preprocessing, including its uncentred STFT.
-        power = loss._power(target[None])[0]
+        transform = STFTPower(
+            sample_rate=SAMPLE_RATE,
+            n_fft=CEL_N_FFT,
+            hop_length=CEL_HOP,
+            center=False,
+        ).to(device=args.device, dtype=torch.float64)
+        power = transform(target[None])[0]
+        frequency, frame_time = transform.coordinates(power)
+        loss = CumulativeEnergyLoss(reduction="none")
+        bound = loss.bind(power, frequency=frequency, time=frame_time)
         total_power = power.sum()
         surfaces = []
         validation = []
@@ -68,10 +80,10 @@ def main() -> None:
                 if frequency_reverse else time_surface.cumsum(0)
             )
             normalised = surface / total_power
-            reference, scale = loss.references[index]
-            feature = torch.sqrt(normalised.clamp_min(loss.sqrt_floor))
+            reference = bound.reference[index]
+            feature = torch.sqrt(normalised.clamp_min(loss.eps))
             torch.testing.assert_close(feature, reference, rtol=1e-12, atol=1e-14)
-            torch.testing.assert_close(scale, total_power, rtol=1e-12, atol=1e-14)
+            torch.testing.assert_close(bound.mass.squeeze(), total_power, rtol=1e-12, atol=1e-14)
             # Each image must be monotone along both of its stated directions.
             for axis, reverse in ((0, frequency_reverse), (1, time_reverse)):
                 differences = torch.diff(normalised, dim=axis) * (-1 if reverse else 1)
@@ -87,9 +99,9 @@ def main() -> None:
     power_array = power.cpu().numpy()
     spectrogram_normalised = power_array / power_array.max()
     # STFT coordinates are window centres, rather than artificially shifted onsets.
-    time_edges = (np.arange(power.shape[1] + 1) * loss.hop
-                  + loss.n_fft / 2 - loss.hop / 2) / SAMPLE_RATE
-    frequency_edges = (np.arange(power.shape[0] + 1) - 0.5) * SAMPLE_RATE / loss.n_fft
+    time_edges = (np.arange(power.shape[1] + 1) * CEL_HOP
+                  + CEL_N_FFT / 2 - CEL_HOP / 2) / SAMPLE_RATE
+    frequency_edges = (np.arange(power.shape[0] + 1) - 0.5) * SAMPLE_RATE / CEL_N_FFT
     frequency_edges[0] = 1e-3  # Positive plotting edge for DC on a log axis.
     plt.rcParams.update({
         "font.family": "DejaVu Sans",
@@ -165,7 +177,7 @@ def main() -> None:
                    "phase": "2*pi*20*(exp(a*t)-1)/a, a=log(50)/2"},
         "device": args.device,
         "torch_version": torch.__version__,
-        "stft": {"n_fft": loss.n_fft, "hop": loss.hop, "center": False,
+        "stft": {"n_fft": CEL_N_FFT, "hop": CEL_HOP, "center": False,
                  "window": "periodic Hann", "shape": list(power.shape)},
         "display": {"spectrogram": "linear power / peak STFT power, [0,1]",
                     "surfaces": "linear S_q/m, shared [0,1] display scale",

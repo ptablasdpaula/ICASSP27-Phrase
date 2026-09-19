@@ -63,7 +63,7 @@ def run(cardinality: int, batches: tuple[int, ...], output: Path) -> None:
             print(json.dumps(row), flush=True)
     sig, hashes = signature()
     payload = {
-        "schema": "nine-loss-recovery-batch-scaling-v1",
+        "schema": "phrase-recovery-16k-batch-scaling-v1",
         "created_utc": datetime.now(UTC).isoformat(),
         "signature": sig,
         "source_hashes": hashes,
@@ -79,7 +79,7 @@ def run(cardinality: int, batches: tuple[int, ...], output: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cardinality", type=int, required=True)
-    parser.add_argument("--batches", default="10,25,50,75,150")
+    parser.add_argument("--batches", default="150")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     torch.set_num_threads(1)

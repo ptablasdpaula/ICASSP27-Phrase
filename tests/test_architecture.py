@@ -44,8 +44,8 @@ def test_all_150_targets_load_for_every_cardinality() -> None:
             assert metadata.index == index
             assert phrase.cardinality == cardinality
     first, _ = load_target(1, 1)
-    assert first.f0_hz[0] == pytest.approx(319.6450634016123, rel=0.0, abs=0.0)
-    assert first.onset_seconds[0] == pytest.approx(0.6182587918583865, rel=0.0, abs=0.0)
+    assert first.f0_hz[0] == pytest.approx(99.50133576815546, rel=0.0, abs=0.0)
+    assert first.onset_seconds[0] == pytest.approx(0.53273515283798, rel=0.0, abs=0.0)
 
 
 def test_repository_has_no_legacy_renderer_name() -> None:

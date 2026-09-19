@@ -19,13 +19,13 @@ import numpy as np
 import run_nine_loss_recovery as recovery
 import run_packed_nine_loss_recovery as packed
 import torch
+from icassp27_phrase.metrics import log_spectral_distance, recovery_metrics
 from icassp27_phrase.runtime import require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
-from scipy.optimize import linear_sum_assignment
 
-RAW = Path("results/nine-loss-recovery-packed/raw")
-QUALIFICATION = Path("results/nine-loss-recovery-packed/qualification-cuda.json")
-OUTPUT = Path("docs/nine-loss-recovery")
+RAW = Path("results/phrase-recovery-16k/raw")
+QUALIFICATION = Path("results/phrase-recovery-16k/qualification-cuda.json")
+OUTPUT = Path("docs/phrase-recovery/16k")
 PAPER = Path("paper/figures")
 METRICS = ("pitch_mae_cents", "onset_mae_ms", "log_spectral_distance_db")
 
@@ -64,22 +64,6 @@ def expected_keys() -> set[tuple[str, int, int]]:
     }
 
 
-def recompute_metrics(row: dict) -> tuple[float, float, list[int]]:
-    f0 = np.asarray(row["reported_f0_hz"], dtype=np.float64)
-    onset = np.asarray(row["reported_onset_seconds"], dtype=np.float64)
-    target_f0 = np.asarray(row["target"]["f0_hz"], dtype=np.float64)
-    target_onset = np.asarray(row["target"]["onset_seconds"], dtype=np.float64)
-    pitch = np.log2(f0 / 80.0)
-    target_pitch = np.log2(target_f0 / 80.0)
-    cost = (pitch[:, None] - target_pitch[None]) ** 2 + (
-        onset[:, None] - target_onset[None]
-    ) ** 2
-    _, assignment = linear_sum_assignment(cost)
-    pitch_mae = float(np.abs(1200 * (pitch - target_pitch[assignment])).mean())
-    onset_mae = float(np.abs(1000 * (onset - target_onset[assignment])).mean())
-    return pitch_mae, onset_mae, assignment.tolist()
-
-
 def validate() -> tuple[dict[tuple[str, int, int], dict], dict]:
     paths = sorted(RAW.glob("*/*.json.gz"))
     if len(paths) != packed.TOTAL_SHARDS:
@@ -113,7 +97,7 @@ def validate() -> tuple[dict[tuple[str, int, int], dict], dict]:
         ):
             raise ValueError(f"task coordinates changed in {path}")
         if (
-            payload["schema"] != "nine-loss-recovery-v2"
+            payload["schema"] != "phrase-recovery-16k-v1"
             or payload["signature"] != signature
             or payload["execution_plan"] != "packed-nine-loss-recovery-v1"
             or payload["execution_plan_sha256"] != execution_plan
@@ -151,12 +135,18 @@ def validate() -> tuple[dict[tuple[str, int, int], dict], dict]:
                 raise ValueError(f"invalid update count in {key}")
             if row["stopped_by"] not in {"patience", "maximum_updates"}:
                 raise ValueError(f"invalid stopping reason in {key}")
-            pitch_mae, onset_mae, assignment = recompute_metrics(row)
+            recomputed = recovery_metrics(
+                np.asarray(row["reported_f0_hz"]),
+                np.asarray(row["reported_onset_seconds"]),
+                np.asarray(row["target"]["f0_hz"]),
+                np.asarray(row["target"]["onset_seconds"]),
+            )
             metrics = row["metrics"]
             if (
-                assignment != metrics["assignment"]
-                or abs(pitch_mae - metrics["pitch_mae_cents"]) > 1e-9
-                or abs(onset_mae - metrics["onset_mae_ms"]) > 1e-9
+                recomputed["assignment"] != metrics["assignment"]
+                or recomputed["assignment_tied"] != metrics["assignment_tied"]
+                or abs(recomputed["pitch_mae_cents"] - metrics["pitch_mae_cents"]) > 1e-9
+                or abs(recomputed["onset_mae_ms"] - metrics["onset_mae_ms"]) > 1e-9
             ):
                 raise ValueError(f"stored Hungarian metrics do not reproduce in {key}")
             stop_reasons[row["stopped_by"]] += 1
@@ -189,22 +179,9 @@ def verify_common_targets(rows: dict[tuple[str, int, int], dict]) -> None:
                     raise ValueError(f"target differs across losses at C{cardinality}, T{target}")
 
 
-def stft_magnitude(audio: torch.Tensor, window: torch.Tensor) -> torch.Tensor:
-    return torch.stft(
-        audio,
-        n_fft=256,
-        hop_length=64,
-        win_length=256,
-        window=window,
-        center=True,
-        return_complex=True,
-    ).abs()
-
-
 def compute_lsd(rows: dict[tuple[str, int, int], dict], device: str) -> dict:
     require_df2_backend(device)
     synth = PhraseSynth().to(device)
-    window = torch.hann_window(256, periodic=True, dtype=torch.float64, device=device)
     values = {}
     with torch.no_grad():
         for cardinality in recovery.CARDINALITIES:
@@ -222,11 +199,7 @@ def compute_lsd(rows: dict[tuple[str, int, int], dict], device: str) -> dict:
                 dtype=torch.float64,
                 device=device,
             )
-            target_magnitude = stft_magnitude(synth(target_f0, target_onset), window)
-            floor = (target_magnitude.amax((-2, -1), keepdim=True) * 1e-5).clamp_min(
-                torch.finfo(torch.float64).tiny
-            )
-            target_db = 20 * torch.log10(torch.maximum(target_magnitude, floor))
+            target_audio = synth(target_f0, target_onset)
             for loss in recovery.LOSSES:
                 group = [
                     rows[loss, cardinality, index]
@@ -242,9 +215,8 @@ def compute_lsd(rows: dict[tuple[str, int, int], dict], device: str) -> dict:
                     dtype=torch.float64,
                     device=device,
                 )
-                candidate = stft_magnitude(synth(f0, onset), window)
-                candidate_db = 20 * torch.log10(torch.maximum(candidate, floor))
-                lsd = (candidate_db - target_db).square().mean((-2, -1)).sqrt().cpu()
+                candidate_audio = synth(f0, onset)
+                lsd = log_spectral_distance(candidate_audio, target_audio).cpu()
                 for index, value in enumerate(lsd.tolist()):
                     if not math.isfinite(value) or value < 0:
                         raise FloatingPointError(f"invalid LSD for {(loss, cardinality, index)}")
@@ -380,7 +352,7 @@ def format_value(value: float) -> str:
 def render_table(medians: dict, path: Path) -> None:
     labels = (
         "SS",
-        "LinMSS",
+        "MSS",
         "SmoMSS",
         r"$\mathrm{TF}\mathcal{W}_2$",
         r"log-$\mathrm{TF}\mathcal{W}_2$",
@@ -465,7 +437,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
 
     labels = (
         "SS",
-        "LinMSS",
+        "MSS",
         "SmoMSS",
         r"$\mathrm{TF}\mathcal{W}_2$",
         r"log-$\mathrm{TF}\mathcal{W}_2$",
@@ -587,7 +559,7 @@ def main() -> None:
     figure = render_lsd(lsd, PAPER / "lsd_violin")
     write_markdown(medians, OUTPUT / "README.md")
     provenance = {
-        "schema": "nine-loss-recovery-report-v1",
+        "schema": "phrase-recovery-16k-report-v1",
         "created_utc": datetime.now(UTC).isoformat(),
         "fit_count": len(rows),
         "loss_count": len(recovery.LOSSES),
@@ -599,7 +571,7 @@ def main() -> None:
             "median across phrases of within-phrase Hungarian-matched mean absolute error"
         ),
         "lsd": (
-            "RMS difference between centered periodic-Hann FFT-256/hop-64 log-magnitude "
+            "RMS difference between centered periodic-Hann FFT-1024/hop-256 log-magnitude "
             "spectra with a common target-relative -100 dB floor"
         ),
         "validation": validation,

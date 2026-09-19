@@ -2,23 +2,22 @@ from __future__ import annotations
 
 import pytest
 import torch
-
 from icassp27_phrase import Exciter, ExciterConfig
 
 
 @pytest.mark.parametrize("method", ("naive", "lagrange", "fourier", "thiran"))
 def test_integer_onset_methods_equal_the_sampled_hrc(method: str) -> None:
-    config = ExciterConfig(method=method, sample_count=512, fourier_fft_length=2048)
+    config = ExciterConfig(method=method, sample_count=1024, fourier_fft_length=2048)
     onset = torch.tensor([[0.05]], dtype=torch.float64)
     actual = Exciter(config)(onset)
-    expected = Exciter(ExciterConfig(method="naive", sample_count=512))(onset)
+    expected = Exciter(ExciterConfig(method="naive", sample_count=1024))(onset)
     tolerance = 2e-12 if method != "fourier" else 3e-12
     torch.testing.assert_close(actual, expected, rtol=0.0, atol=tolerance)
 
 
 @pytest.mark.parametrize("method", ("naive", "lagrange", "fourier", "thiran"))
 def test_onset_gradient_is_finite_and_nonzero(method: str) -> None:
-    config = ExciterConfig(method=method, sample_count=512, fourier_fft_length=2048)
+    config = ExciterConfig(method=method, sample_count=1024, fourier_fft_length=2048)
     onset = torch.tensor([[0.05013]], dtype=torch.float64, requires_grad=True)
     audio = Exciter(config)(onset)
     probe = torch.linspace(-1.0, 1.0, audio.shape[-1], dtype=torch.float64)

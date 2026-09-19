@@ -13,19 +13,15 @@ import torch
 from icassp27_phrase.config import CARDINALITIES
 from icassp27_phrase.runtime import require_df2_backend
 
-ROOT = Path("results/nine-loss-recovery-packed")
+ROOT = Path("results/phrase-recovery-16k")
 
 
 def targets_per_shard(loss: str, cardinality: int) -> int:
-    if cardinality == 1:
-        return 75 if loss in {"linear_jtfot", "log_jtfot"} else 150
-    if cardinality == 2:
-        return 50 if loss == "smooth_mss" else 75
-    if cardinality == 4:
-        return 10 if loss == "smooth_mss" else 50
-    if cardinality in {6, 8}:
-        return 10 if loss == "smooth_mss" else 25
-    raise ValueError(f"unsupported cardinality {cardinality}")
+    if loss not in recovery.LOSSES or cardinality not in CARDINALITIES:
+        raise ValueError("unsupported loss or cardinality")
+    # Andrena's A100 nodes and longer wall-time limit let each loss/cardinality
+    # cell share one target-bound objective and one vectorised optimiser.
+    return recovery.TARGETS_PER_CELL
 
 
 def build_specs():

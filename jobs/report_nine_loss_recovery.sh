@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=24G
 #SBATCH --time=00:59:00
-#SBATCH --output=results/nine-loss-recovery-packed/report-%j.log
+#SBATCH --output=results/phrase-recovery-16k/report-%j.log
 
 set -euo pipefail
 cd /data/home/acw794/ICASSP27-Phrase

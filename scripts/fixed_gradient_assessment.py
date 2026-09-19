@@ -8,8 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from icassp27_phrase.gradient_assessment import NAMES as BASE_NAMES
-from icassp27_phrase.gradient_assessment import SCHEMA, SEED, SharedObjectives
+from icassp27_phrase.losses import NAMES, PaperObjectives
 from scipy.stats import qmc
 
 TARGETS_PER_CARDINALITY = 32
@@ -28,7 +27,8 @@ COLUMNS = (
     (2, "time"),
     (4, "time"),
 )
-NAMES = (*BASE_NAMES, "forward_log")
+SEED = 2028
+SCHEMA = "gradient-assessment-16k-fixed-lhs-v1"
 
 
 def seed_for(*items: object) -> int:
@@ -84,14 +84,11 @@ def candidates(name: str, target: np.ndarray) -> dict[str, np.ndarray]:
     return {"joint": joint, "pitch": pitch, "time": time}
 
 
-class FixedObjectives(SharedObjectives):
-    """The eleven established objectives plus forward-time Log-Weighed CeL."""
+class FixedObjectives(PaperObjectives):
+    """All frozen 16-kHz paper objectives."""
 
-    def values(self, audio: torch.Tensor) -> dict[str, torch.Tensor]:
-        values = super().values(audio)
-        directions = self.cel.directional_distances(audio)
-        values["forward_log"] = directions[:, 1, :2].mean(-1)
-        return values
+    def __init__(self, target: torch.Tensor) -> None:
+        super().__init__(target, NAMES)
 
     def evaluate(self, synth, positions: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         coordinates = torch.tensor(
@@ -108,9 +105,6 @@ class FixedObjectives(SharedObjectives):
             gradients.append(gradient.detach())
         value = torch.stack(values, 1).cpu().numpy()
         gradient = torch.stack(gradients, 1).cpu().numpy()
-        sot, mss = NAMES.index("sot_published_composite"), NAMES.index("linear_mss")
-        value[:, sot] += 0.05 * value[:, mss]
-        gradient[:, sot] += 0.05 * gradient[:, mss]
         if not np.isfinite(value).all() or not np.isfinite(gradient).all():
             raise FloatingPointError("nonfinite objective/gradient")
         return value, gradient
@@ -122,8 +116,8 @@ def signature() -> tuple[str, dict[str, str]]:
     paths = [
         Path(__file__),
         *(source / name for name in (
-            "gradient_assessment.py",
             "losses.py",
+            "metrics.py",
             "synth.py",
             "exciter.py",
             "waveguide.py",
@@ -133,12 +127,19 @@ def signature() -> tuple[str, dict[str, str]]:
         )),
     ]
     hashes = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+    library = Path(__file__).parents[1] / "external" / "cels" / "src" / "cels"
+    hashes.update(
+        {
+            f"cels/{path.name}": hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(library.glob("*.py"))
+        }
+    )
     return hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest(), hashes
 
 
 def design_metadata() -> dict[str, object]:
     return {
-        "schema": f"{SCHEMA}-fixed-lhs-v1",
+        "schema": SCHEMA,
         "seed": SEED,
         "signature": signature()[0],
         "cardinalities": list(CARDINALITIES),
@@ -167,6 +168,7 @@ __all__ = [
     "COLUMNS",
     "FixedObjectives",
     "NAMES",
+    "SCHEMA",
     "TARGETS_PER_CARDINALITY",
     "candidates",
     "design_metadata",

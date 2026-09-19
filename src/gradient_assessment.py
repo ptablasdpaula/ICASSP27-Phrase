@@ -32,8 +32,8 @@ from .losses import (
     reverse_cumsum,
 )
 
-SCHEMA = "gradient-assessment-v1"
-SEED = 7942029
+SCHEMA = "gradient-assessment-v2"
+SEED = 2028
 NAMES = (
     "waveform_l1",
     "waveform_mse",
