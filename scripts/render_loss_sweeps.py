@@ -104,7 +104,9 @@ def compute(device: str, batch_size: int) -> tuple[np.ndarray, np.ndarray, dict[
 def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
     plt.rcParams.update(
         {
-            "font.size": 8.5,
+            # The 5.2-inch source is reduced to one 3.5-inch column. These
+            # sizes therefore print at approximately 8.5 pt.
+            "font.size": 12.5,
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
             "path.simplify": False,
@@ -112,7 +114,7 @@ def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
     )
     # Restore the earlier wide treatment at its final print width. This keeps
     # labels at body-text size while reducing the figure's vertical footprint.
-    figure, panels = plt.subplots(2, 2, figsize=(5.2, 3.2), sharey=True, squeeze=False)
+    figure, panels = plt.subplots(2, 2, figsize=(5.2, 3.45), sharey=True, squeeze=False)
     for row in range(2):
         for column, group in enumerate(GROUPS):
             axis = panels[row, column]
@@ -140,6 +142,7 @@ def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
             )
             axis.get_xticklabels()[0].set_horizontalalignment("left")
             axis.get_xticklabels()[-1].set_horizontalalignment("right")
+            axis.tick_params(axis="x", labelsize=9)
             axis.tick_params(axis="y", labelleft=False, labelright=False, left=False)
             axis.grid(axis="y", alpha=0.18)
             for spine in axis.spines.values():
@@ -150,7 +153,7 @@ def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
                 framealpha=0.9,
                 facecolor="white",
                 edgecolor="none",
-                fontsize=8.5,
+                fontsize=12.5,
                 handlelength=1.8,
                 borderpad=0.25,
                 labelspacing=0.25,
@@ -160,10 +163,10 @@ def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
         right=0.997,
         top=0.997,
         bottom=0.18,
-        hspace=0.43,
+        hspace=0.50,
         wspace=0.035,
     )
-    figure.supylabel("Normalised Loss [0-1]", x=0.020, y=0.537, fontsize=8.5)
+    figure.supylabel("Normalised Loss [0-1]", x=0.020, y=0.537, fontsize=12.5)
     for row, label in enumerate(("Time shift (s)", "Frequency shift (octaves)")):
         figure.text(
             0.514,
@@ -171,7 +174,7 @@ def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
             label,
             ha="center",
             va="top",
-            fontsize=8.5,
+            fontsize=12.5,
         )
     destination.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(destination, metadata={"CreationDate": None, "ModDate": None})

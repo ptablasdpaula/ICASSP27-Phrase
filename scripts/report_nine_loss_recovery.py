@@ -20,6 +20,7 @@ import run_nine_loss_recovery as recovery
 import run_packed_nine_loss_recovery as packed
 import run_sot_recovery_addon as sot_addon
 import torch
+from icassp27_phrase.config import MASTER_SEED
 from icassp27_phrase.metrics import log_spectral_distance, recovery_metrics
 from icassp27_phrase.runtime import require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
@@ -97,6 +98,25 @@ def reported_keys() -> set[tuple[str, int, int]]:
         for cardinality in recovery.CARDINALITIES
         for target in range(recovery.TARGETS_PER_CELL)
     }
+
+
+def random_lsd_keys() -> set[tuple[str, int, int]]:
+    return {
+        ("random", cardinality, target)
+        for cardinality in recovery.CARDINALITIES
+        for target in range(recovery.TARGETS_PER_CELL)
+    }
+
+
+def random_derangement(cardinality: int) -> np.ndarray:
+    """Return a fixed no-self-match permutation for the random LSD baseline."""
+    size = recovery.TARGETS_PER_CELL
+    original = np.arange(size)
+    generator = np.random.default_rng(MASTER_SEED + cardinality)
+    while True:
+        permutation = generator.permutation(size)
+        if np.all(permutation != original):
+            return permutation
 
 
 def validate() -> tuple[dict[tuple[str, int, int], dict], dict]:
@@ -333,6 +353,16 @@ def compute_lsd(rows: dict[tuple[str, int, int], dict], device: str) -> dict:
                 device=device,
             )
             target_audio = synth(target_f0, target_onset)
+            permutation = torch.as_tensor(
+                random_derangement(cardinality), dtype=torch.long, device=device
+            )
+            random_lsd = log_spectral_distance(target_audio[permutation], target_audio).cpu()
+            for index, value in enumerate(random_lsd.tolist()):
+                if not math.isfinite(value) or value < 0:
+                    raise FloatingPointError(
+                        f"invalid random LSD for {(cardinality, index)}"
+                    )
+                values["random", cardinality, index] = value
             for loss in REPORT_LOSSES:
                 group = [
                     rows[loss, cardinality, index]
@@ -354,7 +384,7 @@ def compute_lsd(rows: dict[tuple[str, int, int], dict], device: str) -> dict:
                     if not math.isfinite(value) or value < 0:
                         raise FloatingPointError(f"invalid LSD for {(loss, cardinality, index)}")
                     values[loss, cardinality, index] = value
-    if set(values) != reported_keys():
+    if set(values) != reported_keys() | random_lsd_keys():
         raise ValueError("LSD pass did not cover every fit")
     return values
 
@@ -590,6 +620,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
 
     matplotlib.use("Agg")
     from matplotlib import pyplot as plt
+    from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
 
     labels = (
@@ -641,35 +672,51 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
                 linewidth=0.35,
                 zorder=4,
             )
+    random_means = [
+        np.mean(
+            [
+                lsd["random", cardinality, index]
+                for index in range(recovery.TARGETS_PER_CELL)
+            ]
+        )
+        for cardinality in recovery.CARDINALITIES
+    ]
+    axis.plot(
+        range(len(recovery.CARDINALITIES)),
+        random_means,
+        color="0.2",
+        linestyle="--",
+        linewidth=0.9,
+        zorder=5,
+    )
     axis.set_xticks(range(len(recovery.CARDINALITIES)), recovery.CARDINALITIES)
     axis.set_xlabel("Number of events", fontsize=8, labelpad=5)
     axis.set_ylabel("LSD (dB)", fontsize=8)
     axis.tick_params(labelsize=7, length=2.0, pad=1.2)
     axis.grid(axis="y", color="0.88", linewidth=0.45)
     handles = [
-            Patch(facecolor=colors[loss], edgecolor="black", label=label)
-            for loss, label in zip(REPORT_LOSSES, labels, strict=True)
-        ]
-    # Matplotlib fills multi-column legends down columns. Reorder the handles
-    # so the visible reading order instead runs left-to-right across each row.
-    handles = [handles[index] for index in (0, 3, 6, 1, 4, 7, 2, 5, 8)]
+        Patch(facecolor=colors[loss], edgecolor="black", label=label)
+        for loss, label in zip(REPORT_LOSSES, labels, strict=True)
+    ]
+    handles.append(Line2D([0], [0], color="0.2", linestyle="--", label="Random"))
     axis.legend(
         handles=handles,
-        ncol=3,
+        ncol=len(handles),
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.005),
+        bbox_to_anchor=(0.5, 1.01),
         frameon=False,
-        fontsize=5.2,
-        handlelength=0.9,
-        columnspacing=0.7,
+        fontsize=4.8,
+        handlelength=0.45,
+        handletextpad=0.18,
+        columnspacing=0.25,
         borderaxespad=0.0,
     )
     for spine in axis.spines.values():
         spine.set_linewidth(0.6)
-    figure.subplots_adjust(left=0.15, right=0.99, bottom=0.21, top=0.72)
+    figure.subplots_adjust(left=0.15, right=0.99, bottom=0.21, top=0.84)
     paths = {suffix: output_stem.with_suffix(f".{suffix}") for suffix in ("pdf", "png")}
     for path in paths.values():
-        save_figure(figure, path, pad_inches=0.14)
+        save_figure(figure, path, pad_inches=0.08)
     plt.close(figure)
     return {suffix: sha256(path) for suffix, path in paths.items()}
 
@@ -741,6 +788,10 @@ def main() -> None:
         "lsd": (
             "RMS difference between centered periodic-Hann FFT-1024/hop-256 log-magnitude "
             "spectra with a common target-relative -100 dB floor"
+        ),
+        "random_lsd_baseline": (
+            "mean LSD after pairing each target with a fixed, no-self-match random "
+            "permutation of the other targets at the same event cardinality"
         ),
         "validation": {"main": main_validation, "sot_addon": sot_validation},
         "artifacts": {
