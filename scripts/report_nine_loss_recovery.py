@@ -482,6 +482,17 @@ def format_value(value: float) -> str:
     return rendered
 
 
+def format_ranked_value(value: float, rank: int) -> str:
+    rendered = format_value(value)
+    if rank == 1:
+        return rf"\textbf{{{rendered}}}"
+    if rank == 2:
+        return rf"\underline{{{rendered}}}"
+    if rank == 3:
+        return rf"\textit{{{rendered}}}"
+    return rendered
+
+
 def render_table(medians: dict, path: Path) -> None:
     labels = (
         "SS",
@@ -489,10 +500,10 @@ def render_table(medians: dict, path: Path) -> None:
         "SOT",
         r"$\mathrm{TF}\mathcal{W}_2$",
         r"log-$\mathrm{TF}\mathcal{W}_2$",
-        r"Ce$\mathcal L$ (Ours)",
-        r"logCe$\mathcal L$ (Ours)",
-        r"decCe$\mathcal L$ (Ours)",
-        r"tlogCe$\mathcal L$ (Ours)",
+        r"Ce$\mathcal L$",
+        r"logCe$\mathcal L$",
+        r"decCe$\mathcal L$",
+        r"tlogCe$\mathcal L$",
     )
     configurations = (
         ("--", "--", "--"),
@@ -533,15 +544,22 @@ def render_table(medians: dict, path: Path) -> None:
     ):
         cells = []
         for metric in ("pitch_mae_cents", "onset_mae_ms"):
-            cells.extend(
-                format_value(medians[metric][loss, cardinality])
-                for cardinality in recovery.CARDINALITIES
-            )
+            for cardinality in recovery.CARDINALITIES:
+                values = {
+                    candidate: medians[metric][candidate, cardinality]
+                    for candidate in REPORT_LOSSES
+                }
+                # Displayed values below .01 share the best rank. Other exact
+                # ties also share a rank, so the next distinct value follows.
+                groups = sorted({0.0 if value < 0.01 else value for value in values.values()})
+                value = values[loss]
+                group = 0.0 if value < 0.01 else value
+                cells.append(format_ranked_value(value, groups.index(group) + 1))
         lines.append(
             " & ".join((label, *configuration, *cells)) + r" \\"
         )
         if index == 4:
-            lines.append(r"\addlinespace[1pt]")
+            lines.append(r"\midrule")
     lines.extend((r"\bottomrule", r"\end{tabularx}", r"\endgroup"))
     atomic_text(path, "\n".join(lines) + "\n")
 
