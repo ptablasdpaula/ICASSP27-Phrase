@@ -216,15 +216,18 @@ nut-side delay $D_1$ and bridge-side delay $D_2$ on each rail.}
 \label{fig:waveguide}
 \end{figure}
 
-% Queue the single-column slices for page 3.
-\begin{figure}[!t]
+% Queue the wide slices while page 2 is being composed.
+\begin{figure*}[!t]
 \centering
-\includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_sweeps.pdf}
+\begin{minipage}{0.72\textwidth}
+\centering
+\includegraphics[width=\linewidth]{\PaperRoot/figures/loss_sweeps.pdf}
 \caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time
 shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is
 independently min--max normalised over 3201 samples.}
 \label{fig:loss-sweeps}
-\end{figure}
+\end{minipage}
+\end{figure*}
 
 Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, where
 $H_L$ is the loss-filter transfer function, $z$ the transform variable, and
@@ -396,8 +399,8 @@ each fit's lowest-loss iterate.
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
-\includegraphics[width=0.74\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
-\vspace{-5.0mm}
+\includegraphics[width=\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
+\vspace{-3.0mm}
 \caption{Per-phrase \acrshort{lsd} distributions over the same targets; lower
 is better.}
 \label{fig:lsd}

@@ -564,14 +564,20 @@ def render_table(medians: dict, path: Path) -> None:
     atomic_text(path, "\n".join(lines) + "\n")
 
 
-def save_figure(figure, path: Path) -> None:
+def save_figure(figure, path: Path, *, pad_inches: float = 0.1) -> None:
     descriptor, temporary = tempfile.mkstemp(
         prefix=f".{path.stem}-", suffix=path.suffix, dir=path.parent
     )
     os.close(descriptor)
     try:
         metadata = {"CreationDate": None, "ModDate": None} if path.suffix == ".pdf" else None
-        figure.savefig(temporary, dpi=300, bbox_inches="tight", metadata=metadata)
+        figure.savefig(
+            temporary,
+            dpi=300,
+            bbox_inches="tight",
+            pad_inches=pad_inches,
+            metadata=metadata,
+        )
         os.replace(temporary, path)
         os.chmod(path, 0o644)
     finally:
@@ -605,7 +611,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
             strict=True,
         )
     )
-    figure, axis = plt.subplots(figsize=(3.45, 2.58))
+    figure, axis = plt.subplots(figsize=(3.5, 2.45))
     offsets = np.linspace(-0.36, 0.36, len(REPORT_LOSSES))
     for loss_index, loss in enumerate(REPORT_LOSSES):
         for cardinality_index, cardinality in enumerate(recovery.CARDINALITIES):
@@ -636,15 +642,19 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
                 zorder=4,
             )
     axis.set_xticks(range(len(recovery.CARDINALITIES)), recovery.CARDINALITIES)
-    axis.set_xlabel("Events", fontsize=8)
+    axis.set_xlabel("Number of events", fontsize=8, labelpad=5)
     axis.set_ylabel("LSD (dB)", fontsize=8)
     axis.tick_params(labelsize=7, length=2.0, pad=1.2)
     axis.grid(axis="y", color="0.88", linewidth=0.45)
-    axis.legend(
-        handles=[
+    handles = [
             Patch(facecolor=colors[loss], edgecolor="black", label=label)
             for loss, label in zip(REPORT_LOSSES, labels, strict=True)
-        ],
+        ]
+    # Matplotlib fills multi-column legends down columns. Reorder the handles
+    # so the visible reading order instead runs left-to-right across each row.
+    handles = [handles[index] for index in (0, 3, 6, 1, 4, 7, 2, 5, 8)]
+    axis.legend(
+        handles=handles,
         ncol=3,
         loc="lower center",
         bbox_to_anchor=(0.5, 1.005),
@@ -656,10 +666,10 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
     )
     for spine in axis.spines.values():
         spine.set_linewidth(0.6)
-    figure.subplots_adjust(left=0.15, right=0.99, bottom=0.17, top=0.72)
+    figure.subplots_adjust(left=0.15, right=0.99, bottom=0.21, top=0.72)
     paths = {suffix: output_stem.with_suffix(f".{suffix}") for suffix in ("pdf", "png")}
     for path in paths.values():
-        save_figure(figure, path)
+        save_figure(figure, path, pad_inches=0.14)
     plt.close(figure)
     return {suffix: sha256(path) for suffix, path in paths.items()}
 
