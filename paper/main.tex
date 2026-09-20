@@ -59,10 +59,8 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \newacronym{stft}{STFT}{short-time Fourier transform}
 \newacronym{fft}{FFT}{fast Fourier transform}
 \newacronym{dft}{DFT}{discrete Fourier transform}
-\newacronym{fm}{FM}{frequency modulation}
 \newacronym{ir}{IR}{impulse response}
 \newacronym{mir}{MIR}{music information retrieval}
-\newacronym{midi}{MIDI}{Musical Instrument Digital Interface}
 \newacronym{rms}{RMS}{root-mean-square}
 \newacronym{cdf}{CDF}{cumulative distribution function}
 \newacronym{hrc}{HRC}{half-raised-cosine}
@@ -103,9 +101,9 @@ starting corners and accumulation directions.}
 
 \section{Introduction}
 \glsresetall
-Engel et al. coined the term \Gls{ddsp}, as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. The purpose is usually sound matching: retrieving the synthesizer parameters, that would best synthesize the target sound. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, \gls{fm} synthesis, reverberation, vocal tract modelling and effects modulation ~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}.
+Engel et al. coined the term \Gls{ddsp}, as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. The purpose is usually sound matching: retrieving the synthesizer parameters, that would best synthesize the target sound. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, FM synthesis, reverberation, vocal tract modelling and effects modulation ~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}.
 
-In most of the \gls{ddsp} literature, controls are predicted as either a constant set of parameters, or dense frame trajectories. These naturally fit \gls{ir} prediction or continuously driven sounds respectively. However, that is not how many instruments are instinctively performed. Previously, we proposed an event-set predictor for the recovery of sparse guitar plucks \cite{tablasdepaula2026karplus}, forming note events with onset, pitch ($f_0$) and velocity among other physical parameters. This work expands this framework with the purpose of joining common \gls{mir} representations, where plucked string is represented as \gls{midi}, sheet music or guitar tablatures ~\cite{riley2024gaps, loth2025goat,loth2025guitarflow} with \gls{ddsp}.
+In most of the \gls{ddsp} literature, controls are predicted as either a constant set of parameters, or dense frame trajectories. These naturally fit \gls{ir} prediction or continuously driven sounds respectively. However, that is not how many instruments are instinctively performed. Previously, we proposed an event-set predictor for the recovery of sparse guitar plucks \cite{tablasdepaula2026karplus}, forming note events with onset, pitch ($f_0$) and velocity among other physical parameters. This work expands this framework with the purpose of joining common \gls{mir} representations, where plucked string is represented as MIDI, sheet music or guitar tablatures ~\cite{riley2024gaps, loth2025goat,loth2025guitarflow} with \gls{ddsp}.
 
 However, $f_0$ and onset time, representing a displacement of energy, are notoriously difficult to predict. This is due to the fact that~\gls{ddsp}     relies on waveform and pointwise spectral losses, such as \gls{mss}, prompt to oscillatory local minima and useless when there is no energy overlap \cite{wang2019nsf, turian2020loss}. Recent revisions of \gls{mss} aimed to reduce the former issue by reducing spectral leaking \cite{schwar2023mss}, but do not address the latter. Complex surrogates were proposed but remain synthesiser-dependant \cite{hayes2023sinusoidal}. The literature commonly eludes this problematic via external detectors or synthetic labels, the first inherit the detectors' errors and veto further end-to-end training of $f_0$ \cite{engel2020inverse, engel2020ddsp, caspe2022ddx7, sudholt2023vocal}, while the latter generalises poorly to out of domain data \cite{tablasdepaula2026karplus}.
 
@@ -132,13 +130,11 @@ While promising, we showed that \gls{sot} is unreliable for joint onset--$f_0$ o
 %excitation and Thiran fractional-delay propagation, with event-wise string-state
 %reset for phrase recovery.
 
-\textcolor{red}{
-Hence, our contributions are twofold:
-\begin{itemize}
-    \item A family of losses, \glspl{cel}, that can recover onset time and $f_0$ in the single-pluck landscape.
-    \item An unsupervised method for recovering monophonic plucked string musical phrases that is superior to previously proposed loss configurations.
-\end{itemize}
-}
+We contribute (i)~\glspl{cel}, a family of objectives for jointly optimising
+onset time and $f_0$ by comparing accumulated spectral power; and (ii)~a
+phrase-wide gradient analysis and unsupervised recovery study of one- to
+eight-event phrases, comparing waveform, spectral, transport, and Ce$\mathcal L$
+objectives.
 
 
 \section{Cumulative Energy Losses}
@@ -274,7 +270,7 @@ interference with residual string vibration contributes to this effect.
 \begin{table*}[!t]
 \centering
 \caption{\normalfont Median Hungarian-assigned pitch and onset errors over 150
-target phrases per event count; lower is better. Bold, underlined, and italic
+target phrases for each number of events; lower is better. Bold, underlined, and italic
 values denote the best, second-best, and third-best results in each column,
 respectively; all values below $.01$ share the best rank. Ce$\mathcal L$
 configuration columns show the accumulation directions, linear-bin or
@@ -344,8 +340,8 @@ $(\rightarrow,\uparrow)$ and $(\rightarrow,\downarrow)$.
 \subsection{Gradient Analysis}
 \label{sec:gradient-diagnostic}
 We ask how closely each loss's descent direction aligns with the displacement
-that recovers a target phrase, before taking an optimiser step. For each
-cardinality, we generate 32 target phrases and 256 candidates per target from
+that recovers a target phrase, before taking an optimiser step. For each $N$,
+we generate 32 target phrases and 256 candidates per target from
 independently scrambled joint LHS designs. The \emph{Joint} condition retains
 both perturbations; \emph{Known time} restores target onsets and varies only
 pitch; \emph{Known $f_0$} restores target pitches and varies only onset. Joint
@@ -359,13 +355,13 @@ movement in a known coordinate reduces alignment.
 \centering
 \includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
 \caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation over
-8192 candidate--target pairs per column; higher is better. Columns give event
-count; colours span $[-1,1]$.}
+8192 candidate--target pairs per column; higher is better. Columns give the
+number of events; colours span $[-1,1]$.}
 \label{fig:gradient-alignment}
 \end{figure}
 
 \subsection{Musical Phrase Recovery}
-Seed 2029 generates 150 scrambled-LHS targets at each cardinality. Every
+Seed 2029 generates 150 scrambled-LHS targets for each $N$. Every
 candidate begins with all pitches at 160~Hz and onsets isochronously spaced
 within 0.2--1.8~s; independent logits constrain both coordinates to their
 registered ranges. We retain the seven objectives whose one-event Joint mean
@@ -386,17 +382,39 @@ each fit's lowest-loss iterate.
 \vspace{-4.5mm}
 \caption{Per-phrase \acrshort{lsd} distributions for the best-performing
 representative of each loss family over the same targets; lower is better.
-Random pairs each target with a different randomly permuted target of the same
-event count.}
+Random pairs each target with a different randomly permuted target having the
+same number of events.}
 \label{fig:lsd}
 \end{figure}
 
 \section{Conclusion}
-We have introduced a new family of losses \glspl{cel}, which compare STFT power accumulated in time and frequency directions and proposed its use alongside a Digital Waveguide for the recovery of monophonic plucked-string musical phrases, via optimisation of their independent pitch and onset times. Across 90,112 Latin Hypercube Sampled comparisons of musical phrases of increasing number of events (1 to 8), we find that \glspl{cel} preserve stronger cosine similarity for joint pitch-time optimisation than any other previously proposed waveform, spectral or optimal transport-based losses. However, as the number of events increases, cosine similarity also decreases substantially. Gradient descent optimisation aligns closely with these results, where our proposed \glspl{cel} beat all other losses at the task of musical phrase recovery, being near perfect for 1 and 2 events but progressively collapsing at increasing number of events, as can be seen both in \ref{fit} and \ref{fig:lsd}. As seen in the results, adding a progressive decay in the accumulation improves phrase-matching substantially for $N=4$ events, but collapses as $N$ increases. This suggests global energy displacement might not always be beneficial, directing our attention towards unbalanced variants of OT \cite{sejourne2023unbalanced}. Additionally, we note this work uses only STFT as a representation, where Joint Time Frequency Scattering has previously been proposed for the related task of arpeggio rate and pitch range prediction, and also deserve of careful attention \cite{anden2019joint, vahidi2023mesostructures}.
+We introduced \acrlongpl{cel} (Ce$\mathcal L$s), which compare accumulated
+short-time Fourier transform (STFT) power in time and frequency, for joint onset
+and $f_0$ optimisation in monophonic plucked-string phrases. Across 90,112
+phrase comparisons with one to eight events, Ce$\mathcal L$s achieve the highest
+mean phrase-wide gradient cosine among the tested waveform, spectral, and
+transport objectives; alignment falls as the number of events $N$ grows
+(Fig.~\ref{fig:gradient-alignment}). Recovery mirrors this diagnostic: every
+Ce$\mathcal L$ variant is nearly exact at $N\in\{1,2\}$, while decCe$\mathcal L$
+gives the lowest median pitch and onset errors at $N\in\{4,6,8\}$
+(Table~\ref{tab:pilot-compact}). Its median log-spectral distance remains below
+random pairing at every $N$ (Fig.~\ref{fig:lsd}).
 
-We point out, that the current approach has several limitations. Firstly, it addresses only monophonic synthetic data and needs of the filter state to be reset between plucks, corresponding to a hard mute before every new injection of energy - further research is needed to corroborate why persistence of energy between plucks complicates optimisation, and whether resetting is a viable surrogate technique for matching targets where this is not present. Extending this work to real-world data would require matching timbre as well as pitch and onset times, which this work does not address. Lastly we might not know the number of events occurring in a real-world performance. Predicting this variable introduces a non-differentiable categorical/binary difficult to address with gradient descent.
+The gain from decaying
+accumulation suggests that localising displacement helps as phrases grow,
+motivating comparison with objectives that relax global mass transport, such
+as unbalanced optimal transport~\cite{sejourne2023unbalanced}.
 
-We believe this work introduces a viable method for the matching of event times and pitch, with potential impacts for unsupervised onset detection, and any other DDSP application where variables concerning displacement of energy are needed. We provide all implementation and experiments code at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase}, and a library where CeLs are easily callable for further experiments in research \url{link here..}
+Our evidence is limited to synthetic monophonic phrases with known $N$, fixed
+timbre, and waveguide state reset at each pluck. The reset suppresses residual
+string interactions, but its suitability for recordings with persistent
+vibration remains untested. Real-world recovery must also estimate timbre and
+the number of events, requiring discrete model selection alongside gradient
+optimisation. Alternative representations such as joint time--frequency
+scattering merit study given their use for related arpeggio-rate and pitch-range
+estimation~\cite{anden2019joint,vahidi2023mesostructures}. Code, experiments,
+and the PyTorch Ce$\mathcal L$ library are available at
+\url{https://github.com/ptablasdpaula/ICASSP27-Phrase}.
 
 
 
