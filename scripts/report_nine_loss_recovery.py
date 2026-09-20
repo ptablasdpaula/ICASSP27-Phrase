@@ -53,6 +53,13 @@ REPORT_LABELS = (
     "decCeL",
     "tlogCeL",
 )
+LSD_FIGURE_LOSSES = ("single_stft", "log_jtfot", "dec_cel", "random")
+LSD_FIGURE_LABELS = (
+    "SS",
+    r"log-$\mathrm{TF}\mathcal{W}_2$",
+    r"decCe$\mathcal{L}$",
+    "Random",
+)
 LOW_ALIGNMENT_CONTROLS = ("sot_published_composite", "linear_jtfot")
 EXCLUDED_AFTER_SCREEN = ("mss",)
 
@@ -620,38 +627,30 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
 
     matplotlib.use("Agg")
     from matplotlib import pyplot as plt
-    from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
 
-    labels = (
-        "SS",
-        "SmoMSS",
-        "SOT",
-        r"$\mathrm{TF}\mathcal{W}_2$",
-        r"log-$\mathrm{TF}\mathcal{W}_2$",
-        r"Ce$\mathcal{L}$",
-        r"logCe$\mathcal{L}$",
-        r"decCe$\mathcal{L}$",
-        r"tlogCe$\mathcal{L}$",
-    )
     cmap = plt.get_cmap("magma")
-    colors = dict(
-        zip(
-            REPORT_LOSSES,
-            [cmap(value) for value in np.linspace(0.08, 0.92, len(REPORT_LOSSES))],
-            strict=True,
-        )
-    )
+    colors = {
+        "single_stft": cmap(0.12),
+        "log_jtfot": cmap(0.43),
+        "dec_cel": cmap(0.74),
+        "random": (0.52, 0.52, 0.52, 1.0),
+    }
     figure, axis = plt.subplots(figsize=(3.5, 2.45))
-    offsets = np.linspace(-0.36, 0.36, len(REPORT_LOSSES))
-    for loss_index, loss in enumerate(REPORT_LOSSES):
+    offsets = np.linspace(-0.27, 0.27, len(LSD_FIGURE_LOSSES))
+    for loss_index, loss in enumerate(LSD_FIGURE_LOSSES):
         for cardinality_index, cardinality in enumerate(recovery.CARDINALITIES):
-            values = np.asarray([lsd[loss, cardinality, index] for index in range(150)])
+            values = np.asarray(
+                [
+                    lsd[loss, cardinality, index]
+                    for index in range(recovery.TARGETS_PER_CELL)
+                ]
+            )
             position = cardinality_index + offsets[loss_index]
             violin = axis.violinplot(
                 values,
                 positions=[position],
-                widths=0.082,
+                widths=0.17,
                 showmeans=False,
                 showmedians=False,
                 showextrema=False,
@@ -672,23 +671,6 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
                 linewidth=0.35,
                 zorder=4,
             )
-    random_means = [
-        np.mean(
-            [
-                lsd["random", cardinality, index]
-                for index in range(recovery.TARGETS_PER_CELL)
-            ]
-        )
-        for cardinality in recovery.CARDINALITIES
-    ]
-    axis.plot(
-        range(len(recovery.CARDINALITIES)),
-        random_means,
-        color="0.2",
-        linestyle="--",
-        linewidth=0.9,
-        zorder=5,
-    )
     axis.set_xticks(range(len(recovery.CARDINALITIES)), recovery.CARDINALITIES)
     axis.set_xlabel("Number of events", fontsize=8, labelpad=5)
     axis.set_ylabel("LSD (dB)", fontsize=8)
@@ -696,9 +678,8 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
     axis.grid(axis="y", color="0.88", linewidth=0.45)
     handles = [
         Patch(facecolor=colors[loss], edgecolor="black", label=label)
-        for loss, label in zip(REPORT_LOSSES, labels, strict=True)
+        for loss, label in zip(LSD_FIGURE_LOSSES, LSD_FIGURE_LABELS, strict=True)
     ]
-    handles.append(Line2D([0], [0], color="0.2", linestyle="--", label="Random"))
     axis.legend(
         handles=handles,
         ncol=len(handles),
@@ -789,8 +770,9 @@ def main() -> None:
             "RMS difference between centered periodic-Hann FFT-1024/hop-256 log-magnitude "
             "spectra with a common target-relative -100 dB floor"
         ),
+        "lsd_figure_losses": LSD_FIGURE_LOSSES,
         "random_lsd_baseline": (
-            "mean LSD after pairing each target with a fixed, no-self-match random "
+            "per-phrase LSD after pairing each target with a fixed, no-self-match random "
             "permutation of the other targets at the same event cardinality"
         ),
         "validation": {"main": main_validation, "sot_addon": sot_validation},
