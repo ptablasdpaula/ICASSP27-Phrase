@@ -291,8 +291,7 @@ All experiments use the two-second, 16-kHz synthesis configuration in
 Sec.~\ref{sec:renderer}. An $N$-event phrase contains fundamental frequencies
 $f_0\in[80,320]$~Hz and onsets $t\in[0.2,1.8]$~s, with
 $N\in\{1,2,4,6,8\}$. We use reproducibly scrambled Latin hypercube sampling
-(LHS) to stratify target coordinates and, in Gradient Analysis, candidate
-coordinates~\cite{mckay1979comparison}. Target onsets are separated by at
+(LHS) to stratify all target coordinates~\cite{mckay1979comparison}. Target onsets are separated by at
 least 50~ms, while candidates span the complete registered domain.
 
 \textbf{Metrics.}
@@ -317,20 +316,17 @@ between periodic-Hann \acrshort{fft}-1024/hop-256 log-magnitude spectra, using a
 common target-relative $-100$-dB magnitude floor.
 
 \textbf{Baselines.}
-We retain the cited losses and state only their adaptations to our 16-kHz
-inputs. Alongside waveform $L_1$ and $L_2$, SS uses periodic-Hann
+Alongside waveform $L_1$ and $L_2$, we use a single-scale STFT (SS) using a periodic-Hann
 \acrshort{fft}-1024/hop-256 magnitudes. MSS sums linear- and log-magnitude
 $L_1$ terms over periodic-Hann FFT sizes 2048, 1024, 512, 256, 128, and 64,
-with quarter-length hops, end padding, and no centring~\cite{wang2019nsf,engel2020ddsp}.
-SmoMSS uses the flat-top window/hop pairs 67/32, 127/63, 257/128, 509/254,
-1021/510, and 2053/1026~\cite{schwar2023mss}. \Gls{sot} uses flat-top
+with quarter-length hops, end padding, and no centring, as in~\cite{wang2019nsf,engel2020ddsp}.
+SmoMSS uses the flat-top prime window/hop pairs 67/32, 127/63, 257/128, 509/254,
+1021/510, and 2053/1026 proposed by ~\cite{schwar2023mss}. \Gls{sot} uses flat-top
 \acrshort{fft}-2048/hop-256 transport and its $0.05$-weighted linear MSS
 component; SOT-NC removes its asymmetric cumulative-mass cutoff and normalises
 the two spectra independently~\cite{torres2024sot}. Both \gls{tfw} variants use
 globally normalised periodic-Hann \acrshort{fft}-1024/hop-512 magnitudes and ten projections: the
-published coordinates set $1$~s${}=1000$~Hz, while our log-frequency adaptation
-sets $1$~s${}=1$~octave through
-$\log_2[\max(f,20)/20]$~\cite{fabiani2024jtfot}.
+published coordinates set $1$~s${}=1000$~Hz. Additionally, we propose a log-frequency variant where cost is $1$~s${}=1$~ (log\gls{tfw})\cite{fabiani2024jtfot}.
 
 \textbf{CeL variants.}
 The base Ce$\mathcal L$ averages all four diagonal direction pairs, uses
@@ -396,14 +392,13 @@ event count.}
 \end{figure}
 
 \section{Conclusion}
-We introduced \glspl{cel} for joint pluck-onset and pitch recovery. Across
-90,112 comparisons, they give the highest mean Joint gradient cosine at every
-cardinality and retain $.10$--$.13$ at eight events, against at most $.04$ for
-the baselines. Their advantage also holds when only pitch or onset is unknown.
-Across the 6,750 matched fits, decCe$\mathcal L$ gives the lowest median pitch
-error and \gls{lsd} from four to eight events. Its onset error is lowest at
-four events and remains within 3.7~ms of the best median at six and eight
-events.
+We have introduced a new family of losses \glspl{cel}, which compare STFT power accumulated in time and frequency directions and proposed its use alongside a Digital Waveguide for the recovery of monophonic plucked-string musical phrases, via optimisation of their independent pitch and onset times. Across 90,112 Latin Hypercube Sampled comparisons of musical phrases of increasing number of events (1 to 8), we find that \glspl{cel} preserve stronger cosine similarity for joint pitch-time optimisation than any other previously proposed waveform, spectral or optimal transport-based losses. However, as the number of events increases, cosine similarity also decreases substantially. Gradient descent optimisation aligns closely with these results, where our proposed \glspl{cel} beat all other losses at the task of musical phrase recovery, being near perfect for 1 and 2 events but progressively collapsing at increasing number of events, as can be seen both in \ref{fit} and \ref{fig:lsd}. As seen in the results, adding a progressive decay in the accumulation improves phrase-matching substantially for $N=4$ events, but collapses as $N$ increases. This suggests global energy displacement might not always be beneficial, directing our attention towards unbalanced variants of OT \cite{sejourne2023unbalanced}. Additionally, we note this work uses only STFT as a representation, where Joint Time Frequency Scattering has previously been proposed for the related task of arpeggio rate and pitch range prediction, and also deserve of careful attention \cite{anden2019joint, vahidi2023mesostructures}.
+
+We point out, that the current approach has several limitations. Firstly, it addresses only monophonic synthetic data and needs of the filter state to be reset between plucks, corresponding to a hard mute before every new injection of energy - further research is needed to corroborate why persistence of energy between plucks complicates optimisation, and whether resetting is a viable surrogate technique for matching targets where this is not present. Extending this work to real-world data would require matching timbre as well as pitch and onset times, which this work does not address. Lastly we might not know the number of events occurring in a real-world performance. Predicting this variable introduces a non-differentiable categorical/binary difficult to address with gradient descent.
+
+We believe this work introduces a viable method for the matching of event times and pitch, with potential impacts for unsupervised onset detection, and any other DDSP application where variables concerning displacement of energy are needed. We provide all implementation and experiments code at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase}, and a library where CeLs are easily callable for further experiments in research \url{link here..}
+
+
 
 \clearpage
 \section*{Acknowledgment}
