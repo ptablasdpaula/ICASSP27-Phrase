@@ -39,7 +39,8 @@ STYLE = {
     "cel": (r"Ce$\mathcal{L}$", "#6A3D9A", "-", 1.3),
     "sot_published_composite": ("SOT", "#009E73", "-", 1.3),
 }
-LABEL_SIZE = 6.0
+LABEL_SIZE = 7.0
+SHARED_LABEL_GAP_PT = 15.0
 
 
 def sha256(path: Path) -> str:
@@ -165,15 +166,64 @@ def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
         hspace=0.50,
         wspace=0.035,
     )
-    figure.supylabel("Normalised Loss [0-1]", x=0.020, y=0.537, fontsize=LABEL_SIZE)
-    for row, label in enumerate(("Time shift (s)", "Frequency shift (octaves)")):
-        figure.text(
-            0.514,
-            panels[row, 0].get_position().y0 - 0.060,
-            label,
-            ha="center",
-            va="top",
-            fontsize=LABEL_SIZE,
+    shared_y_label = figure.text(
+        0.0,
+        0.0,
+        "Normalised Loss [0-1]",
+        ha="center",
+        va="center",
+        rotation=90,
+        fontsize=LABEL_SIZE,
+    )
+    shared_x_labels = []
+    for label in ("Time shift (s)", "Frequency shift (octaves)"):
+        shared_x_labels.append(
+            figure.text(
+                0.0,
+                0.0,
+                label,
+                ha="center",
+                va="center",
+                fontsize=LABEL_SIZE,
+            )
+        )
+
+    # Centre the shared labels on the panel block rather than on the canvas.
+    # Work in display coordinates so the horizontal and vertical clearances
+    # are the same physical distance and do not depend on the font size.
+    figure.canvas.draw()
+    renderer = figure.canvas.get_renderer()
+    all_panel_boxes = [axis.get_window_extent(renderer) for axis in panels.flat]
+    panel_left = min(box.x0 for box in all_panel_boxes)
+    panel_bottom = min(box.y0 for box in all_panel_boxes)
+    panel_top = max(box.y1 for box in all_panel_boxes)
+    gap_pixels = SHARED_LABEL_GAP_PT * figure.dpi / 72.0
+
+    def shift_text(text, dx_pixels: float, dy_pixels: float) -> None:
+        x, y = text.get_position()
+        text.set_position(
+            (
+                x + dx_pixels / figure.bbox.width,
+                y + dy_pixels / figure.bbox.height,
+            )
+        )
+
+    y_box = shared_y_label.get_window_extent(renderer)
+    shift_text(
+        shared_y_label,
+        panel_left - gap_pixels - y_box.x1,
+        (panel_bottom + panel_top) / 2.0 - (y_box.y0 + y_box.y1) / 2.0,
+    )
+    for row, text in enumerate(shared_x_labels):
+        row_boxes = [panels[row, column].get_window_extent(renderer) for column in range(2)]
+        row_left = min(box.x0 for box in row_boxes)
+        row_right = max(box.x1 for box in row_boxes)
+        row_bottom = min(box.y0 for box in row_boxes)
+        text_box = text.get_window_extent(renderer)
+        shift_text(
+            text,
+            (row_left + row_right) / 2.0 - (text_box.x0 + text_box.x1) / 2.0,
+            row_bottom - gap_pixels - text_box.y1,
         )
     destination.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(destination, metadata={"CreationDate": None, "ModDate": None})
