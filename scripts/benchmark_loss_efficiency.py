@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import gc
 import json
-import math
 import statistics
 import time
 from datetime import UTC, datetime
@@ -20,7 +19,7 @@ from icassp27_phrase.targets import load_target
 
 LOSSES = {
     "single_stft": "SS",
-    "mss": "MSS",
+    "smooth_mss": "SmoMSS",
     "linear_jtfot": "TFW2",
     "cel": "CeL",
 }
@@ -44,6 +43,7 @@ def benchmark(
     warmup: int,
     measured: int,
     repeats: int,
+    target_count: int,
     cardinalities: tuple[int, ...],
     losses: tuple[str, ...],
 ) -> None:
@@ -52,69 +52,97 @@ def benchmark(
     torch.set_num_threads(1)
     synth = PhraseSynth().to(device)
     rows: list[dict[str, object]] = []
+    summaries: list[dict[str, object]] = []
+    if target_count % batch:
+        raise ValueError("target count must be divisible by batch size")
 
     for cardinality in cardinalities:
-        phrases = [load_target(cardinality, index + 1, device=device)[1] for index in range(batch)]
-        with torch.no_grad():
-            targets = synth(
-                torch.stack([phrase.f0_hz for phrase in phrases]),
-                torch.stack([phrase.onset_seconds for phrase in phrases]),
-            )
         initial = initial_candidate(cardinality, device=device)
-
         for loss in losses:
             label = LOSSES[loss]
-            objective = PaperObjectives(targets, (loss,))
-            raw = encode(
-                initial.f0_hz.expand(batch, -1),
-                initial.onset_seconds.expand(batch, -1),
-            ).clone().requires_grad_(True)
-            torch.cuda.synchronize()
-            persistent = torch.cuda.memory_allocated()
-            torch.cuda.reset_peak_memory_stats()
-
-            def update(
-                value: torch.Tensor,
-                bound: PaperObjectives = objective,
-                name: str = loss,
-            ) -> torch.Tensor:
-                f0, onset = decode(value)
-                audio = synth(f0, onset)
-                scalar = bound.values(audio)[name].sum()
-                gradient, = torch.autograd.grad(scalar, value)
-                return (value - 1e-4 * gradient).detach().requires_grad_(True)
-
-            for _ in range(warmup):
-                raw = update(raw)
-            durations = []
-            for _ in range(repeats):
+            loss_rows = []
+            for begin in range(0, target_count, batch):
+                phrases = [
+                    load_target(cardinality, index + 1, device=device)[1]
+                    for index in range(begin, begin + batch)
+                ]
+                with torch.no_grad():
+                    targets = synth(
+                        torch.stack([phrase.f0_hz for phrase in phrases]),
+                        torch.stack([phrase.onset_seconds for phrase in phrases]),
+                    )
+                objective = PaperObjectives(targets, (loss,))
+                raw = encode(
+                    initial.f0_hz.expand(batch, -1),
+                    initial.onset_seconds.expand(batch, -1),
+                ).clone().requires_grad_(True)
                 torch.cuda.synchronize()
-                started = time.perf_counter()
-                for _ in range(measured):
+                persistent = torch.cuda.memory_allocated()
+
+                def update(
+                    value: torch.Tensor,
+                    bound: PaperObjectives = objective,
+                    name: str = loss,
+                ) -> torch.Tensor:
+                    f0, onset = decode(value)
+                    audio = synth(f0, onset)
+                    scalar = bound.values(audio)[name].sum()
+                    gradient, = torch.autograd.grad(scalar, value)
+                    return (value - 1e-4 * gradient).detach().requires_grad_(True)
+
+                for _ in range(warmup):
                     raw = update(raw)
-                torch.cuda.synchronize()
-                durations.append((time.perf_counter() - started) / measured)
+                durations = []
+                peaks = []
+                for _ in range(repeats):
+                    torch.cuda.synchronize()
+                    torch.cuda.reset_peak_memory_stats()
+                    started = time.perf_counter()
+                    for _ in range(measured):
+                        raw = update(raw)
+                    torch.cuda.synchronize()
+                    durations.append((time.perf_counter() - started) / measured)
+                    peaks.append(torch.cuda.max_memory_allocated())
 
-            peak = torch.cuda.max_memory_allocated()
-            median_seconds = statistics.median(durations)
-            ordered = sorted(durations)
-            q1 = ordered[max(0, math.floor((len(ordered) - 1) * 0.25))]
-            q3 = ordered[min(len(ordered) - 1, math.ceil((len(ordered) - 1) * 0.75))]
-            row = {
+                row = {
+                    "loss": loss,
+                    "label": label,
+                    "cardinality": cardinality,
+                    "cell": begin // batch,
+                    "target_begin": begin,
+                    "target_end": begin + batch,
+                    "batch": batch,
+                    "mean_ms_per_update": 1000.0 * statistics.mean(durations),
+                    "mean_peak_total_mib": statistics.mean(peaks) / 2**20,
+                    "mean_peak_incremental_mib": (
+                        statistics.mean(peaks) - persistent
+                    ) / 2**20,
+                }
+                rows.append(row)
+                loss_rows.append(row)
+                print(json.dumps({"cell": row}), flush=True)
+                del objective, raw, targets, phrases, update
+                gc.collect()
+                torch.cuda.empty_cache()
+
+            times = [float(row["mean_ms_per_update"]) for row in loss_rows]
+            memories = [float(row["mean_peak_total_mib"]) for row in loss_rows]
+            summary = {
                 "loss": loss,
                 "label": label,
                 "cardinality": cardinality,
+                "cells": len(loss_rows),
+                "targets": target_count,
                 "batch": batch,
-                "median_ms_per_update": 1000.0 * median_seconds,
-                "iqr_ms_per_update": 1000.0 * (q3 - q1),
-                "peak_total_mib": peak / 2**20,
-                "peak_incremental_mib": (peak - persistent) / 2**20,
+                "mean_ms_per_update": statistics.mean(times),
+                "sample_std_ms_per_update": statistics.stdev(times),
+                "median_ms_per_update": statistics.median(times),
+                "mean_peak_total_mib": statistics.mean(memories),
+                "sample_std_peak_total_mib": statistics.stdev(memories),
+                "median_peak_total_mib": statistics.median(memories),
             }
-            rows.append(row)
-            print(json.dumps(row), flush=True)
-            del objective, raw, update
-            gc.collect()
-            torch.cuda.empty_cache()
+            summaries.append(summary)
+            print(json.dumps({"summary": summary}), flush=True)
 
     payload = {
         "schema": "loss-efficiency-benchmark-v1",
@@ -128,11 +156,13 @@ def benchmark(
         "warmup_updates": warmup,
         "measured_updates_per_repeat": measured,
         "repeats": repeats,
+        "target_count": target_count,
         "cardinalities": cardinalities,
         "losses": losses,
         "timed_path": "render + bound objective + backward to pitch/onset logits",
         "target_precomputation_timed": False,
         "rows": rows,
+        "summaries": summaries,
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
@@ -147,6 +177,7 @@ if __name__ == "__main__":
     parser.add_argument("--warmup", type=int, default=10)
     parser.add_argument("--measured", type=int, default=20)
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--target-count", type=int, default=150)
     parser.add_argument(
         "--cardinalities", type=int, nargs="+", choices=CARDINALITIES, default=[1]
     )
@@ -158,6 +189,7 @@ if __name__ == "__main__":
         warmup=args.warmup,
         measured=args.measured,
         repeats=args.repeats,
+        target_count=args.target_count,
         cardinalities=tuple(dict.fromkeys(args.cardinalities)),
         losses=tuple(dict.fromkeys(args.losses)),
     )
