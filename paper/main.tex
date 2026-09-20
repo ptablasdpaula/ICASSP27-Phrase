@@ -387,10 +387,12 @@ Target representations are cached before timing. Table~\ref{tab:efficiency}
 shows that Ce$\mathcal L$ matches the computational cost of SS and SmoMSS,
 while $\mathrm{TF}\mathcal W_2$ requires more time and memory.
 
+\begingroup
+\renewcommand{\tablename}{Table}
 \begin{table}[t]
 \centering
-\caption{Efficiency on the $N=1$ recovery cells. Values are mean $\pm$ sample
-standard deviation (median) across 15 batch-10 cells; lower is better.}
+\caption{Median efficiency across 15 batch-10 $N=1$ recovery cells; lower is
+better.}
 \label{tab:efficiency}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -398,13 +400,14 @@ standard deviation (median) across 15 batch-10 cells; lower is better.}
 \toprule
 Loss & Full update (ms) & Peak GPU memory (GiB) \\
 \midrule
-SS & $370.75\pm0.69\;(370.57)$ & $1.808\pm0.000\;(1.808)$ \\
-SmoMSS & $372.80\pm2.51\;(371.67)$ & $1.818\pm0.000\;(1.818)$ \\
-$\mathrm{TF}\mathcal W_2$ & $398.63\pm2.90\;(399.05)$ & $2.725\pm0.261\;(2.666)$ \\
-Ce$\mathcal L$ & $372.20\pm1.90\;(371.15)$ & $1.826\pm0.000\;(1.826)$ \\
+SS & 370.57 & 1.808 \\
+SmoMSS & 371.67 & 1.818 \\
+$\mathrm{TF}\mathcal W_2$ & 399.05 & 2.666 \\
+Ce$\mathcal L$ & 371.15 & 1.826 \\
 \bottomrule
 \end{tabular}
 \end{table}
+\endgroup
 
 \begin{figure}[t]
 \centering
