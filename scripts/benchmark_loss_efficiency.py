@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import csv
 import gc
 import json
 import math
@@ -20,8 +19,8 @@ from icassp27_phrase.synth import PhraseSynth
 from icassp27_phrase.targets import load_target
 
 LOSSES = {
-    "smooth_mss": "SmoMSS",
-    "sot_published_composite": "SOT",
+    "single_stft": "SS",
+    "mss": "MSS",
     "linear_jtfot": "TFW2",
     "cel": "CeL",
 }
@@ -38,22 +37,6 @@ def decode(raw: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     return 80.0 * 4.0 ** unit[..., 0], 0.2 + 1.6 * unit[..., 1]
 
 
-def recovery_updates(
-    path: Path, cardinalities: tuple[int, ...]
-) -> dict[tuple[str, int], float]:
-    grouped: dict[tuple[str, int], list[int]] = {}
-    with path.open(newline="") as stream:
-        for row in csv.DictReader(stream):
-            key = (row["label"], int(row["cardinality"]))
-            if row["label"] in LOSSES.values():
-                grouped.setdefault(key, []).append(int(row["updates"]))
-    expected = {(label, n) for label in LOSSES.values() for n in cardinalities}
-    grouped = {key: values for key, values in grouped.items() if key in expected}
-    if set(grouped) != expected or any(len(values) != 150 for values in grouped.values()):
-        raise RuntimeError("the recovery archive is incomplete for the benchmark losses")
-    return {key: statistics.median(values) for key, values in grouped.items()}
-
-
 def benchmark(
     output: Path,
     *,
@@ -62,14 +45,12 @@ def benchmark(
     measured: int,
     repeats: int,
     cardinalities: tuple[int, ...],
+    losses: tuple[str, ...],
 ) -> None:
     device = torch.device("cuda")
     require_df2_backend(device)
     torch.set_num_threads(1)
     synth = PhraseSynth().to(device)
-    medians = recovery_updates(
-        Path("docs/phrase-recovery/16k/per_phrase.csv"), cardinalities
-    )
     rows: list[dict[str, object]] = []
 
     for cardinality in cardinalities:
@@ -81,7 +62,8 @@ def benchmark(
             )
         initial = initial_candidate(cardinality, device=device)
 
-        for loss, label in LOSSES.items():
+        for loss in losses:
+            label = LOSSES[loss]
             objective = PaperObjectives(targets, (loss,))
             raw = encode(
                 initial.f0_hz.expand(batch, -1),
@@ -127,7 +109,6 @@ def benchmark(
                 "iqr_ms_per_update": 1000.0 * (q3 - q1),
                 "peak_total_mib": peak / 2**20,
                 "peak_incremental_mib": (peak - persistent) / 2**20,
-                "median_recovery_updates": medians[(label, cardinality)],
             }
             rows.append(row)
             print(json.dumps(row), flush=True)
@@ -148,6 +129,7 @@ def benchmark(
         "measured_updates_per_repeat": measured,
         "repeats": repeats,
         "cardinalities": cardinalities,
+        "losses": losses,
         "timed_path": "render + bound objective + backward to pitch/onset logits",
         "target_precomputation_timed": False,
         "rows": rows,
@@ -168,6 +150,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cardinalities", type=int, nargs="+", choices=CARDINALITIES, default=[1]
     )
+    parser.add_argument("--losses", nargs="+", choices=LOSSES, default=list(LOSSES))
     args = parser.parse_args()
     benchmark(
         args.output,
@@ -176,4 +159,5 @@ if __name__ == "__main__":
         measured=args.measured,
         repeats=args.repeats,
         cardinalities=tuple(dict.fromkeys(args.cardinalities)),
+        losses=tuple(dict.fromkeys(args.losses)),
     )
