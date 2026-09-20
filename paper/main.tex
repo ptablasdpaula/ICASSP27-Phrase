@@ -304,11 +304,13 @@ gradient cosine. We express each event as
 $(\log_2(f_{0,i}/80),t_i)$, concatenate these octave--second pairs into
 $\boldsymbol\theta$, and measure the cosine between the descent
 $\mathbf d=-\nabla_{\boldsymbol\theta}\mathcal L$ and
-$\boldsymbol\theta^\star_\pi-\boldsymbol\theta$. This scale-independent
-alignment follows the use of gradient cosine similarity to identify helpful
-directions~\cite{du2018gradient}; $1$, $0$, and $-1$ indicate descent directly
-towards, orthogonal to, and away from the assigned target. We report its mean
-and sample standard deviation across candidate phrases. As an
+$\boldsymbol\theta^\star_\pi-\boldsymbol\theta$. The latter is the negative
+gradient of $\tfrac12\lVert\boldsymbol\theta-
+\boldsymbol\theta^\star_\pi\rVert_2^2$, so this scale-independent cosine measures
+agreement between the loss descent and the steepest descent of assigned
+parameter error; $1$, $0$, and $-1$ indicate descent directly towards,
+orthogonal to, and away from the assigned target. We report its mean and sample
+standard deviation across candidate phrases. As an
 objective-independent audio metric, \gls{lsd} is the \gls{rms} difference
 between periodic-Hann \acrshort{fft}-1024/hop-256 log-magnitude spectra, using a
 common target-relative $-100$-dB magnitude floor.
