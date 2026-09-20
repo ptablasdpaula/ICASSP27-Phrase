@@ -89,7 +89,8 @@ differentiable digital signal processing, digital waveguide, audio loss, analysi
 % Queue the cumulative illustration on page 1 so it occupies page 2.
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
+\setlength{\abovecaptionskip}{1pt}
+\includegraphics[width=\textwidth,trim=0 1.5pt 0 0,clip]{\PaperRoot/figures/cumulative_surfaces.pdf}
 \caption{STFT power of a constant amplitude logarithmic 20-to-1000~Hz sine sweep over two seconds, and its resulting cumulative surfaces for the direction pairs $(d_t,d_f)$.
 The shared linear colour scale runs from 0 to 1, with power normalised by peak
 power for the spectrogram and total target power ($S_q/m$) for the
@@ -101,15 +102,15 @@ starting corners and accumulation directions.}
 
 \section{Introduction}
 \glsresetall
-Engel et al. coined the term \Gls{ddsp}, as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. The purpose is usually sound matching: retrieving the synthesizer parameters, that would best synthesize the target sound. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, FM synthesis, reverberation, vocal tract modelling and effects modulation ~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}.
+Engel et al. coined the term \Gls{ddsp}, as the process of embedding audio processors in automatic differentiation graphs for efficient and interpretable unsupervised analysis by synthesis~\cite{engel2020ddsp}. The purpose is usually sound matching: retrieving the synthesizer parameters, that would best synthesize the target sound. Since then, it has been widely adopted in multitude of applications, such as neural waveshaping, FM synthesis, reverberation, vocal tract modelling and effects modulation~\cite{hayes2021waveshaping, caspe2022ddx7, dalsanto2023diffdn, sudholt2023vocal, yu2024torchlpc, mitcheltree2025modulation, carson2026gradient}; for an early comprehensive review, we redirect the reader to Hayes et al.~\cite{hayes2024review}.
 
-In most of the \gls{ddsp} literature, controls are predicted as either a constant set of parameters, or dense frame trajectories. These naturally fit \gls{ir} prediction or continuously driven sounds respectively. However, that is not how many instruments are instinctively performed. Previously, we proposed an event-set predictor for the recovery of sparse guitar plucks \cite{tablasdepaula2026karplus}, forming note events with onset, pitch ($f_0$) and velocity among other physical parameters. This work expands this framework with the purpose of joining common \gls{mir} representations, where plucked string is represented as MIDI, sheet music or guitar tablatures ~\cite{riley2024gaps, loth2025goat,loth2025guitarflow} with \gls{ddsp}.
+In most of the \gls{ddsp} literature, controls are predicted as either a constant set of parameters, or dense frame trajectories. These naturally fit \gls{ir} prediction or continuously driven sounds respectively. However, that is not how many instruments are instinctively performed. Previously, we proposed an event-set predictor for the recovery of sparse guitar plucks~\cite{tablasdepaula2026karplus}, forming note events with onset, pitch ($f_0$) and velocity among other physical parameters. This work expands this framework with the purpose of joining common \gls{mir} representations, where plucked string is represented as MIDI, sheet music or guitar tablatures~\cite{riley2024gaps,loth2025goat,loth2025guitarflow} with \gls{ddsp}.
 
-However, $f_0$ and onset time, representing a displacement of energy, are notoriously difficult to predict. This is due to the fact that~\gls{ddsp}     relies on waveform and pointwise spectral losses, such as \gls{mss}, prompt to oscillatory local minima and useless when there is no energy overlap \cite{wang2019nsf, turian2020loss}. Recent revisions of \gls{mss} aimed to reduce the former issue by reducing spectral leaking \cite{schwar2023mss}, but do not address the latter. Complex surrogates were proposed but remain synthesiser-dependant \cite{hayes2023sinusoidal}. The literature commonly eludes this problematic via external detectors or synthetic labels, the first inherit the detectors' errors and veto further end-to-end training of $f_0$ \cite{engel2020inverse, engel2020ddsp, caspe2022ddx7, sudholt2023vocal}, while the latter generalises poorly to out of domain data \cite{tablasdepaula2026karplus}.
+However, $f_0$ and onset time, representing a displacement of energy, are notoriously difficult to predict. This is due to the fact that~\gls{ddsp}     relies on waveform and pointwise spectral losses, such as \gls{mss}, prompt to oscillatory local minima and useless when there is no energy overlap~\cite{wang2019nsf,turian2020loss}. Recent revisions of \gls{mss} aimed to reduce the former issue by reducing spectral leaking~\cite{schwar2023mss}, but do not address the latter. Complex surrogates were proposed but remain synthesiser-dependant~\cite{hayes2023sinusoidal}. The literature commonly eludes this problematic via external detectors or synthetic labels, the first inherit the detectors' errors and veto further end-to-end training of $f_0$~\cite{engel2020inverse,engel2020ddsp,caspe2022ddx7,sudholt2023vocal}, while the latter generalises poorly to out of domain data~\cite{tablasdepaula2026karplus}.
 
-Recent years have seen the adoption of \gls{ot}, which measures the shortest energy displacement cost, in machine learning \cite{monge1781deblais,cuturi2013sinkhorn,peyre2019computational} and audio applications, such as music transcription and source separation \cite{flamary2016optimal, rolet2018blind}. Torres et al. were the first to apply it to \gls{ddsp} for harmonic parameter estimation, as a frame-wise spectral $\mathcal{W}_2$, \gls{sot} \cite{torres2024sot}; followingly, Fabiani et al. proposed a sliced formulation of a joint time--frequency \gls{ot} as a similarity metric, the \gls{tfw} ~\cite{fabiani2024jtfot}.
+Recent years have seen the adoption of \gls{ot}, which measures the shortest energy displacement cost, in machine learning~\cite{monge1781deblais,cuturi2013sinkhorn,peyre2019computational} and audio applications, such as music transcription and source separation~\cite{flamary2016optimal,rolet2018blind}. Torres et al. applied it to \gls{ddsp} for harmonic parameter estimation as a frame-wise spectral $\mathcal{W}_2$, \gls{sot}~\cite{torres2024sot}; Fabiani et al. then proposed a sliced joint time--frequency \gls{ot} similarity metric, \gls{tfw}~\cite{fabiani2024jtfot}.
 
-While promising, we showed that \gls{sot} is unreliable for joint onset--$f_0$ optimisation, and proposed \gls{tfw} as future work \cite{tablasdepaula2026karplus}. Hence, we propose recovering musical phrases via optimisation of $f_0$ and onset time of plucks rendered by a simple digital waveguide \cite{smith2010physical}, comparing \gls{tfw} with a newly proposed family of losses, \glspl{cel}, which compare \gls{stft} power accumulation in time and frequency bins.
+While promising, we showed that \gls{sot} is unreliable for joint onset--$f_0$ optimisation, and proposed \gls{tfw} as future work~\cite{tablasdepaula2026karplus}. Hence, we propose recovering musical phrases via optimisation of $f_0$ and onset time of plucks rendered by a simple digital waveguide~\cite{smith2010physical}, comparing \gls{tfw} with a newly proposed family of losses, \glspl{cel}, which compare \gls{stft} power accumulation in time and frequency bins.
 
 %OT traces to Monge's earth-moving problem~\cite{monge1781deblais} and measures
 %displacement using support geometry~\cite{peyre2019computational}.
@@ -195,9 +196,9 @@ Thus $\ell_{\uparrow}=d_{\rm C}/\sqrt{K\Delta}$ exactly, with reverse
 accumulation giving the same result. After unit normalisation of each slice,
 frequency-only and time-only accumulation yield scaled RMSs of per-frame and
 per-bin Cram\'er distances; diagonals instead yield two-dimensional
-quadrant-CDF discrepancies. The one-dimensional $1$-Wasserstein distance
-applies $L_1$ to the same CDF residual for which Cram\'er uses $L_2$
-\cite{szekely2013energy}\cite[Remark~2.30]{peyre2019computational}.
+quadrant-CDF discrepancies. The Cram\'er distance is the $L_2$ norm of the CDF
+residual~\cite{szekely2013energy}; the one-dimensional $1$-Wasserstein distance
+applies $L_1$ to that same residual~\cite[Remark~2.30]{peyre2019computational}.
 
 
 \section{Differentiable Plucked-String Musical Phrases}
@@ -222,7 +223,8 @@ nut-side delay $D_1$ and bridge-side delay $D_2$ on each rail.}
 % Queue the short, wide-aspect slices for one column on page 3.
 \begin{figure}[!t]
 \centering
-\includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_sweeps.pdf}
+\setlength{\abovecaptionskip}{1pt}
+\includegraphics[width=\columnwidth,trim=0 20pt 0 0,clip]{\PaperRoot/figures/loss_sweeps.pdf}
 \caption{Single-pluck loss slices around a 160-Hz, 1.0-s target. Top: time
 shift with pitch fixed; bottom: frequency shift with onset fixed. Each curve is
 independently min--max normalised over 3201 samples.}
@@ -317,12 +319,12 @@ Alongside waveform $L_1$ and $L_2$, we use a single-scale STFT (SS) using a peri
 $L_1$ terms over periodic-Hann FFT sizes 2048, 1024, 512, 256, 128, and 64,
 with quarter-length hops, end padding, and no centring, as in~\cite{wang2019nsf,engel2020ddsp}.
 SmoMSS uses the flat-top prime window/hop pairs 67/32, 127/63, 257/128, 509/254,
-1021/510, and 2053/1026 proposed by ~\cite{schwar2023mss}. \Gls{sot} uses flat-top
+1021/510, and 2053/1026 proposed by~\cite{schwar2023mss}. \Gls{sot} uses flat-top
 \acrshort{fft}-2048/hop-256 transport and its $0.05$-weighted linear MSS
 component; SOT-NC removes its asymmetric cumulative-mass cutoff and normalises
 the two spectra independently~\cite{torres2024sot}. Both \gls{tfw} variants use
 globally normalised periodic-Hann \acrshort{fft}-1024/hop-512 magnitudes and ten projections: the
-published coordinates set $1$~s${}=1000$~Hz. Additionally, we propose a log-frequency variant where cost is $1$~s${}=1$~ (log\gls{tfw})\cite{fabiani2024jtfot}.
+published coordinates set $1$~s${}=1000$~Hz. Additionally, we propose a log-frequency variant where cost is $1$~s${}=1$~ (log\gls{tfw})~\cite{fabiani2024jtfot}.
 
 \textbf{CeL variants.}
 The base Ce$\mathcal L$ averages all four diagonal direction pairs, uses
@@ -353,7 +355,8 @@ movement in a known coordinate reduces alignment.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.88\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
+\setlength{\abovecaptionskip}{1pt}
+\includegraphics[width=0.88\columnwidth,trim=0 6pt 0 0,clip]{\PaperRoot/figures/gradient_alignment.pdf}
 \caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation over
 8192 candidate--target pairs per column; higher is better. Columns give the
 number of events; colours span $[-1,1]$.}
@@ -379,7 +382,7 @@ each fit's lowest-loss iterate.
 \centering
 \setlength{\abovecaptionskip}{0pt}
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
-\vspace{-4.5mm}
+\vspace{-5mm}
 \caption{Per-phrase \acrshort{lsd} distributions for the best-performing
 representative of each loss family over the same targets; lower is better.
 Random pairs each target with a different randomly permuted target having the
