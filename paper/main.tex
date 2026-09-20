@@ -79,7 +79,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 \maketitle
 
 \begin{abstract}
-\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 90,112 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the seven objectives whose single-event alignment rounds to at least .10, plus two low-alignment transport controls, across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing and pitch, and provide a PyTorch library for future applications\footnote{The Ce$\mathcal L$s library is available at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0}.}.
+\acrlong{ddsp} enables interpretable, unsupervised recovery of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to recover the onset and pitch of sparse plucks rendered by a differentiable digital waveguide whose delay length defines pitch. Across 106,496 candidate--target comparisons containing one to eight events, \glspl{cel} give the strongest phrase-wide gradient alignment. We then compare the seven objectives whose single-event alignment rounds to at least .10, plus two low-alignment transport controls, across 6,750 musical-phrase fits. We believe these losses will further support unsupervised optimisation of onset timing and pitch, and provide a PyTorch library for future applications\footnote{The Ce$\mathcal L$s library is available at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0}.}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -350,18 +350,22 @@ independently scrambled joint LHS designs. The \emph{Joint} condition retains
 both perturbations; \emph{Known time} restores target onsets and varies only
 pitch; \emph{Known $f_0$} restores target pitches and varies only onset. Joint
 is tested at $N\in\{1,2,4,6,8\}$ and both conditional cases at
-$N\in\{1,2,4\}$. Thus, every condition contains 8192 candidate--target pairs,
-giving 90,112 pairs per loss overall. Hungarian matching remains unrestricted
+$N\in\{1,2,4\}$. Two further columns test reset candidates against persistent-state
+$N=2$ targets, and vary all seven $N=1$ controls ($f_0$, onset, \acrshort{hrc}
+amplitude and duration, pluck position, $g$, and $a_1$) scaled to $[0,1]$.
+Thus, every condition contains 8192 candidate--target pairs, giving 106,496
+pairs per loss overall. Hungarian matching remains unrestricted
 in the conditional cases, and all gradient components are retained, so
 movement in a known coordinate reduces alignment.
 
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{1pt}
-\includegraphics[width=0.88\columnwidth,trim=0 6pt 0 0,clip]{\PaperRoot/figures/gradient_alignment.pdf}
+\includegraphics[width=\columnwidth,trim=0 6pt 0 0,clip]{\PaperRoot/figures/gradient_alignment.pdf}
 \caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation over
-8192 candidate--target pairs per column; higher is better. Columns give the
-number of events; colours span $[-1,1]$.}
+8192 candidate--target pairs per column; higher is better. State uses
+persistent-state targets and reset candidates; 7-D varies all seven controls.
+Numbers give the number of events; colours span $[-1,1]$.}
 \label{fig:gradient-alignment}
 \end{figure}
 
@@ -392,18 +396,18 @@ while $\mathrm{TF}\mathcal W_2$ requires more time and memory.
 \begin{table}[t]
 \centering
 \caption{\normalfont Median efficiency across 15 batch-10 $N=1$ recovery cells; lower is
-better.}
+better. Ratios are relative to SS.}
 \label{tab:efficiency}
 \scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lcc@{}}
+\setlength{\tabcolsep}{1pt}
+\begin{tabular}{@{}lrr@{\hspace{7pt}}rr@{}}
 \toprule
-Loss & Full update (ms) & Peak GPU memory (GiB) \\
+Loss & Full update (ms) & Ratio & Peak GPU memory (GiB) & Ratio \\
 \midrule
-SS & 370.57 & 1.808 \\
-SmoMSS & 371.67 & 1.818 \\
-$\mathrm{TF}\mathcal W_2$ & 399.05 & 2.666 \\
-Ce$\mathcal L$ & 371.15 & 1.826 \\
+SS & 370.57 & 1.000 & 1.808 & 1.000 \\
+SmoMSS & 371.67 & 1.003 & 1.818 & 1.006 \\
+$\mathrm{TF}\mathcal W_2$ & 399.05 & 1.077 & 2.666 & 1.475 \\
+Ce$\mathcal L$ & 371.15 & 1.002 & 1.826 & 1.010 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -424,11 +428,13 @@ same number of events.}
 \section{Conclusion}
 We introduced \acrlongpl{cel} (Ce$\mathcal L$s), which compare accumulated
 short-time Fourier transform (STFT) power in time and frequency, for joint onset
-and $f_0$ optimisation in monophonic plucked-string phrases. Across 90,112
+and $f_0$ optimisation in monophonic plucked-string phrases. Across 106,496
 phrase comparisons with one to eight events, Ce$\mathcal L$s achieve the highest
 mean phrase-wide gradient cosine among the tested waveform, spectral, and
 transport objectives; alignment falls as the number of events $N$ grows
-(Fig.~\ref{fig:gradient-alignment}). Recovery mirrors this diagnostic: every
+(Fig.~\ref{fig:gradient-alignment}). They retain the strongest alignment for
+persistent-state targets and when all seven synthesis controls vary. Recovery
+mirrors this diagnostic: every
 Ce$\mathcal L$ variant is nearly exact at $N\in\{1,2\}$, while decCe$\mathcal L$
 gives the lowest median pitch and onset errors at $N\in\{4,6,8\}$
 (Table~\ref{tab:pilot-compact}). Its median log-spectral distance remains below
@@ -439,10 +445,10 @@ accumulation suggests that localising displacement helps as phrases grow,
 motivating comparison with objectives that relax global mass transport, such
 as unbalanced optimal transport~\cite{sejourne2023unbalanced}.
 
-Our evidence is limited to synthetic monophonic phrases with known $N$, fixed
-timbre, and waveguide state reset at each pluck. The reset suppresses residual
-string interactions, but its suitability for recordings with persistent
-vibration remains untested. Real-world recovery must also estimate timbre and
+Phrase recovery remains limited to synthetic monophonic phrases with known
+$N$, fixed timbre, and waveguide state reset at each pluck. The gradient stress
+tests suggest robustness to persistent-state targets and variable timbre, but
+recordings with persistent vibration remain untested. Real-world recovery must also estimate timbre and
 the number of events, requiring discrete model selection alongside gradient
 optimisation. Alternative representations such as joint time--frequency
 scattering merit study given their use for related arpeggio-rate and pitch-range

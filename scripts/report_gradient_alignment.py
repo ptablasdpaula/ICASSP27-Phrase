@@ -95,6 +95,8 @@ def render(
                 "joint": "Joint",
                 "pitch": "Known time",
                 "time": r"Known $f_0$",
+                "persistent": "State",
+                "controls": "7-D",
             }[columns[int(a + 0.5)][1]],
         )
         for a, b in zip(edges[:-1], edges[1:], strict=True)
