@@ -380,6 +380,32 @@ losses raw. ReduceLROnPlateau uses factor $.5$ and patience 200. Independent
 early stopping uses a 1000-update patience, with a 20,000-update cap. We report
 each fit's lowest-loss iterate.
 
+Additionally, under the same synthesis, loss, precision, and batch settings as
+the corresponding $N=1$ recovery cells, we time the first 20 batch-10
+render--loss--backward updates after five warm-up updates on an NVIDIA A100.
+Target representations are cached before timing. Table~\ref{tab:efficiency}
+shows that Ce$\mathcal L$ matches the computational cost of SS and SmoMSS,
+while $\mathrm{TF}\mathcal W_2$ requires more time and memory.
+
+\begin{table}[t]
+\centering
+\caption{Efficiency on the $N=1$ recovery cells. Values are mean $\pm$ sample
+standard deviation (median) across 15 batch-10 cells; lower is better.}
+\label{tab:efficiency}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Loss & Full update (ms) & Peak GPU memory (GiB) \\
+\midrule
+SS & $370.75\pm0.69\;(370.57)$ & $1.808\pm0.000\;(1.808)$ \\
+SmoMSS & $372.80\pm2.51\;(371.67)$ & $1.818\pm0.000\;(1.818)$ \\
+$\mathrm{TF}\mathcal W_2$ & $398.63\pm2.90\;(399.05)$ & $2.725\pm0.261\;(2.666)$ \\
+Ce$\mathcal L$ & $372.20\pm1.90\;(371.15)$ & $1.826\pm0.000\;(1.826)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \begin{figure}[t]
 \centering
 \setlength{\abovecaptionskip}{0pt}
