@@ -206,7 +206,14 @@ applies $L_1$ to the same CDF residual for which Cram\'er uses $L_2$
 
 \section{Differentiable Plucked-String Musical Phrases}
 \label{sec:renderer}
-We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings \cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$, where $f_s$ is the sample rate; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position arises as $D_2/(D_1+D_2)=0.23$ from the bridge. We synthesise two-second signals at $f_s=16$~kHz.
+We use \Glspl{dwg} as a common and efficient choice for modelling plucked
+strings~\cite{smith2010physical,depaula2026waveguides}. Our model has two
+oppositely travelling rails, each split at the excitation point into nut-side
+and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted
+in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations,
+$f_0=f_s/[2(D_1+D_2)]$; the implemented model also compensates for
+interpolation and loss-filter phase. The relative pluck position is
+$D_2/(D_1+D_2)=0.23$ from the bridge.
 
 \begin{figure}[!b]
 \centering
@@ -226,12 +233,8 @@ independently min--max normalised over 3201 samples.}
 \label{fig:loss-sweeps}
 \end{figure}
 
-Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, where
-$H_L$ is the loss-filter transfer function, $z$ the transform variable, and
-$z^{-1}$ a one-sample delay:
-\begin{equation*}
-H_L(z)=g\frac{1-a_1}{1-a_1z^{-1}},\qquad g=0.99,\quad a_1=0.2.
-\end{equation*}
+Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, with
+loss filter $H_L(z)=g(1-a_1)/(1-a_1z^{-1})$, $g=0.99$, and $a_1=0.2$.
 Here $g$ controls the DC gain and increasing $a_1$ increases high-frequency
 attenuation, providing decay and damping controls. The resulting decay times
 depend on $f_0$, since the loss filter is traversed once per round trip,
@@ -239,34 +242,24 @@ as also illustrated for a related model in
 \cite[Fig.~3]{tablasdepaula2026karplus}. Output is the bridge-incident
 travelling velocity.
 
-Each new event excites a \gls{hrc},
-\begin{equation*}
-e_0(t)=\begin{cases}
-\dfrac{A_e}{2}[1-\cos(\pi t/T_e)],&0\leq t<T_e,\\
-0,&\text{otherwise,}
-\end{cases}
-\end{equation*}
-where $e_0(t)$ is amplitude at elapsed time $t$, $A_e=0.8$ its amplitude
-scale, and $T_e=10$~ms its duration. For differentiable onset placement, we
+Each new event excites a \gls{hrc}
+$e_0(t)=A_e[1-\cos(\pi t/T_e)]/2$ for $0\leq t<T_e$ and zero otherwise, with
+$A_e=0.8$ and $T_e=10$~ms. For differentiable onset placement, we
 use a Fourier phase-ramp delay implemented with FLAMO~\cite{dalsanto2025flamo}.
 To place an onset by $\delta_o$ samples, we multiply the spectrum of $e_0$ by
 $e^{-j\omega\delta_o}$, where $\omega$ is angular frequency in radians per
-sample and $j^2=-1$. The excitation is zero-padded to 65,536 samples, $2.048$
-times the full signal length, to reduce circular wrap-around~\cite[Ch.~7]{smith2007dft}.
+sample and $j^2=-1$. The excitation is zero-padded to $2.048$ times the signal
+length to reduce circular wrap-around~\cite[Ch.~7]{smith2007dft}.
 We constrain the DC and Nyquist bins to be real to preserve Hermitian
 symmetry~\cite[Ch.~7]{smith2007dft}. Shifted event spectra are summed before
-one inverse FFT, retaining the first two seconds as the summed excitation.
+one inverse FFT, retaining the original signal length as the summed excitation.
 
-For gradient-based $f_0$ optimisation, we use real-valued delays with Thiran
-all-pass interpolation.
-These filters have unity magnitude and maximally flat group delay at
-DC~\cite[p.~49]{laakso1996splitting}.
-Each path combines an integer delay with an all-pass section. For an order-$M$
-section, the approximated delay must exceed $M-1$ samples for
-stability~\cite{laakso1996splitting}.
-At 16~kHz, both paths support the order-3 sections used here throughout the
-80--320~Hz pitch range. We iteratively adjust their delays to account for the
-all-pass and loss-filter phase at $f_0$.
+For gradient-based $f_0$ optimisation, each path combines an integer delay
+with an order-3 Thiran all-pass section, chosen for its unity-magnitude
+frequency response and maximally flat group delay at
+DC~\cite[p.~49]{laakso1996splitting}. We
+iteratively adjust the delays to account for the all-pass and loss-filter phase
+at $f_0$.
 
 Finally, we collapse the waveguide algebraically into a rational transfer
 function and evaluate it in \gls{df2} as required for PhilTorch with its TorchLPC
@@ -274,10 +267,7 @@ backend for fast GPU backpropagation~\cite{yu2025philtorch,yu2024torchlpc}. For 
 the recurrence history at each incoming event's onset, rounded down to a
 sample boundary and detached from differentiation. Resetting smooths the
 multi-pluck loss landscapes in our diagnostic; we hypothesise that removing
-interference with residual string vibration contributes to this effect\footnote{Supplementary
-loss landscapes at
-\url{https://ptablasdpaula.github.io/ICASSP27-Phrase} document onset placement, delay interpolation choices and the state-reset
-diagnostic and comparison of \gls{df2} and literal \gls{dwg} implementations.}.
+interference with residual string vibration contributes to this effect.
 
 % Queue the double-column result while page 3 is still being composed so that
 % IEEEtran can place it at the top of page 4.
