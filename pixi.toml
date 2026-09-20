@@ -40,3 +40,10 @@ app = "marimo run notebooks/optimize_phrase.py"
 cpu-check = "python scripts/qualify_cpu_notebook.py"
 gpu-check = "python scripts/qualify_gpu.py"
 paper = "bash -lc 'cd paper && mkdir -p build && tectonic -X compile main.tex --outdir build'"
+
+[feature.sinkhorn.pypi-dependencies]
+geomloss = "==0.2.6"
+pykeops = "==2.3"
+
+[environments]
+sinkhorn = ["sinkhorn"]
