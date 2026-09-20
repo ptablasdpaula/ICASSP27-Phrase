@@ -1,0 +1,130 @@
+{
+  "schema": "gradient-assessment-limitations-v1",
+  "signature": "0059eb4ab86a7a716cfe19e5a163d218e5d427d6910fd99c577f25d59482954a",
+  "source_hashes": {
+    "/data/home/acw794/ICASSP27-Phrase/scripts/assess_limitation_columns.py": "72862436c3f5a8f2bf2cc5ee6b6e08c709fbf04f00c4471236f6bab6adf7b1b4",
+    "/data/home/acw794/ICASSP27-Phrase/scripts/fixed_gradient_assessment.py": "8f6aefb510bae7d98ab43654e9b9ea877ffe6e5ee05b8b2110f2e9b04986b63d",
+    "/data/home/acw794/ICASSP27-Phrase/src/losses.py": "fff1b4a78e49efae57027839cd636547f1c5293feb76d6cf12c807448b234fc8",
+    "/data/home/acw794/ICASSP27-Phrase/src/metrics.py": "8c74fc8749fa86f595b5498b25f35c82b8c0a5e598d456785712aa7b9381c76f",
+    "/data/home/acw794/ICASSP27-Phrase/src/synth.py": "1b77c9bc10e2767e2b22711935c5080cf14f16e4a7c96bd74adb85934d60a491",
+    "/data/home/acw794/ICASSP27-Phrase/src/exciter.py": "ea65a2e1b047ae9f71946ae067fc9f7cb0322d491168dc679fd4ea4e5471dd7c",
+    "/data/home/acw794/ICASSP27-Phrase/src/waveguide.py": "7c142f9cd3bce174be1f7e4ab567e1a43bd27b0434a34bb35819db3ad8338de5",
+    "/data/home/acw794/ICASSP27-Phrase/src/_fractional.py": "e1ca1ca327f455c5818d3b052de2f7927b53ae7c0aa3f10e8e16acb08c59c6ad",
+    "/data/home/acw794/ICASSP27-Phrase/src/config.py": "b78ba1b0db42191c9456e3e1c2d02fe72d8bdf7e73f3922a813976b73689eddb",
+    "/data/home/acw794/ICASSP27-Phrase/src/runtime.py": "adc48a47ccbd43bac51a78424f6ce0934f66a97422445123c7ca482dfd07989a",
+    "/data/home/acw794/ICASSP27-Phrase/external/cels/src/cels/__init__.py": "075c4072b5e812cbfb75fe2e0cd5990ea8af87b5b89152bcae1804dd84ce1182",
+    "/data/home/acw794/ICASSP27-Phrase/external/cels/src/cels/loss.py": "0907007a801bd601b18a287671ff360a47f7f161c6347d3089fb2306d3f554df",
+    "/data/home/acw794/ICASSP27-Phrase/external/cels/src/cels/stft.py": "70bccca86469f59b9f50c6d930a97e3fe6657eed0c60f49ea74fa8cfd951caf8"
+  },
+  "targets_per_condition": 32,
+  "candidates_per_target": 256,
+  "pairs_per_condition": 8192,
+  "control_names": [
+    "log_f0",
+    "onset",
+    "log_amplitude",
+    "log_duration",
+    "pluck_position",
+    "log_one_minus_gain",
+    "loop_pole"
+  ],
+  "control_ranges": {
+    "f0_hz": [
+      80.0,
+      320.0
+    ],
+    "onset_seconds": [
+      0.2,
+      1.8
+    ],
+    "amplitude": [
+      0.1,
+      1.0
+    ],
+    "duration_seconds": [
+      0.0025,
+      0.04
+    ],
+    "pluck_position": [
+      0.1,
+      0.5
+    ],
+    "loop_gain": [
+      0.9,
+      0.9999
+    ],
+    "loop_pole": [
+      0.0,
+      0.75
+    ]
+  },
+  "coordinate_system": "Each all-control coordinate spans [0,1]; f0, amplitude, and duration are logarithmic, loop gain is logarithmic in 1-g, and the remaining coordinates are linear.",
+  "persistent_target": "N=2 target uses persistent DF2 state; candidate uses the registered hard-reset renderer; pitch/onset LHS and Hungarian metric are unchanged.",
+  "all_controls": "N=1 independent seven-dimensional scrambled LHS targets and candidates.",
+  "artifacts": {
+    "results/gradient-assessment-limitations/raw/persistent_target/target-000.npz": "9b05335c881decebe63c334691aca387cd2932b8888012ebe5524ab5dbb9043a",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-001.npz": "354b4cd3cda6cc00e03a10e292456488d8837610d247312e082f1b939f0ebce1",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-002.npz": "86c12b75d37a81d2331ad8940af329642857624f8d016d1151e8a42e8735a4c8",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-003.npz": "6b96ff1c67b7bef4e088df946441764d034be0e045797ca5320b2783d48a8831",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-004.npz": "5769750e949c3c108a7f5e280e2e58487d4f6fef46ef9a38f415607ee5e796ad",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-005.npz": "a8079b0cfa77877014f279d66c11dcd213e03c455a2e2148868ccfbaffb811ab",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-006.npz": "e332b4ffa5ce9f7786518c58e41c1e20ceca1128b15671cdf2de6bdc381fc60f",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-007.npz": "dae17d7929247188ff487387a416427a7eb0b2bb0553b7e6be7d2976c0f3a964",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-008.npz": "a7b7d575030fe2cc1dfbe260e8c46a6984741054816b3c60d219f0748301ee91",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-009.npz": "d6d23723358466655b428a55e312ebf87adb2fbac66efc5f8029775d753a5dfb",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-010.npz": "663fd9d8c12207638ffd064c10e1473ad5dcc3ab7c5356172946720951f457cd",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-011.npz": "34d6f4b7ee95a1fa41716e28885ef0f5a8029a9b812e64bfb6b72207d4d851d0",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-012.npz": "ae1f801f06f842ebe32e8e87e00d989020a631c319497f53b5555d0cdc1a62e3",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-013.npz": "aad769fdb9e092da2123915baf203ad2b1412c5f72223f2a00d78fa022c573e4",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-014.npz": "88650469188047ce7fbffed6aff4580255fd159c92866f6c5bda9b93c3e4e718",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-015.npz": "46c53e3caf73d43729647f12c99644d8f0401cb0819e62d65dcb76dd49eb3af5",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-016.npz": "4299ff652ddecccbbed6992bccef4058b1e046ffcfdfe893f0f09a76b41b6b2a",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-017.npz": "c28ad8319d6dfe1eca8e816e18192f6c1ba1db2a3f0e5f468c1958b415565f03",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-018.npz": "0cfab57a872d7853387ac8b895fadb1df0d5edc67a2e13c0f9eacd06ca297146",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-019.npz": "d908f8f54dbd818f83db0281bf8b1f79175cc6afa893b627f269d1ab25e31e7e",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-020.npz": "d792d87ad90008f5101433e987a321ab1253a21aaf571e250c7bc7b42b71e789",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-021.npz": "7911d0ed0f26313f7ad9192b5fd7aab5d006934fac31da28d48ca6c2e09a77ce",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-022.npz": "98806e0e9d406dca3cab98123231a40798618842024dab1c13165047388f667b",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-023.npz": "780d1537759d3bd11c78bec1cae48174072f8ee95b155afd0ad9698c25f72311",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-024.npz": "3bfb22660603e20d819a78db956c264d248e5a2f520416ab0f0c4558a777cc9f",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-025.npz": "19e2137ab4cf3a199405eee01c06c74a79bedc2bc2dbaf94608567f26f411ff4",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-026.npz": "adf90fff4f2bd056e2b19928916da9c54f93c39c93d884025352cebfbe6a4f52",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-027.npz": "67d56de8d83aa0e8832f19f3dddc1e969e8a87b9ba5090b08a4fb9dda5a66b8d",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-028.npz": "57496e96a8b2b413238ea4d7970c8e94b17ad2467d177953d43cd96e62b57ba0",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-029.npz": "26beedb8f6a232b559d0412b446e6573889d0805ac452874628f47a65090dda2",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-030.npz": "3a9402b5ac5cd7d72a5269f715e2604862c6d7d343ecd58fb93bc2cf1f504c78",
+    "results/gradient-assessment-limitations/raw/persistent_target/target-031.npz": "bb0ac2f89cb716b1af6e81ea78f831056415a08ece0495a01ac857868b429b0e",
+    "results/gradient-assessment-limitations/raw/all_controls/target-000.npz": "9f2abc21e8af52bbcb30e4fbcc4fa41bf5487282d0765bf60ca699f0b3f36b02",
+    "results/gradient-assessment-limitations/raw/all_controls/target-001.npz": "0c7f492280f422848d71b64353e2dc022d6e6c9279208fd5ab328502d8e0fce6",
+    "results/gradient-assessment-limitations/raw/all_controls/target-002.npz": "1452f5cb39a3c758e8bd27170de75ad49348967747b2994441d1474df6de519e",
+    "results/gradient-assessment-limitations/raw/all_controls/target-003.npz": "09d442c32f2c766c3f65c382ad9efe2441141ee3fb561118da8aa4731cd6de2f",
+    "results/gradient-assessment-limitations/raw/all_controls/target-004.npz": "d555cf17597ff369bacc1c109596144ff1dd636145773fb204d5560ed4345623",
+    "results/gradient-assessment-limitations/raw/all_controls/target-005.npz": "5b38d9df5950b571bf38239bd7198bac157ecba819dc8f0e3bd90d52a159ba12",
+    "results/gradient-assessment-limitations/raw/all_controls/target-006.npz": "537f5022147f8bc6512fbee84ddf8ebb60048a5bb37b267a864af5f0261f2504",
+    "results/gradient-assessment-limitations/raw/all_controls/target-007.npz": "8eec1c7a96b353430fda458021391831aed080acef71681f1f26ceeba4930826",
+    "results/gradient-assessment-limitations/raw/all_controls/target-008.npz": "7bb92e51724517698a62d87120d5b9c37c94985f8ccd2d1eeb0081da186cfec4",
+    "results/gradient-assessment-limitations/raw/all_controls/target-009.npz": "a12d6bb22e3d876190df08c71e46899aef6a7afce7affc02738b565ac52a87d2",
+    "results/gradient-assessment-limitations/raw/all_controls/target-010.npz": "989eff0d155ee9a2877787317d2c218101f0575de449875cf49041a499f572c4",
+    "results/gradient-assessment-limitations/raw/all_controls/target-011.npz": "9ee3a7f2ee1c96fa5477a532c88f197e1b9d7e03c81a44862d20201e55792509",
+    "results/gradient-assessment-limitations/raw/all_controls/target-012.npz": "7435d6c772b815387a777a68d30d5a0b204065e3bb4b57e7c99e5132f436fcd9",
+    "results/gradient-assessment-limitations/raw/all_controls/target-013.npz": "386a0b6120fbc9c631c85f9a464e58342ec643166facdc1fbc06b5a1b4980fe5",
+    "results/gradient-assessment-limitations/raw/all_controls/target-014.npz": "ad784b1f006d326605820f22804d6d8fb711690b93edc0cc489cd2f039aa0d95",
+    "results/gradient-assessment-limitations/raw/all_controls/target-015.npz": "d566ba694a83f5ad8f2459137b4c177e9ccd576d004085129656cb5bf0c76eb0",
+    "results/gradient-assessment-limitations/raw/all_controls/target-016.npz": "d05cb3cc5c90a098d8e04285143128c40ee66ef85ecdabb247617f332d1f5cd7",
+    "results/gradient-assessment-limitations/raw/all_controls/target-017.npz": "e73115b73eb468ea32837dd17de155141ee112ecc7cf2478a2f64bbffd4d2797",
+    "results/gradient-assessment-limitations/raw/all_controls/target-018.npz": "7794fae4e5701667d551928e36aa33d546d1bc6dd3b07ce62c2f1d0b7129c6de",
+    "results/gradient-assessment-limitations/raw/all_controls/target-019.npz": "903f057dbb6064d236d005a4f5e3eab8a517a8797fb56279537c364bc6a73e76",
+    "results/gradient-assessment-limitations/raw/all_controls/target-020.npz": "d84ff980ec86d190c0c0d96d791a78ab60a99c53a680d79e53cdb8539face63a",
+    "results/gradient-assessment-limitations/raw/all_controls/target-021.npz": "3507aa40208c41b1f6cd88944f7000676e610a58f9a6d52a8d5f7361ce389e40",
+    "results/gradient-assessment-limitations/raw/all_controls/target-022.npz": "35d065fa0a4529d6d06ebce06f8e9380db17e4f096f9d99b214e0670213ec732",
+    "results/gradient-assessment-limitations/raw/all_controls/target-023.npz": "5bc665499e610687482181b6af74a053c310d12fd43e5a17f2a19d92efbee673",
+    "results/gradient-assessment-limitations/raw/all_controls/target-024.npz": "5e6728f7ca6ef874e7a33deaa95e4836ffde46859df1f684ead412df59edf1a3",
+    "results/gradient-assessment-limitations/raw/all_controls/target-025.npz": "7e12c331c92f0be3d75cf8a1acf34f2562c9b5df0fb20a8c3f7d113790d4c16c",
+    "results/gradient-assessment-limitations/raw/all_controls/target-026.npz": "36701e3b60899ae4ac5a24b607f284a2262b5dbf8fb5a57b86a1fae6c15907bc",
+    "results/gradient-assessment-limitations/raw/all_controls/target-027.npz": "ce1277e671d25f94d90c55a62e416fc7837badfae5cc3340d04d57e120d31ead",
+    "results/gradient-assessment-limitations/raw/all_controls/target-028.npz": "ea508db3bcf85d2c48a468bf37b4c104d0037ebf383cb975bb25f593e934f699",
+    "results/gradient-assessment-limitations/raw/all_controls/target-029.npz": "5f103abcc8b6f6bf5d8564a3794fa1860a785f63cec2545b68021dc2f8353cf3",
+    "results/gradient-assessment-limitations/raw/all_controls/target-030.npz": "b5a4ab34c9e1913d51709ac520648f30f84263a58d1cf21b5954081f3af7489f",
+    "results/gradient-assessment-limitations/raw/all_controls/target-031.npz": "87d44a14575d9042f6e4c2c9aa1ded3093bfad9dcdba6c1e3b8ff2ace58a4bad"
+  }
+}
