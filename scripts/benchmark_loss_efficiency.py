@@ -19,7 +19,6 @@ from icassp27_phrase.runtime import require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
 from icassp27_phrase.targets import load_target
 
-
 LOSSES = {
     "smooth_mss": "SmoMSS",
     "sot_published_composite": "SOT",
@@ -92,10 +91,14 @@ def benchmark(
             persistent = torch.cuda.memory_allocated()
             torch.cuda.reset_peak_memory_stats()
 
-            def update(value: torch.Tensor) -> torch.Tensor:
+            def update(
+                value: torch.Tensor,
+                bound: PaperObjectives = objective,
+                name: str = loss,
+            ) -> torch.Tensor:
                 f0, onset = decode(value)
                 audio = synth(f0, onset)
-                scalar = objective.values(audio)[loss].sum()
+                scalar = bound.values(audio)[name].sum()
                 gradient, = torch.autograd.grad(scalar, value)
                 return (value - 1e-4 * gradient).detach().requires_grad_(True)
 
@@ -128,7 +131,7 @@ def benchmark(
             }
             rows.append(row)
             print(json.dumps(row), flush=True)
-            del objective, raw
+            del objective, raw, update
             gc.collect()
             torch.cuda.empty_cache()
 
