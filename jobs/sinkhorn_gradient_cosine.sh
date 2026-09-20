@@ -18,6 +18,7 @@ export LIBRARY_PATH="$CUDA_HOME/targets/x86_64-linux/lib:${LIBRARY_PATH:-}"
 export KEOPS_CACHE_FOLDER="/data/home/acw794/.cache/keops-icaspp27"
 export PYTHONHOME="$PWD/.pixi/envs/sinkhorn" OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 mode=${MODE:-compute}
 if [[ "$mode" == qualify ]]; then
@@ -31,11 +32,11 @@ if [[ "$mode" == compute ]]; then
     cardinality=${cardinalities[$((task / 32))]}
     target=$((task % 32))
     case "$cardinality" in
-      1) default_batch=64 ;;
-      2) default_batch=48 ;;
-      4) default_batch=32 ;;
-      6) default_batch=24 ;;
-      8) default_batch=16 ;;
+      1) default_batch=32 ;;
+      2) default_batch=24 ;;
+      4) default_batch=16 ;;
+      6) default_batch=12 ;;
+      8) default_batch=8 ;;
     esac
     exec "$PWD/.pixi/envs/sinkhorn/bin/python" scripts/assess_sinkhorn_gradient.py compute \
       --device cuda --batch "${BATCH_SIZE:-$default_batch}" --kind standard \
@@ -43,12 +44,12 @@ if [[ "$mode" == compute ]]; then
   elif (( task < 192 )); then
     target=$((task - 160))
     exec "$PWD/.pixi/envs/sinkhorn/bin/python" scripts/assess_sinkhorn_gradient.py compute \
-      --device cuda --batch "${BATCH_SIZE:-48}" --kind persistent_target \
+      --device cuda --batch "${BATCH_SIZE:-24}" --kind persistent_target \
       --target-index "$target"
   else
     target=$((task - 192))
     exec "$PWD/.pixi/envs/sinkhorn/bin/python" scripts/assess_sinkhorn_gradient.py compute \
-      --device cuda --batch "${CONTROL_BATCH_SIZE:-16}" --kind all_controls \
+      --device cuda --batch "${CONTROL_BATCH_SIZE:-8}" --kind all_controls \
       --target-index "$target"
   fi
 fi
