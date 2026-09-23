@@ -1,6 +1,6 @@
 % Derived from the supplied IEEEbib.bst: given names use initials and
 % author lists of seven or more use the first author followed by et al.
-% Bibliography spacing is unchanged.
+% Edition labels use the abbreviation ed. Bibliography spacing is unchanged.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  IEEE.bst  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography Syle file for articles according to IEEE instructions
 % balemi@aut.ee.ethz.ch     <22-JUN-93>
@@ -389,8 +389,8 @@ FUNCTION {format.edition}
 { edition empty$
     { "" }
     { output.state mid.sentence =
-	{ edition "l" change.case$ " edition" * }
-	{ edition "t" change.case$ " edition" * }
+	{ edition "l" change.case$ " ed." * }
+	{ edition "t" change.case$ " ed." * }
       if$
     }
   if$

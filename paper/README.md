@@ -15,6 +15,7 @@ archive; `IEEEtran.cls` is retained only for the historical reviewed manuscript.
 
 The bibliography uses `IEEEbib-initials.bst`, derived from the supplied
 `IEEEbib.bst` with given names formatted as initials and author lists of seven
-or more shortened to the first author plus et al. Full author metadata remains
+or more shortened to the first author plus et al.; editions use `ed.`.
+Full author metadata remains
 in `references.bib`. The original style is retained unchanged, and bibliography
 spacing follows `spconf`.
