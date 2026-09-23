@@ -1,0 +1,123 @@
+{
+  "artifacts": {
+    "pdf": "021bb1fcc24bf48a73c1276246281609907baeded96584137c75520981178673",
+    "png": "7e7c522ec648698b286d13f7af44348945b5e9e9601bd04f738f69fa9a6906de"
+  },
+  "device": "cpu",
+  "display": {
+    "arrows": "landscape style, 4x length/head size, original shaft width",
+    "colorbar": "one vertical shared scale; distinct reference powers",
+    "colour_scale": "10 log10, [-40,0] dB",
+    "direction_order": [
+      "right_up",
+      "right_down",
+      "left_up",
+      "left_down"
+    ],
+    "frequency_axis": "logarithmic, 20-8000 Hz; sums use all bins",
+    "spectrogram": "power / peak STFT power",
+    "surfaces": "S_q/m; accumulation uses linear power"
+  },
+  "power_sha256": "f29bc8883d7074825981ed0240ddb1c3d4e884b63ec2a2def0daf63d51360303",
+  "schema": "cumulative-surfaces-figure-v2",
+  "script_sha256": "30fe4024cc504e7e9b910dbdf396053a7e52f7ae63519c919ea79b2ae9ca4815",
+  "stft": {
+    "center": false,
+    "hop": 256,
+    "n_fft": 1024,
+    "shape": [
+      513,
+      122
+    ],
+    "window": "periodic Hann"
+  },
+  "target": {
+    "duration_seconds": 2.0,
+    "events": [
+      {
+        "f0_hz": 320.0,
+        "onset_seconds": 0.0
+      },
+      {
+        "f0_hz": 242.51465064166374,
+        "onset_seconds": 0.3333333333333333
+      },
+      {
+        "f0_hz": 183.79173679952555,
+        "onset_seconds": 0.6666666666666666
+      },
+      {
+        "f0_hz": 139.28809012737977,
+        "onset_seconds": 1.0
+      },
+      {
+        "f0_hz": 105.56063286183152,
+        "onset_seconds": 1.3333333333333333
+      },
+      {
+        "f0_hz": 80.0,
+        "onset_seconds": 1.6666666666666667
+      }
+    ],
+    "sample_rate": 16000,
+    "staircase_events": 6,
+    "staircase_timing": "2*i/N, i=0,...,N-1",
+    "synthesiser": {
+      "architecture": [
+        "Exciter",
+        "Waveguide",
+        "PhraseSynth"
+      ],
+      "candidate_coordinates": "independent elementwise bounded logits; no ordering, spacing, canonicalization, or Magic Clamp",
+      "dtype": "float64/complex128",
+      "exciter": {
+        "amplitude": 0.8,
+        "duration_seconds": 0.01,
+        "fourier_fft_length": 65536,
+        "lagrange_order": 5,
+        "method": "fourier",
+        "sample_count": 32000,
+        "sample_rate": 16000,
+        "thiran_order": 1
+      },
+      "schema": "icassp27-phrase-renderer-v1",
+      "waveguide": {
+        "fourier_fft_length": 262144,
+        "interpolation": "thiran",
+        "loop_gain": 0.99,
+        "loop_pole": 0.2,
+        "phase_correction_iterations": 12,
+        "pluck_position": 0.23,
+        "realization": "df2",
+        "sample_count": 32000,
+        "sample_rate": 16000,
+        "state_policy": "hard_reset"
+      }
+    },
+    "type": "waveguide phrase"
+  },
+  "target_audio_sha256": "b468c4ecbb16092dba96174a3b3a8db826dfb788e592a483952b0d9fdac3e1ea",
+  "torch_version": "2.7.1+cu126",
+  "validation": [
+    {
+      "direction": "right_up",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "f514379d8895f1b87036e552759c8acce410f883f149f9418c3695e37a8122f1"
+    },
+    {
+      "direction": "right_down",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "9349d0fee017cd96aa0720634d87c227d2afc75836832d2f0419a40fd43796d4"
+    },
+    {
+      "direction": "left_up",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "e8d7d34a27d31ff54fdf72231ff8414e2a65e212442633ee9c23c1f6fe18f5d3"
+    },
+    {
+      "direction": "left_down",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "b800a7de117830d75c9448913cb26cddebef829d3bb7b66f0895bacf76f3f0fc"
+    }
+  ]
+}
