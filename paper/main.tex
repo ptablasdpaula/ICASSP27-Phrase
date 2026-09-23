@@ -226,8 +226,8 @@ uses Log-Weighing: octave and time-bin widths weight the final \gls{rms}, so
 equal octave spans receive equal total frequency weight while the cumulative
 surfaces remain unchanged. In dec\acrshort{cel} accumulated energy decays as the scan advances, reaching zero after $1$~s or $1000$~Hz; Each source bin $P_{i,j}$ contributes to
 $S_\dvec(P)_{k,n}$ with weight
-$w(\Delta t; 1\,\mathrm{s}) w(\Delta f; 1000\,\mathrm{Hz})$, where
-$\Delta t$ and $\Delta f$ measure its separation from the current accumulation
+$w(\Delta \ttype; 1\,\mathrm{s}) w(\Delta \ftype; 1000\,\mathrm{Hz})$, where
+$\Delta \ttype$ and $\Delta \ftype$ measure its separation from the current accumulation
 bin $(k,n)$. The decay kernel is $w(r; H) = 1-\log_{10}(1+9r/H)$ for
 $0\le r\le H$, and zero otherwise. Finally, tlogCe$\mathcal L$ applies
 Log-Weighing to only the two forward-time pairs
