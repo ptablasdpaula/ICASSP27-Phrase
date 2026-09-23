@@ -1,0 +1,104 @@
+{
+  "artifacts": {
+    "pdf": "286480d4215fadb4ada36630d3684f6d99e7e4d50413ad3824cd4d017ad65dab",
+    "png": "a60a27f6c31082a509cd4d425b7d7dd1813ee312f7119f4046863419e6d2e460"
+  },
+  "device": "cpu",
+  "display": {
+    "arrows": "landscape style, 4x length/head size, original shaft width",
+    "colorbar": "one vertical shared linear scale; distinct reference powers",
+    "direction_order": [
+      "right_up",
+      "right_down",
+      "left_up",
+      "left_down"
+    ],
+    "frequency_axis": "logarithmic, 20-8000 Hz; sums use all bins",
+    "spectrogram": "linear power / peak STFT power, [0,1]",
+    "surfaces": "linear S_q/m, shared [0,1] display scale"
+  },
+  "power_sha256": "61357b604f637ad36d116dad6562230cca0eb5ff5c4230242e2e5e1255934f07",
+  "schema": "cumulative-surfaces-figure-v2",
+  "script_sha256": "7d2dc5afd1fd3072bc4ea4fe26b8c842aaf5425415f34c17f0b6f9ed7ad4befd",
+  "stft": {
+    "center": false,
+    "hop": 256,
+    "n_fft": 1024,
+    "shape": [
+      513,
+      122
+    ],
+    "window": "periodic Hann"
+  },
+  "target": {
+    "duration_seconds": 2.0,
+    "events": [
+      {
+        "f0_hz": 80.0,
+        "onset_seconds": 0.5
+      },
+      {
+        "f0_hz": 240.0,
+        "onset_seconds": 1.25
+      }
+    ],
+    "sample_rate": 16000,
+    "synthesiser": {
+      "architecture": [
+        "Exciter",
+        "Waveguide",
+        "PhraseSynth"
+      ],
+      "candidate_coordinates": "independent elementwise bounded logits; no ordering, spacing, canonicalization, or Magic Clamp",
+      "dtype": "float64/complex128",
+      "exciter": {
+        "amplitude": 0.8,
+        "duration_seconds": 0.01,
+        "fourier_fft_length": 65536,
+        "lagrange_order": 5,
+        "method": "fourier",
+        "sample_count": 32000,
+        "sample_rate": 16000,
+        "thiran_order": 1
+      },
+      "schema": "icassp27-phrase-renderer-v1",
+      "waveguide": {
+        "fourier_fft_length": 262144,
+        "interpolation": "thiran",
+        "loop_gain": 0.99,
+        "loop_pole": 0.2,
+        "phase_correction_iterations": 12,
+        "pluck_position": 0.23,
+        "realization": "df2",
+        "sample_count": 32000,
+        "sample_rate": 16000,
+        "state_policy": "hard_reset"
+      }
+    },
+    "type": "waveguide phrase"
+  },
+  "target_audio_sha256": "ed40febb6c577a8ee769da1e603abceceb3894860a08737a3593c3be14452111",
+  "torch_version": "2.7.1+cu126",
+  "validation": [
+    {
+      "direction": "right_up",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "97c5e752f0c28ef1d0cf6c2d175c5a1ee10d1e4199fc5e07dd7e95758d2f244f"
+    },
+    {
+      "direction": "right_down",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "8a4455f27122101b52fc068c5cd17cfefe10b302d86217232f57264cfaf2d386"
+    },
+    {
+      "direction": "left_up",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "c05d59aa332825fe24d3d56d6c49581e9b3a41a1a6595741918fac9bf1910414"
+    },
+    {
+      "direction": "left_down",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "98c15c3bf60370a38b26665a3ff3d7200d69f60fb120f2b28552fcfa17b8b640"
+    }
+  ]
+}

@@ -44,6 +44,8 @@ def digest(data: bytes) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument("--max-frequency", type=float, default=END_HZ,
+                        help="Upper display frequency in Hz; accumulation uses all bins.")
     parser.add_argument(
         "--event", nargs=2, type=float, action="append", metavar=("HZ", "SECONDS"),
         help="Waveguide event; repeat for a phrase. Omit to render the sine sweep.",
@@ -53,6 +55,8 @@ def main() -> None:
         default=ROOT / "paper/figures/cumulative_surfaces",
     )
     args = parser.parse_args()
+    if not START_HZ < args.max_frequency <= SAMPLE_RATE / 2:
+        parser.error("--max-frequency must exceed 20 Hz and not exceed Nyquist")
     configure_reproducibility()
     torch.set_num_threads(1)
     with torch.no_grad():
@@ -166,10 +170,15 @@ def main() -> None:
     for axis in axes:
         axis.set_box_aspect(1)
         axis.set_yscale("log")
-        axis.set_ylim(START_HZ, END_HZ)
+        axis.set_ylim(START_HZ, args.max_frequency)
         axis.set_xticks([0.5, 1, 1.5], ["0.5", "1", "1.5"])
         axis.set_xlim(time_edges[0], time_edges[-1])
-        axis.set_yticks([100, 1000], [r"$10^2$", r"$10^3$"])
+        ticks = [100, 1000]
+        labels = [r"$10^2$", r"$10^3$"]
+        if args.max_frequency == 8000:
+            ticks.append(8000)
+            labels.append(r"$8\!\times\!10^3$")
+        axis.set_yticks(ticks, labels)
         axis.minorticks_off()
         axis.tick_params(length=2, width=0.5, pad=1.5)
     figure.canvas.draw()
@@ -201,7 +210,7 @@ def main() -> None:
                  "window": "periodic Hann", "shape": list(power.shape)},
         "display": {"spectrogram": "linear power / peak STFT power, [0,1]",
                     "surfaces": "linear S_q/m, shared [0,1] display scale",
-                    "frequency_axis": "logarithmic, 20-1000 Hz; decade ticks; sums use all bins",
+                    "frequency_axis": f"logarithmic, 20-{args.max_frequency:g} Hz; sums use all bins",
                     "colorbar": "one vertical shared linear scale; distinct reference powers",
                     "arrows": "landscape style, 4x length/head size, original shaft width",
                     "direction_order": [item[0] for item in DIRECTIONS]},
