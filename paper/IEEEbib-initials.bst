@@ -1,5 +1,6 @@
-% Derived from the supplied IEEEbib.bst; only author/editor given-name
-% formatting is changed to initials. Bibliography spacing is unchanged.
+% Derived from the supplied IEEEbib.bst: given names use initials and
+% author lists of seven or more use the first author followed by et al.
+% Bibliography spacing is unchanged.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  IEEE.bst  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography Syle file for articles according to IEEE instructions
 % balemi@aut.ee.ethz.ch     <22-JUN-93>
@@ -256,7 +257,11 @@ FUNCTION {format.names}
 FUNCTION {format.authors}
 { author empty$
     { "" }
-    { author format.names }
+    { author num.names$ #6 >
+        { author #1 "{f.~}{vv~}{ll}{, jj}" format.name$ " et~al." * }
+        { author format.names }
+      if$
+    }
   if$
 }
 
