@@ -55,6 +55,8 @@ def main() -> None:
     parser.add_argument("--db-floor", type=float, default=-40.0)
     parser.add_argument("--descending-from-zero", action="store_true",
                         help="Illustration only: descending staircase at times 2*i/N.")
+    parser.add_argument("--ascending-from-zero", action="store_true",
+                        help="Illustration only: ascending staircase at times 2*i/N.")
     parser.add_argument("--staircase", type=int, choices=(4, 6, 8),
                         help="80-to-320 Hz log-spaced notes with equal inter-note and edge gaps.")
     parser.add_argument(
@@ -68,16 +70,20 @@ def main() -> None:
     args = parser.parse_args()
     if not np.isfinite(args.db_floor) or args.db_floor >= 0:
         parser.error("--db-floor must be finite and negative")
-    if args.descending_from_zero and not args.staircase:
-        parser.error("--descending-from-zero requires --staircase")
+    if args.descending_from_zero and args.ascending_from_zero:
+        parser.error("choose only one staircase direction")
+    from_zero = args.descending_from_zero or args.ascending_from_zero
+    if from_zero and not args.staircase:
+        parser.error("a from-zero direction requires --staircase")
     if args.staircase:
         if args.event:
             parser.error("use either --staircase or --event")
         args.event = list(zip(np.geomspace(80, 320, args.staircase).tolist(),
                              (np.arange(1, args.staircase + 1) * DURATION_SECONDS / (args.staircase + 1)).tolist()))
-        if args.descending_from_zero:
+        if from_zero:
             args.event = list(zip(
-                np.geomspace(320, 80, args.staircase).tolist(),
+                np.geomspace(320 if args.descending_from_zero else 80,
+                             80 if args.descending_from_zero else 320, args.staircase).tolist(),
                 (np.arange(args.staircase) * DURATION_SECONDS / args.staircase).tolist(),
             ))
     if not 0 < args.min_frequency < args.max_frequency <= SAMPLE_RATE / 2:
@@ -108,7 +114,7 @@ def main() -> None:
             # The experiment configuration and synthesis algorithm are unchanged.
             onset_domain = (
                 patch("icassp27_phrase.waveguide.ONSET_BOUNDS_SECONDS", (0., DURATION_SECONDS))
-                if args.descending_from_zero else nullcontext()
+                if from_zero else nullcontext()
             )
             with onset_domain:
                 target = synth(events[:, 0][None], events[:, 1][None])[0]
@@ -119,7 +125,7 @@ def main() -> None:
                 "duration_seconds": DURATION_SECONDS, "sample_rate": SAMPLE_RATE,
                 "synthesiser": synth.provenance(),
                 "staircase_events": args.staircase,
-                "staircase_timing": "2*i/N, i=0,...,N-1" if args.descending_from_zero else "equal edge gaps",
+                "staircase_timing": "2*i/N, i=0,...,N-1" if from_zero else "equal edge gaps",
             }
         transform = STFTPower(
             sample_rate=SAMPLE_RATE,
