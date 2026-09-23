@@ -46,6 +46,8 @@ def digest(data: bytes) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    parser.add_argument("--min-frequency", type=float, default=START_HZ,
+                        help="Lower display frequency in Hz; accumulation uses all bins.")
     parser.add_argument("--max-frequency", type=float, default=END_HZ,
                         help="Upper display frequency in Hz; accumulation uses all bins.")
     parser.add_argument("--decibels", action="store_true",
@@ -78,8 +80,8 @@ def main() -> None:
                 np.geomspace(320, 80, args.staircase).tolist(),
                 (np.arange(args.staircase) * DURATION_SECONDS / args.staircase).tolist(),
             ))
-    if not START_HZ < args.max_frequency <= SAMPLE_RATE / 2:
-        parser.error("--max-frequency must exceed 20 Hz and not exceed Nyquist")
+    if not 0 < args.min_frequency < args.max_frequency <= SAMPLE_RATE / 2:
+        parser.error("display frequencies must satisfy 0 < minimum < maximum <= Nyquist")
     configure_reproducibility()
     torch.set_num_threads(1)
     with torch.no_grad():
@@ -205,12 +207,15 @@ def main() -> None:
     for axis in axes:
         axis.set_box_aspect(1)
         axis.set_yscale("log")
-        axis.set_ylim(START_HZ, args.max_frequency)
+        axis.set_ylim(args.min_frequency, args.max_frequency)
         axis.set_xticks([0.5, 1, 1.5], ["0.5", "1", "1.5"])
         axis.set_xlim((0, DURATION_SECONDS) if args.staircase
                       else (time_edges[0], time_edges[-1]))
-        ticks = [100, 1000]
-        labels = [r"$10^2$", r"$10^3$"]
+        ticks = [tick for tick in (100, 1000)
+                 if args.min_frequency <= tick <= args.max_frequency]
+        labels = [rf"$10^{{{int(np.log10(tick))}}}$" for tick in ticks]
+        if args.min_frequency == 80 and args.max_frequency == 640:
+            ticks, labels = [80, 160, 320, 640], ["80", "160", "320", "640"]
         axis.set_yticks(ticks, labels)
         axis.minorticks_off()
         axis.tick_params(length=2, width=0.5, pad=1.5)
@@ -246,7 +251,7 @@ def main() -> None:
         "display": {"spectrogram": "power / peak STFT power",
                     "surfaces": "S_q/m; accumulation uses linear power",
                     "colour_scale": f"10 log10, [{args.db_floor:g},0] dB" if args.decibels else "linear [0,1]",
-                    "frequency_axis": f"logarithmic, 20-{args.max_frequency:g} Hz; sums use all bins",
+                    "frequency_axis": f"logarithmic, {args.min_frequency:g}-{args.max_frequency:g} Hz; sums use all bins",
                     "colorbar": "one vertical shared scale; distinct reference powers",
                     "arrows": "landscape style, 4x length/head size, original shaft width",
                     "direction_order": [item[0] for item in DIRECTIONS]},
