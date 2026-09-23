@@ -1,4 +1,4 @@
-\documentclass[conference]{IEEEtran}
+\documentclass[letterpaper]{article}
 % Overleaf runs BibTeX from the project top level even when the selected main
 % document lives in paper/.  Resolve one prefix for both a full-repository
 % Overleaf project and a standalone upload of the paper/ directory.
@@ -9,7 +9,7 @@
     \newcommand{\PaperRoot}{.}%
   }%
 \fi
-% IEEE conference template version as of 6/27/2024.
+\usepackage{\PaperRoot/spconf}
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -23,31 +23,18 @@
 \usepackage{xcolor}
 \usepackage[acronym,nonumberlist,nopostdot]{glossaries}
 \makeglossaries
-% Keep IEEE's typography and page geometry while avoiding oversized gaps
-% around floats.
-\setlength{\textfloatsep}{5pt plus 1pt minus 2pt}
-\setlength{\floatsep}{5pt plus 1pt minus 2pt}
-\setlength{\dbltextfloatsep}{5pt plus 1pt minus 2pt}
-\setlength{\dblfloatsep}{5pt plus 1pt minus 2pt}
-\setlength{\intextsep}{5pt plus 1pt minus 2pt}
-\setlength{\abovecaptionskip}{2pt plus 1pt minus 1pt}
-\setlength{\belowcaptionskip}{2pt plus 1pt minus 1pt}
 
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \title{Unsupervised Estimation of Musical Phrase Parameters via Differentiable DSP}
-\author{\IEEEauthorblockN{Pablo Tablas de Paula\IEEEauthorrefmark{1},
-Sebastian J. Schlecht\IEEEauthorrefmark{2},
-Emmanouil Benetos\IEEEauthorrefmark{1}, and
-Joshua D. Reiss\IEEEauthorrefmark{1}}
-\IEEEauthorblockA{\IEEEauthorrefmark{1}Centre for Digital Music,
-Queen Mary University of London, London, UK}
-\IEEEauthorblockA{\IEEEauthorrefmark{2}Multimedia Communications and Signal Processing,\\
-Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
-\IEEEauthorblockA{\texttt{p.tablasdepaula@qmul.ac.uk};
-\texttt{sebastian.schlecht@fau.de}}}
+\name{Pablo Tablas de Paula$^{1}$, Sebastian J. Schlecht$^{2}$,
+Emmanouil Benetos$^{1}$, and Joshua D. Reiss$^{1}$}
+\address{$^{1}$Centre for Digital Music, Queen Mary University of London, London, UK\\
+$^{2}$Multimedia Communications and Signal Processing,\\
+Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany\\
+\texttt{p.tablasdepaula@qmul.ac.uk}; \texttt{sebastian.schlecht@fau.de}}
 
 % Expand acronyms on first use; the introduction starts a fresh first-use scope.
 \newacronym{ddsp}{DDSP}{differentiable digital signal processing}
@@ -85,15 +72,13 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany}
 Differentiable digital signal processing enables unsupervised estimation of sound processor parameters via analysis by synthesis. However, it relies on waveform and spectral pointwise losses that do not encode energy displacement, needed to obtain essential parameters like onset time and pitch. In this work, we propose \glspl{cel}, which compare \acrshort{stft} power accumulated in time and frequency directions. We use them to predict the pitch and timing of monophonic plucked-string musical phrases synthesised by a differentiable digital waveguide whose delay length defines pitch. In musical phrases containing one to eight notes, \glspl{cel} give the strongest gradient alignment with respect to pitch, timing and timbre, near exact estimation for 1 and 2 notes and lowest median pitch and time error on phrases with more than 2 notes with respect to previous waveform, spectral and optimal transport baselines. Still, it is comparable in runtime and memory usage to a single scale STFT loss. We believe these losses will further support unsupervised joint optimisation of pitch, timing and timbre, and provide a pip installable PyTorch package to be used in future work\footnote{The Ce$\mathcal L$s library is available at \url{https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0}.}.
 \end{abstract}
 
-\begin{IEEEkeywords}
+\begin{keywords}
 differentiable digital signal processing, digital waveguide, audio loss, analysis by synthesis, note parameter estimation
-\end{IEEEkeywords}
+\end{keywords}
 
-% Queue the cumulative illustration on page 1 so it occupies page 2.
-\begin{figure*}[!t]
+\begin{figure*}[t]
 \centering
-\setlength{\abovecaptionskip}{1pt}
-\includegraphics[width=\textwidth,trim=0 1.5pt 0 0,clip]{\PaperRoot/figures/cumulative_surfaces.pdf}
+\includegraphics[width=\textwidth]{\PaperRoot/figures/cumulative_surfaces.pdf}
 \caption{STFT power of a constant amplitude logarithmic 20-to-1000~Hz sine sweep over two seconds, and its resulting cumulative surfaces for the direction pairs $(d_t,d_f)$.
 The shared linear colour scale runs from 0 to 1, with power normalised by peak
 power for the spectrogram and total target power ($S_q/m$) for the
@@ -137,8 +122,10 @@ $\downarrow$ includes $k,\ldots,K-1$. Thus, the arrows give the starting corner
 and accumulation direction. Writing $a\preceq_\dvec b$ for
 $a\leq b$ when $\dvec\in\{\rightarrow,\uparrow\}$ and $a\geq b$ otherwise, the target and candidate surfaces are:
 \begin{equation*}
-S_\dvec(P)_{k,n}=\sum_{i\preceq_{\df}k}\sum_{j\preceq_{\dt}n}P_{i,j},
-\qquad S_\dvec = S_\dvec(P), \quad \hat S_{\dvec}=S_{\dvec}(\hat P).
+\begin{gathered}
+S_\dvec(P)_{k,n}=\sum_{i\preceq_{\df}k}\sum_{j\preceq_{\dt}n}P_{i,j},\\
+S_\dvec = S_\dvec(P), \quad \hat S_{\dvec}=S_{\dvec}(\hat P).
+\end{gathered}
 \end{equation*}
 Each value contains the power in the rectangle from the selected corner to
 $(k,n)$, as shown in Fig.~\ref{fig:cumulative-surfaces}. Let
@@ -167,7 +154,7 @@ where $\|\cdot\|_\mathrm{F}$ denotes the Frobenius norm, normalising across $K$ 
 \label{sec:renderer}
 We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings~\cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position is $D_2/(D_1+D_2)=0.23$ from the bridge. Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, with loss filter $H_L(z)=g(1-a_1)/(1-a_1z^{-1})$, $g=0.99$, and $a_1=0.2$. Here $g$ controls the DC gain and increasing $a_1$ increases high-frequency attenuation, providing decay and damping controls. Output is the bridge-incident travelling velocity. Each new note excites a \gls{hrc} $e_0(t)=A_e[1-\cos(\pi t/T_e)]/2$ for $0\leq t<T_e$ and zero otherwise, with $A_e=0.8$ and $T_e=10$~ms. This results in a rich signal of evenly spaced harmonics with an $f_0$-dependant decay time (see~\cite[Fig.~3]{tablasdepaula2026karplus}). In turn it poses rugged loss landscapes w.r.t $f_0$ and time for SOT and other traditional losses as shown in Fig.~\ref{fig:loss-sweeps}, motivating the use of \glspl{cel}. 
 
-\begin{figure}[!b]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/Waveguide.pdf}
 \caption{Two-rail digital waveguide for plucked string synthesis, with
@@ -175,11 +162,9 @@ nut-side delay $D_1$ and bridge-side delay $D_2$ on each rail.}
 \label{fig:waveguide}
 \end{figure}
 
-% Queue the short, wide-aspect slices for one column on page 3.
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
-\setlength{\abovecaptionskip}{1pt}
-\includegraphics[width=\columnwidth,trim=0 20pt 0 0,clip]{\PaperRoot/figures/loss_sweeps.pdf}
+\includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_sweeps.pdf}
 \caption{Single-pluck loss slices around a 160-Hz, 1.0-s target, using the baselines and base \gls{cel} defined in Sec~\ref{sec:experiments}. Top: time shift with pitch fixed; bottom: frequency shift with onset fixed.}
 \label{fig:loss-sweeps}
 \end{figure}
@@ -197,11 +182,9 @@ Finally, we collapse the waveguide algebraically into a rational transfer
 function and evaluate it in direct form II as required for PhilTorch with its TorchLPC
 backend for fast GPU backpropagation~\cite{yu2025philtorch,yu2024torchlpc}. For phrase synthesis, we reset the recurrence history at each incoming note's onset, which is needed to smooth the multi-pluck loss landscape; we hypothesise that removing interference with residual string vibration contributes to this effect.
 
-% Queue the double-column result while page 3 is still being composed so that
-% IEEEtran can place it at the top of page 4.
-\begin{table*}[!t]
+\begin{table*}[t]
 \centering
-\caption{\normalfont Median Hungarian-assigned pitch and onset errors over 150
+\caption{Median Hungarian-assigned pitch and onset errors over 150
 target phrases for each number of notes; lower is better. Bold, underlined, and italic
 values denote the best, second-best, and third-best results in each column,
 respectively; all values below $.01$ share the best rank. Ce$\mathcal L$
@@ -263,8 +246,7 @@ pairs per loss overall, whose cosine alignment we report at \ref{fig:gradient-al
 
 \begin{figure}[t]
 \centering
-\setlength{\abovecaptionskip}{1pt}
-\includegraphics[width=\columnwidth,trim=0 6pt 0 0,clip]{\PaperRoot/figures/gradient_alignment.pdf}
+\includegraphics[width=\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
 \caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation; higher is better. State uses persistent-state targets; 7-D varies timbre controls too. Numbers give the number of notes; values closer to $1$ indicate descent directly towards the targets, closer to $0$ orthogonal to them.}
 \label{fig:gradient-alignment}
 \end{figure}
@@ -277,13 +259,11 @@ cosine rounds to at least $.10$ and retain \gls{sot} and linear
 \gls{tfw} as low-alignment controls. Each of the resulting 6,750 fits uses Adam, batch\_size=10, lr=$.05$, ReduceLROnPlateau with factor $.5$ and patience 200, early stopping at 1000 iterations without 1\% relative improvement and a 20,000-update cap. We report each fit's lowest-loss iterate at Table~\ref{tab:pilot-compact}. Additionally, after 5 warm-up updates, we report the render--loss-backward update of the first 20 iterations of SS, SmoMSS, \gls{tfw} and \gls{cel} in Table~\ref{tab:efficiency}.
 
 \begingroup
-\renewcommand{\tablename}{Table}
 \begin{table}[t]
 \centering
-\caption{\normalfont Median runtime and memory usage across 20 iterations. Values in parentheses are ratios with respect to SS.}
+\caption{Median runtime and memory usage across 20 iterations. Values in parentheses are ratios with respect to SS.}
 \label{tab:efficiency}
 \scriptsize
-\setlength{\tabcolsep}{8pt}
 \begin{tabular}{@{}lcc@{}}
 \toprule
 Loss & $\downarrow{}$ Full update (ms) & $\downarrow{}$ Peak GPU memory (GiB) \\
@@ -299,9 +279,7 @@ Ce$\mathcal L$ & 371.15 (x1.002) & 1.826 (x1.010) \\
 
 \begin{figure}[t]
 \centering
-\setlength{\abovecaptionskip}{0pt}
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
-\vspace{-5mm}
 \caption{Per-phrase \acrshort{lsd} distributions for the best-performing
 representative of each loss family over the same targets; lower is better.
 Random pairs each target with a different randomly permuted target having the
@@ -326,7 +304,7 @@ Queen Mary's Apocrita \gls{hpc} facility, supported by QMUL Research-IT
 \section*{Compliance with Ethical Standards}
 Since this is a numerical study not involving human subjects, no ethical approval was required.
 
-\bibliographystyle{IEEEtran}
+\bibliographystyle{\PaperRoot/IEEEbib}
 \typeout{ICASSP bibliography database: \PaperRoot/references.bib}
 \bibliography{\PaperRoot/references}
 \end{document}
