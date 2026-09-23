@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Show a logarithmic sinusoidal sweep and its four cumulative-power images."""
+"""Show a sine sweep or waveguide phrase and its four cumulative-power images."""
 
 from __future__ import annotations
 
@@ -45,6 +45,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument(
+        "--event", nargs=2, type=float, action="append", metavar=("HZ", "SECONDS"),
+        help="Waveguide event; repeat for a phrase. Omit to render the sine sweep.",
+    )
+    parser.add_argument(
         "--output-stem", type=Path,
         default=ROOT / "paper/figures/cumulative_surfaces",
     )
@@ -58,6 +62,27 @@ def main() -> None:
         # Integrate instantaneous frequency before taking the sine.
         phase = (2 * np.pi * START_HZ / rate) * torch.expm1(rate * times)
         target = torch.sin(phase)
+        target_description = {
+            "type": "constant-amplitude logarithmic sinusoidal sweep",
+            "start_hz": START_HZ, "end_hz": END_HZ,
+            "duration_seconds": DURATION_SECONDS, "sample_rate": SAMPLE_RATE,
+            "amplitude": 1.0, "initial_phase_radians": 0.0,
+            "instantaneous_frequency": "f(t)=20*50**(t/2)",
+            "phase": "2*pi*20*(exp(a*t)-1)/a, a=log(50)/2",
+        }
+        if args.event:
+            from icassp27_phrase.synth import PhraseSynth
+
+            synth = PhraseSynth().to(args.device)
+            events = torch.tensor(args.event, dtype=torch.float64, device=args.device)
+            target = synth(events[:, 0][None], events[:, 1][None])[0]
+            target_description = {
+                "type": "waveguide phrase",
+                "events": [{"f0_hz": hz, "onset_seconds": onset}
+                           for hz, onset in args.event],
+                "duration_seconds": DURATION_SECONDS, "sample_rate": SAMPLE_RATE,
+                "synthesiser": synth.provenance(),
+            }
         transform = STFTPower(
             sample_rate=SAMPLE_RATE,
             n_fft=CEL_N_FFT,
@@ -169,12 +194,7 @@ def main() -> None:
     plt.close(figure)
     provenance = {
         "schema": "cumulative-surfaces-figure-v2",
-        "target": {"type": "constant-amplitude logarithmic sinusoidal sweep",
-                   "start_hz": START_HZ, "end_hz": END_HZ,
-                   "duration_seconds": DURATION_SECONDS, "sample_rate": SAMPLE_RATE,
-                   "amplitude": 1.0, "initial_phase_radians": 0.0,
-                   "instantaneous_frequency": "f(t)=20*50**(t/2)",
-                   "phase": "2*pi*20*(exp(a*t)-1)/a, a=log(50)/2"},
+        "target": target_description,
         "device": args.device,
         "torch_version": torch.__version__,
         "stft": {"n_fft": CEL_N_FFT, "hop": CEL_HOP, "center": False,
