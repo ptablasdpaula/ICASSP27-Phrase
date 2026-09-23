@@ -225,11 +225,14 @@ $\phi(u)=\sqrt{u}$, and applies a uniform \gls{rms}. logCe$\mathcal L$ instead
 uses Log-Weighing: octave and time-bin widths weight the final \gls{rms}, so
 equal octave spans receive equal total frequency weight while the cumulative
 surfaces remain unchanged. decCe$\mathcal L$ retains uniform \gls{rms} but
-makes accumulation local. It weights each STFT bin $P_{i,j}$ in $S_\dvec(P)_{k,n}$ 
-by $w(\Delta t; 1\,\mathrm{s}) w(\Delta f; 1000\,\mathrm{Hz})$, where $\Delta t$ 
-and $\Delta f$ are time and frequency separations between $(i,j)$ and $(k,n)$. 
-The decay weight $w(r; H) = 1-\log_{10}(1+9r/H)$ for $r \le H$ (and zero otherwise) 
-drops smoothly from $1$ at zero separation to $0$ at cutoff distance $H$. Finally, tlogCe$\mathcal L$ applies
+makes accumulation local: as the scan advances, previously encountered energy
+contributes progressively less, reaching zero contribution at a separation of
+$1$~s or $1000$~Hz. Each source bin $P_{i,j}$ contributes to
+$S_\dvec(P)_{k,n}$ with weight
+$w(\Delta t; 1\,\mathrm{s}) w(\Delta f; 1000\,\mathrm{Hz})$, where
+$\Delta t$ and $\Delta f$ measure its separation from the current accumulation
+bin $(k,n)$. The decay kernel is $w(r; H) = 1-\log_{10}(1+9r/H)$ for
+$0\le r\le H$, and zero otherwise. Finally, tlogCe$\mathcal L$ applies
 Log-Weighing to only the two forward-time pairs
 $(\rightarrow,\uparrow)$ and $(\rightarrow,\downarrow)$.
 
