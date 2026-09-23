@@ -224,10 +224,7 @@ The base Ce$\mathcal L$ averages all four diagonal direction pairs, uses
 $\phi(u)=\sqrt{u}$, and applies a uniform \gls{rms}. logCe$\mathcal L$ instead
 uses Log-Weighing: octave and time-bin widths weight the final \gls{rms}, so
 equal octave spans receive equal total frequency weight while the cumulative
-surfaces remain unchanged. decCe$\mathcal L$ retains uniform \gls{rms} but
-makes accumulation local: as the scan advances, previously encountered energy
-contributes progressively less, reaching zero contribution at a separation of
-$1$~s or $1000$~Hz. Each source bin $P_{i,j}$ contributes to
+surfaces remain unchanged. In dec\acrshort{cel} accumulated energy decays as the scan advances, reaching zero after $1$~s or $1000$~Hz; Each source bin $P_{i,j}$ contributes to
 $S_\dvec(P)_{k,n}$ with weight
 $w(\Delta t; 1\,\mathrm{s}) w(\Delta f; 1000\,\mathrm{Hz})$, where
 $\Delta t$ and $\Delta f$ measure its separation from the current accumulation
