@@ -46,6 +46,8 @@ def main() -> None:
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--max-frequency", type=float, default=END_HZ,
                         help="Upper display frequency in Hz; accumulation uses all bins.")
+    parser.add_argument("--staircase", type=int, choices=(4, 6, 8),
+                        help="80-to-320 Hz log-spaced notes with equal inter-note and edge gaps.")
     parser.add_argument(
         "--event", nargs=2, type=float, action="append", metavar=("HZ", "SECONDS"),
         help="Waveguide event; repeat for a phrase. Omit to render the sine sweep.",
@@ -55,6 +57,11 @@ def main() -> None:
         default=ROOT / "paper/figures/cumulative_surfaces",
     )
     args = parser.parse_args()
+    if args.staircase:
+        if args.event:
+            parser.error("use either --staircase or --event")
+        args.event = list(zip(np.geomspace(80, 320, args.staircase).tolist(),
+                             (np.arange(1, args.staircase + 1) * DURATION_SECONDS / (args.staircase + 1)).tolist()))
     if not START_HZ < args.max_frequency <= SAMPLE_RATE / 2:
         parser.error("--max-frequency must exceed 20 Hz and not exceed Nyquist")
     configure_reproducibility()
@@ -86,6 +93,7 @@ def main() -> None:
                            for hz, onset in args.event],
                 "duration_seconds": DURATION_SECONDS, "sample_rate": SAMPLE_RATE,
                 "synthesiser": synth.provenance(),
+                "equal_edge_gap_staircase": args.staircase,
             }
         transform = STFTPower(
             sample_rate=SAMPLE_RATE,
@@ -172,12 +180,10 @@ def main() -> None:
         axis.set_yscale("log")
         axis.set_ylim(START_HZ, args.max_frequency)
         axis.set_xticks([0.5, 1, 1.5], ["0.5", "1", "1.5"])
-        axis.set_xlim(time_edges[0], time_edges[-1])
+        axis.set_xlim((0, DURATION_SECONDS) if args.staircase
+                      else (time_edges[0], time_edges[-1]))
         ticks = [100, 1000]
         labels = [r"$10^2$", r"$10^3$"]
-        if args.max_frequency == 8000:
-            ticks.append(8000)
-            labels.append(r"$8\!\times\!10^3$")
         axis.set_yticks(ticks, labels)
         axis.minorticks_off()
         axis.tick_params(length=2, width=0.5, pad=1.5)
