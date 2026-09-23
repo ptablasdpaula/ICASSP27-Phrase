@@ -228,7 +228,7 @@ surfaces remain unchanged. decCe$\mathcal L$ retains uniform \gls{rms} but
 makes accumulation local. It weights each STFT bin $P_{i,j}$ in $S_\dvec(P)_{k,n}$ 
 by $w(\Delta t; 1\,\mathrm{s}) w(\Delta f; 1000\,\mathrm{Hz})$, where $\Delta t$ 
 and $\Delta f$ are time and frequency separations between $(i,j)$ and $(k,n)$. 
-The decay weight $w(r; H) = 1-\log_{10}(1+9r/H)$ for $r \le H$ (and zero for $r > H$) 
+The decay weight $w(r; H) = 1-\log_{10}(1+9r/H)$ for $r \le H$ (and zero otherwise) 
 drops smoothly from $1$ at zero separation to $0$ at cutoff distance $H$. Finally, tlogCe$\mathcal L$ applies
 Log-Weighing to only the two forward-time pairs
 $(\rightarrow,\uparrow)$ and $(\rightarrow,\downarrow)$.
