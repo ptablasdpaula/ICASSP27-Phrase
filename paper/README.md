@@ -12,3 +12,7 @@ For a local build from the repository root, run `pixi run paper`.
 The active manuscript uses the supplied ICASSP article template with default
 spacing and 10-point body text. `real_template/` remains the original template
 archive; `IEEEtran.cls` is retained only for the historical reviewed manuscript.
+
+The bibliography uses `IEEEbib-initials.bst`, derived from the supplied
+`IEEEbib.bst` with only given-name formatting changed to initials. The original
+style is retained unchanged, and bibliography spacing follows `spconf`.

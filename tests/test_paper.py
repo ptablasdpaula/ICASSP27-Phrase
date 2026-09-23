@@ -13,4 +13,5 @@ def test_overleaf_tree_is_self_contained() -> None:
         assert (paper / cleaned).is_file(), relative
     assert (paper / "spconf.sty").is_file()
     assert (paper / "IEEEbib.bst").is_file()
+    assert (paper / "IEEEbib-initials.bst").is_file()
     assert (paper / "references.bib").is_file()
