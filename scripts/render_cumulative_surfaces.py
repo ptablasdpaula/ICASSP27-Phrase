@@ -46,6 +46,8 @@ def main() -> None:
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--max-frequency", type=float, default=END_HZ,
                         help="Upper display frequency in Hz; accumulation uses all bins.")
+    parser.add_argument("--decibels", action="store_true",
+                        help="Display normalised power in dB without changing accumulation.")
     parser.add_argument("--staircase", type=int, choices=(4, 6, 8),
                         help="80-to-320 Hz log-spaced notes with equal inter-note and edge gaps.")
     parser.add_argument(
@@ -135,6 +137,8 @@ def main() -> None:
 
     power_array = power.cpu().numpy()
     spectrogram_normalised = power_array / power_array.max()
+    def display(value):
+        return 10 * np.log10(np.maximum(value, 1e-6)) if args.decibels else value
     # STFT coordinates are window centres, rather than artificially shifted onsets.
     time_edges = (np.arange(power.shape[1] + 1) * CEL_HOP
                   + CEL_N_FFT / 2 - CEL_HOP / 2) / SAMPLE_RATE
@@ -152,9 +156,10 @@ def main() -> None:
     })
     figure, axes = plt.subplots(1, 5, figsize=(7.2, 1.85), sharex=True, sharey=True)
     figure.subplots_adjust(left=0.075, right=0.91, bottom=0.21, top=0.88, wspace=0.06)
-    common = dict(cmap="magma", vmin=0, vmax=1, shading="flat", rasterized=True)
+    common = dict(cmap="magma", vmin=-60 if args.decibels else 0,
+                  vmax=0 if args.decibels else 1, shading="flat", rasterized=True)
     spectral_image = axes[0].pcolormesh(
-        time_edges, frequency_edges, spectrogram_normalised, **common
+        time_edges, frequency_edges, display(spectrogram_normalised), **common
     )
     axes[0].set_title("Spectrogram")
     axes[0].set_ylabel("Frequency (Hz)")
@@ -162,7 +167,7 @@ def main() -> None:
     for axis, surface, (_, time_reverse, frequency_reverse, start, _) in zip(
         axes[1:], surfaces, DIRECTIONS, strict=True
     ):
-        axis.pcolormesh(time_edges, frequency_edges, surface, **common)
+        axis.pcolormesh(time_edges, frequency_edges, display(surface), **common)
         time_arrow = r"\leftarrow" if time_reverse else r"\rightarrow"
         frequency_arrow = r"\downarrow" if frequency_reverse else r"\uparrow"
         axis.set_title(r"$(d_t,d_f)= (" + time_arrow + "," + frequency_arrow + ")$", fontsize=7.5)
@@ -193,10 +198,12 @@ def main() -> None:
                     y=0.06, fontsize=7)
     bar_axis = figure.add_axes([bounds.x1 + 0.014, bounds.y0, 0.012, bounds.height])
     colorbar = figure.colorbar(
-        spectral_image, cax=bar_axis, orientation="vertical", ticks=[0, 0.25, 0.5, 0.75, 1],
+        spectral_image, cax=bar_axis, orientation="vertical",
+        ticks=[-60, -40, -20, 0] if args.decibels else [0, 0.25, 0.5, 0.75, 1],
     )
     colorbar.ax.tick_params(length=1.5, width=0.5, pad=1, labelsize=6)
-    colorbar.set_label("Normalised power", fontsize=7, labelpad=9, rotation=270)
+    colorbar.set_label("Relative power (dB)" if args.decibels else "Normalised power",
+                       fontsize=7, labelpad=9, rotation=270)
     colorbar.outline.set_linewidth(0.5)
 
     args.output_stem.parent.mkdir(parents=True, exist_ok=True)
@@ -214,10 +221,11 @@ def main() -> None:
         "torch_version": torch.__version__,
         "stft": {"n_fft": CEL_N_FFT, "hop": CEL_HOP, "center": False,
                  "window": "periodic Hann", "shape": list(power.shape)},
-        "display": {"spectrogram": "linear power / peak STFT power, [0,1]",
-                    "surfaces": "linear S_q/m, shared [0,1] display scale",
+        "display": {"spectrogram": "power / peak STFT power",
+                    "surfaces": "S_q/m; accumulation uses linear power",
+                    "colour_scale": "10 log10, [-60,0] dB" if args.decibels else "linear [0,1]",
                     "frequency_axis": f"logarithmic, 20-{args.max_frequency:g} Hz; sums use all bins",
-                    "colorbar": "one vertical shared linear scale; distinct reference powers",
+                    "colorbar": "one vertical shared scale; distinct reference powers",
                     "arrows": "landscape style, 4x length/head size, original shaft width",
                     "direction_order": [item[0] for item in DIRECTIONS]},
         "target_audio_sha256": digest(target.cpu().numpy().tobytes()),
