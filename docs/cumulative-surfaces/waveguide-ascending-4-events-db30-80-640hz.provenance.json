@@ -1,0 +1,115 @@
+{
+  "artifacts": {
+    "pdf": "54b68acf34f73e22560fc56af970911f79294006cf7ca0bb9515fc82676a9d2a",
+    "png": "d1bda50a77a76052039c2a49d8bc8214bca52c1885ba0cbb5c08628bb65b2431"
+  },
+  "device": "cpu",
+  "display": {
+    "arrows": "landscape style, 4x length/head size, original shaft width",
+    "colorbar": "one vertical shared scale; distinct reference powers",
+    "colour_scale": "10 log10, [-30,0] dB",
+    "direction_order": [
+      "right_up",
+      "right_down",
+      "left_up",
+      "left_down"
+    ],
+    "frequency_axis": "logarithmic, 80-640 Hz; sums use all bins",
+    "spectrogram": "power / peak STFT power",
+    "surfaces": "S_q/m; accumulation uses linear power"
+  },
+  "power_sha256": "efe960e602b9a8496f9e3cebea8b84db85946c9b2f836e95b36987d8d14e914d",
+  "schema": "cumulative-surfaces-figure-v2",
+  "script_sha256": "cd4c196160da5cdc4618f98f3fc67c962a45633f222015812e5142f560e7e374",
+  "stft": {
+    "center": false,
+    "hop": 256,
+    "n_fft": 1024,
+    "shape": [
+      513,
+      122
+    ],
+    "window": "periodic Hann"
+  },
+  "target": {
+    "duration_seconds": 2.0,
+    "events": [
+      {
+        "f0_hz": 80.0,
+        "onset_seconds": 0.0
+      },
+      {
+        "f0_hz": 126.99208415745593,
+        "onset_seconds": 0.5
+      },
+      {
+        "f0_hz": 201.58736798317955,
+        "onset_seconds": 1.0
+      },
+      {
+        "f0_hz": 320.0,
+        "onset_seconds": 1.5
+      }
+    ],
+    "sample_rate": 16000,
+    "staircase_events": 4,
+    "staircase_timing": "2*i/N, i=0,...,N-1",
+    "synthesiser": {
+      "architecture": [
+        "Exciter",
+        "Waveguide",
+        "PhraseSynth"
+      ],
+      "candidate_coordinates": "independent elementwise bounded logits; no ordering, spacing, canonicalization, or Magic Clamp",
+      "dtype": "float64/complex128",
+      "exciter": {
+        "amplitude": 0.8,
+        "duration_seconds": 0.01,
+        "fourier_fft_length": 65536,
+        "lagrange_order": 5,
+        "method": "fourier",
+        "sample_count": 32000,
+        "sample_rate": 16000,
+        "thiran_order": 1
+      },
+      "schema": "icassp27-phrase-renderer-v1",
+      "waveguide": {
+        "fourier_fft_length": 262144,
+        "interpolation": "thiran",
+        "loop_gain": 0.99,
+        "loop_pole": 0.2,
+        "phase_correction_iterations": 12,
+        "pluck_position": 0.23,
+        "realization": "df2",
+        "sample_count": 32000,
+        "sample_rate": 16000,
+        "state_policy": "hard_reset"
+      }
+    },
+    "type": "waveguide phrase"
+  },
+  "target_audio_sha256": "cfcf08874d3df6dca15053544a496442b5c7f9deb2e8047ff80aea3041636d3e",
+  "torch_version": "2.7.1+cu126",
+  "validation": [
+    {
+      "direction": "right_up",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "bd8d7dab942607920cd2ccdd87d660d37a110db910d5276fd1766c83653cc08b"
+    },
+    {
+      "direction": "right_down",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "25e629511be1ee8f7e333fc781de7c9eb729049e771f2172c5c094ea05cab271"
+    },
+    {
+      "direction": "left_up",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "59639ff173581b1f67b58473e60d7801c1f33573f961a1d0579da83a8eee09d7"
+    },
+    {
+      "direction": "left_down",
+      "maximum_reference_feature_error": 0.0,
+      "surface_sha256": "bf87dcee425354ea6c0c0c01aa09fae26af1198751b264ace59d1556c3f57236"
+    }
+  ]
+}
