@@ -39,7 +39,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
         torch_version = _installed_version("torch")
         return all(
             (
-                _installed_version("icassp27-phrase") == "0.2.0",
+                _installed_version("icassp27-phrase") == "0.2.1",
                 _installed_version("flamo") == "0.2.18",
                 _installed_version("torchlpc") is not None,
                 _installed_version("philtorch") is not None,
@@ -116,7 +116,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                 [
                     *_common,
                     "--no-deps",
-                    "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@paper-reproduction-v0.2.0",
+                    "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@paper-reproduction-v0.2.1",
                 ],
             ),
         )
@@ -140,6 +140,10 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                     raise RuntimeError(f"{_label} failed:\n{_log_tail}")
 
         importlib.invalidate_caches()
+        # A reused cloud kernel may still hold the previous package in memory.
+        for _module_name in list(sys.modules):
+            if _module_name == "icassp27_phrase" or _module_name.startswith("icassp27_phrase."):
+                del sys.modules[_module_name]
 
     if not _environment_is_ready():
         raise RuntimeError("The CPU environment installer completed but did not qualify.")
@@ -192,7 +196,8 @@ def _(mo):
     Select one of the paper's event counts, losses, and 150 frozen LHS
     targets. The target is rendered immediately. The fit starts only when
     you press **Run optimisation**. The current candidate spectrogram is
-    refreshed at evaluation 1 and every 10 evaluations; nothing is written
+    refreshed initially and every 10 Adam updates. The iteration counter updates
+    every step; nothing is written
     to disk.
     """)
     return
@@ -277,152 +282,150 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    run_fit = mo.ui.run_button(
-        label="Run optimisation",
-        tooltip="Fit this target from the registered equal-cell initialisation",
-        kind="success",
-    )
-    mo.vstack(
-        [
-            mo.md(
-                "The live panel refreshes every 10 updates. Each fit uses Adam at 0.05, "
-                "halves the learning rate after 200 plateau evaluations, and stops after "
-                "1000 evaluations without 0.01% relative improvement or 20,000 updates. "
-                "Adam state is retained; the lowest-loss candidate is reported."
-            ),
-            run_fit,
-        ]
-    )
-    return (run_fit,)
-
-
-@app.cell(hide_code=True)
 def _(
     fit,
     loss_type,
     mo,
-    run_fit,
     spectrogram_figure,
     synth,
     target_audio,
     target_metadata,
     torch,
-):
-    mo.stop(not run_fit.value)
-    mo.output.replace(
-        mo.callout(
-            "Starting evaluation 1. The first live spectrogram will appear shortly.",
-            kind="info",
-        )
-    )
-
-    def show_progress(snapshot, current_audio):
-        if snapshot.evaluation == 1 or snapshot.evaluation % 10 == 0:
-            _status = mo.md(
-                f"""
-                ## Optimising — evaluation {snapshot.evaluation}
-
-                - current loss: **{snapshot.raw_loss:.6g}**
-                - strict-best loss: **{snapshot.best_loss:.6g}**
-                - patience: **{snapshot.patience} / 1000**
-                - learning rate: **{snapshot.learning_rate:.4g}**
-                - learning-rate reductions:
-                  **{snapshot.plateau_events}**
-
-                The image below is the current candidate, updated every 10 evaluations.
-                """
-            )
-            _current_figure = spectrogram_figure(
-                current_audio,
-                synth.sample_rate,
-                title=f"Current candidate — evaluation {snapshot.evaluation}",
-            )
-            mo.output.replace(mo.vstack([_status, _current_figure]))
-
-    fit_result = fit(
-        target_audio,
-        cardinality=target_metadata.cardinality,
-        loss_name=loss_type.value,
-        synth=synth,
-        progress=show_progress,
-    )
-    mo.output.replace(
-        mo.callout(
-            f"Optimisation stopped by {fit_result.stopped_by} after "
-            f"{fit_result.evaluations} evaluations. Rendering the strict-best candidate.",
-            kind="success",
-        )
-    )
-    with torch.no_grad():
-        best_audio = synth.render(fit_result.best_phrase).detach()
-    _best_status = mo.md(
-        f"""
-        ## Strict-best candidate ready
-
-        **{fit_result.evaluations} evaluations · best loss {fit_result.best_loss:.6g} ·
-        stopped by {fit_result.stopped_by}.**
-        """
-    )
-    _best_figure = spectrogram_figure(
-        best_audio,
-        synth.sample_rate,
-        title="Strict-best candidate magnitude spectrogram",
-    )
-    mo.output.replace(mo.vstack([_best_status, _best_figure]))
-    return best_audio, fit_result
-
-
-@app.cell(hide_code=True)
-def _(
-    best_audio,
-    fit_result,
-    mo,
-    synth,
-    target_audio,
     wav_bytes,
 ):
-    summary = mo.md(
-        f"""
-        ## Strict-best result
-
-        - evaluations: **{fit_result.evaluations}**
-        - updates: **{fit_result.updates}**
-        - stop: **{fit_result.stopped_by}**
-        - learning-rate reductions: **{fit_result.plateau_events}**
-        - initial loss: **{fit_result.initial_loss:.6g}**
-        - best loss: **{fit_result.best_loss:.6g}**
-        - wall time: **{fit_result.wall_seconds:.1f} s**
-        """
-    )
-    best_event_rows = [
-        {
-            "Event": index + 1,
-            "$f_0$ (Hz)": round(float(f0), 4),
-            "$t$ (s)": round(float(onset), 6),
-        }
-        for index, (f0, onset) in enumerate(
-            zip(
-                fit_result.best_phrase.f0_hz,
-                fit_result.best_phrase.onset_seconds,
-                strict=True,
-            )
+    def _run_optimisation(pressed):
+        if not pressed:
+            return
+        _loss_name = loss_type.value
+        _identity = (
+            f"Target {target_metadata.target_id} · {target_metadata.cardinality} events · "
+            f"{_loss_name}"
         )
-    ]
-    players = mo.hstack(
-        [
-            mo.vstack([mo.md("**Target**"), mo.audio(wav_bytes(target_audio, synth.sample_rate))]),
-            mo.vstack(
+        # UI callbacks receive a fresh output context, so initialise all slots.
+        mo.output.replace(_controls)
+        mo.output.append(mo.md(f"## Starting optimisation\n{_identity}"))
+        mo.output.append(mo.md("Preparing initial candidate…"))
+        mo.output.append(mo.md(""))
+
+        def _show_progress(snapshot, current_audio):
+            _status = mo.md(
+                f"""
+                ## Optimising — iteration {snapshot.update:,} / 20,000
+
+                {_identity}
+
+                **{snapshot.update:,} completed Adam updates ·
+                evaluation {snapshot.evaluation:,}**
+
+                - current loss: **{snapshot.raw_loss:.6g}**
+                - lowest loss: **{snapshot.best_loss:.6g}**
+                - patience: **{snapshot.patience} / 1000**
+                - learning rate: **{snapshot.learning_rate:.4g}**
+                - learning-rate reductions: **{snapshot.plateau_events}**
+                """
+            )
+            mo.output.replace_at_index(_status, 1)
+            if snapshot.update % 10 == 0:
+                _figure = spectrogram_figure(
+                    current_audio,
+                    synth.sample_rate,
+                    title=f"Current candidate — after {snapshot.update:,} Adam updates",
+                )
+                mo.output.replace_at_index(_figure, 2)
+
+        try:
+            _result = fit(
+                target_audio,
+                cardinality=target_metadata.cardinality,
+                loss_name=_loss_name,
+                synth=synth,
+                progress=_show_progress,
+            )
+            with torch.no_grad():
+                _best_audio = synth.render(_result.best_phrase).detach()
+            mo.output.replace_at_index(
+                mo.md(
+                    f"## Lowest-loss candidate ready\n\n{_identity}\n\n"
+                    f"**{_result.updates:,} Adam updates · {_result.evaluations:,} evaluations · "
+                    f"best loss {_result.best_loss:.6g} · stopped by {_result.stopped_by}.**"
+                ),
+                1,
+            )
+            mo.output.replace_at_index(
+                spectrogram_figure(
+                    _best_audio, synth.sample_rate, title="Lowest-loss candidate spectrogram"
+                ),
+                2,
+            )
+            _event_rows = [
+                {"Event": i + 1, "$f_0$ (Hz)": round(float(f0), 4), "$t$ (s)": round(float(t), 6)}
+                for i, (f0, t) in enumerate(
+                    zip(_result.best_phrase.f0_hz, _result.best_phrase.onset_seconds, strict=True)
+                )
+            ]
+            _players = mo.hstack(
                 [
-                    mo.md("**Best candidate**"),
-                    mo.audio(wav_bytes(best_audio, synth.sample_rate)),
-                ]
-            ),
-        ],
-        widths="equal",
+                    mo.vstack(
+                        [mo.md("**Target**"), mo.audio(wav_bytes(target_audio, synth.sample_rate))]
+                    ),
+                    mo.vstack(
+                        [
+                            mo.md("**Best candidate**"),
+                            mo.audio(wav_bytes(_best_audio, synth.sample_rate)),
+                        ]
+                    ),
+                ],
+                widths="equal",
+            )
+            mo.output.replace_at_index(
+                mo.vstack(
+                    [
+                        mo.md(
+                            f"Initial loss: **{_result.initial_loss:.6g}** · "
+                            f"learning-rate reductions: **{_result.plateau_events}** · "
+                            f"wall time: **{_result.wall_seconds:.1f} s**"
+                        ),
+                        _players,
+                        mo.md("## Recovered events"),
+                        mo.ui.table(_event_rows),
+                    ]
+                ),
+                3,
+            )
+        except Exception:
+            mo.output.replace_at_index(
+                mo.callout(
+                    "Optimisation failed; see the error below. You can retry.", kind="danger"
+                ),
+                1,
+            )
+            raise
+
+    # Execute inside the click handler, including in notebooks using lazy execution.
+    # Progress and results stay in this cell; no downstream cell needs a manual run.
+    run_fit = mo.ui.run_button(
+        label="Run optimisation",
+        tooltip="Immediately fit this target from the registered equal-cell initialisation",
+        kind="success",
+        on_change=_run_optimisation,
     )
-    mo.vstack([summary, players, mo.md("## Recovered events"), mo.ui.table(best_event_rows)])
-    return
+    _controls = mo.vstack(
+        [
+            mo.md(
+                "The counter updates every iteration; the spectrogram refreshes every 10 "
+                "Adam updates. Each fit starts at learning rate 0.05, halves it after "
+                "200 plateau evaluations, and stops after 1000 evaluations without "
+                "0.01% relative improvement or 20,000 updates. Adam state is retained; "
+                "the lowest-loss candidate is reported."
+            ),
+            run_fit,
+        ]
+    )
+    mo.output.replace(_controls)
+    mo.output.append(mo.md("Press **Run optimisation** to start."))
+    mo.output.append(mo.md(""))
+    mo.output.append(mo.md(""))
+    return (run_fit,)
 
 
 if __name__ == "__main__":

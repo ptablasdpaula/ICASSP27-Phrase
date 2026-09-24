@@ -10,7 +10,7 @@ This repository reproduces the paper's 16-kHz experiments. The independent
 is pinned as the `external/cels` submodule. Spectral and transport baselines,
 synthesis, evaluation and experiment runners belong to this paper repository.
 The original submission checkout is tagged `paper-submitted-2026-09-24`;
-the cleaned reproduction release is `paper-reproduction-v0.2.0`.
+the cleaned reproduction release is `paper-reproduction-v0.2.1`.
 
 ## Installation
 
@@ -65,7 +65,9 @@ print(result.best_phrase)
 ```
 
 `pixi run notebook` opens the interactive single-phrase demo. It uses the same
-loss implementations and optimiser as the batch recovery experiment. Each fit
+loss implementations and optimiser as the batch recovery experiment. **Run optimisation**
+starts the fit directly, with an iteration counter updated every step and a
+spectrogram refreshed every 10 Adam updates. Each fit
 starts at 160 Hz with evenly spaced onsets; larger CPU fits can take considerable
 time. The notebook reports the lowest-loss candidate, without rollback or
 resetting Adam state. `pixi run notebook-check` validates the notebook structure.

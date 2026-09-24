@@ -90,6 +90,47 @@ def scheduling_checks():
     print("Plateau timing and independent early stopping: OK", flush=True)
 
 
+def progress_checks():
+    class QuadraticObjective:
+        def __init__(self, target, name):
+            self.target = target
+
+        def __call__(self, audio, indices):
+            return 1 + (audio - self.target[indices]).square().sum(-1)
+
+    renders, snapshots = [], []
+
+    def synth(f, t):
+        audio = f + t
+        renders.append(audio.detach().clone())
+        return audio
+
+    def progress(snapshot, audio):
+        assert not audio.requires_grad
+        torch.testing.assert_close(audio, renders[-1][0], rtol=0, atol=0)
+        assert snapshot.evaluation == snapshot.update + 1
+        snapshots.append(snapshot)
+
+    with patch("icassp27_phrase.optimization.PairedObjective", QuadraticObjective):
+        for cap, patience, expected in ((23, 1000, 23), (23, 3, 3)):
+            schedule = replace(
+                SCHEDULE,
+                maximum_updates=cap,
+                stop_patience=patience,
+                threshold=0.99 if patience == 3 else SCHEDULE.threshold,
+            )
+            snapshots.clear()
+            renders.clear()
+            args = (torch.ones(1, 1, dtype=torch.float64), 1, "cel", synth)
+            reported = fit_batch(*args, schedule=schedule, progress=progress)
+            assert [s.update for s in snapshots] == list(range(expected + 1))
+            assert len(renders) == expected + 1  # No extra synthesis for the display.
+            silent = fit_batch(*args, schedule=schedule)
+            for actual, reference in zip(reported[:7], silent[:7], strict=True):
+                torch.testing.assert_close(actual, reference, rtol=0, atol=0)
+    print("Per-iteration progress, terminal callbacks and unchanged optimisation: OK", flush=True)
+
+
 def numerical_checks(device: str, baseline: Path | None):
     configure_reproducibility()
     torch.set_num_threads(1)
@@ -157,6 +198,7 @@ def main():
     validate_reference()
     sampling_checks()
     scheduling_checks()
+    progress_checks()
     if not a.data_only:
         numerical_checks(a.device, a.baseline)
     print("All requested checks passed", flush=True)

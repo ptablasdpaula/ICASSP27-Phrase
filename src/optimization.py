@@ -136,7 +136,8 @@ def fit_batch(target_audio, cardinality, name, synth, *, schedule=SCHEDULE, prog
         indices = active.nonzero().flatten()
         selected_raw = raw[indices]
         f0, onset = decode(selected_raw)
-        values = objective(synth(f0, onset), indices)
+        candidate_audio = synth(f0, onset)
+        values = objective(candidate_audio, indices)
         if initial_loss is None:
             initial_loss = values.detach().clone()
             scheduler_best = values.detach().clone()
@@ -182,11 +183,7 @@ def fit_batch(target_audio, cardinality, name, synth, *, schedule=SCHEDULE, prog
             active_count -= len(stopped_indices)
         if not bool(torch.isfinite(values).all()):
             raise FloatingPointError("non-finite optimisation loss")
-        if (
-            progress is not None
-            and batch == 1
-            and (int(updates[0]) % 10 == 0 or not bool(keep.any()))
-        ):
+        if progress is not None and batch == 1:
             sf, st = decode(selected_raw.detach())
             snapshot = FitSnapshot(
                 int(updates[0]) + 1,
@@ -200,7 +197,7 @@ def fit_batch(target_audio, cardinality, name, synth, *, schedule=SCHEDULE, prog
                 tuple(st[0].tolist()),
             )
             with torch.no_grad():
-                progress(snapshot, synth(sf, st)[0].detach())
+                progress(snapshot, candidate_audio[0].detach())
         if not bool(keep.any()):
             continue
         step_indices = indices[keep]
@@ -243,7 +240,13 @@ def fit(
     config: Schedule = SCHEDULE,
     progress=None,
 ) -> FitResult:
-    """Notebook/API wrapper around the same batched optimiser as the campaign."""
+    """Fit one phrase using the campaign optimiser.
+
+    ``progress(snapshot, audio)`` runs after every candidate evaluation,
+    including the initial and terminal candidates. ``snapshot.update`` counts
+    completed Adam steps; ``snapshot.evaluation`` is one greater. Audio is the
+    detached candidate already rendered for the loss, with no extra synthesis.
+    """
     renderer = synth or PhraseSynth().to(target_audio.device)
     name = LOSS_LABELS.get(loss_name, loss_name)
     if target_audio.ndim != 1 or target_audio.dtype != torch.float64:
