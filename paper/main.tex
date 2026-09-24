@@ -266,12 +266,12 @@ Seed 2029 generates 150 scrambled-LHS targets for each $M$. Every
 candidate begins with all pitches at 160~Hz and onsets isochronously spaced
 within 0.2--1.8~s. We retain the seven objectives whose one-note Joint mean
 cosine rounds to at least $.10$ and retain \gls{sot} and linear
-\gls{tfw} as low-alignment controls. Each of the resulting 6,750 fits uses Adam with a batch size of 10, a learning rate of $.05$, ReduceLROnPlateau with factor $.5$ and patience 200, early stopping at 1000 iterations without 1\% relative improvement and a 20,000-update cap. We report each fit's lowest-loss iterate in Table~\ref{tab:pilot-compact}. Additionally, Table~\ref{tab:efficiency} benchmarks render--loss--backward runtime and peak GPU memory for SS, MSS, \gls{sot}, \gls{tfw} and \gls{cel} using the one-note targets, with candidates fixed at 160~Hz and 1~s and no parameter updates.
+\gls{tfw} as low-alignment controls. Each of the resulting 6,750 fits uses Adam with a batch size of 10, a learning rate of $.05$, ReduceLROnPlateau with factor $.5$ and patience 200, early stopping at 1000 iterations without 1\% relative improvement and a 20,000-update cap. We report each fit's lowest-loss iterate in Table~\ref{tab:pilot-compact}. Additionally, Table~\ref{tab:efficiency} benchmarks median render--loss--backward runtime and peak GPU memory for SS, MSS, \gls{sot}, \gls{tfw} and \gls{cel} using the one-note targets, with candidates fixed at 160~Hz and 1~s and no parameter updates.
 
 \begingroup
 \begin{table}[t]
 \centering
-\caption{Median batch-mean render--loss--backward time and peak allocated GPU memory over 15 batches of 10 one-note targets on an NVIDIA A100 (40 GB). Each batch uses 20 measured passes after five warm-up passes, with fixed candidates and target precomputation excluded. Parentheses give percentage increases over SS.}
+\caption{Benchmarks over 15 batches of 10 one-note targets on an NVIDIA A100 (40 GB). Each batch uses 20 measured passes after five warm-up passes. Parentheses give percentage increases over SS.}
 \label{tab:efficiency}
 \scriptsize
 \begin{tabular}{@{}lcc@{}}
