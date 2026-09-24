@@ -1,9 +1,23 @@
-# ICASSP27-Phrase
+# Unsupervised Estimation of Plucked String Musical Phrase Parameters via Differentiable DSP and Cumulative Energy Losses
 
-Code and numerical results for **Unsupervised Estimation of Plucked String
-Musical Phrase Parameters via Differentiable DSP and Cumulative Energy Losses**
-(Pablo Tablas de Paula, Sebastian J. Schlecht, Emmanouil Benetos and Joshua D. Reiss;
-submitted to ICASSP 2027).
+Differentiable digital signal processing commonly predicts controls as either a
+constant set of parameters or dense frame trajectories. Plucked-string musical
+phrases are more naturally represented as discrete events, each with a pitch
+($f_0$) and onset time. However, optimising these parameters displaces energy in
+frequency and time: waveform and pointwise spectral losses are prone to
+oscillatory local minima and provide little directional guidance when energy
+does not overlap. We propose Cumulative Energy Losses (CeLs), which compare
+accumulated spectral power to support unsupervised joint estimation of pitch
+and timing.
+
+![Single-pluck loss landscapes for SS, MSS, SmoMSS, TFW2, CeL and SOT under time and frequency shifts.](paper/figures/loss_sweeps.png)
+
+*Single-pluck loss slices around a 160-Hz, 1-s target. Top: time shift with pitch
+fixed; bottom: frequency shift with onset fixed. Each curve is independently
+normalised to [0, 1].*
+
+Code and numerical results accompanying the paper by Pablo Tablas de Paula,
+Sebastian J. Schlecht, Emmanouil Benetos and Joshua D. Reiss (submitted to ICASSP 2027).
 
 This repository reproduces the paper's 16-kHz experiments. The independent
 [CeLs library](https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cel-library)
@@ -175,11 +189,7 @@ Original software is [MIT licensed](LICENSE);
 third-party code and the CeLs library retain their own notices. The manuscript,
 figures and IEEE template files are not relicensed by the software licence.
 
-## TODO
-
-- Reconcile the methodology wording with the archived runs: relative-improvement
-  threshold `0.0001` (0.01%, rather than 1%); phrase-recovery batches of 75,
-  or 50 for SOT. The efficiency benchmark uses batches of 10 for every loss.
+## Cite this paper
 
 If you find this work useful, please cite our paper:
 
@@ -193,3 +203,12 @@ If you find this work useful, please cite our paper:
   year      = {2026}
 }
 ```
+
+<details>
+<summary>Personal TODO</summary>
+
+- Reconcile the methodology wording with the archived runs: relative-improvement
+  threshold `0.0001` (0.01%, rather than 1%); phrase-recovery batches of 75,
+  or 50 for SOT. The efficiency benchmark uses batches of 10 for every loss.
+
+</details>
