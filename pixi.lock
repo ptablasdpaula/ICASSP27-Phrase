@@ -86,6 +86,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/88/c6/92fcd42f1ba33e1184263f25bfabf3d27c383410470f169e4b8163bf9c17/beautifulsoup4-4.15.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/01/b1/1a3c4e436ad8a4c4ba3e70f4c62e1f927cbbb3c943a9bba5813b8b815bde/cachebox-5.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/e5/e2/b3c09ad305ec5cab57c6b32337da56914ea10e34658588fd6ea7ee4d556c/cels_audio-0.1.1-py3-none-any.whl
       - pypi: https://download.pytorch.org/whl/certifi-2022.12.7-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b1/db/dceb9dd5b231e1da801793f8acc9f3c52a7e1afe40bb1aae37e02b0faad5/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/a7266970312df65e68b5641b86e0540a739182f5e9c62eec6dbd29f18055/cftime-1.6.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
@@ -166,7 +167,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f1/79/4a20b54ab0491485ccd8c077db2d39187c7f12b3e15485d38a7be37c81b4/uvicorn-0.52.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fb/05/9f82d090c8d2d861604147ef6dfb938a90b039f9358d5193f1df62558593/websockets-17.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: ./
-      - pypi: ./external/cels
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -262,10 +262,10 @@ packages:
   purls: []
   size: 991011
   timestamp: 1788221336073
-- pypi: ./external/cels
+- pypi: https://files.pythonhosted.org/packages/e5/e2/b3c09ad305ec5cab57c6b32337da56914ea10e34658588fd6ea7ee4d556c/cels_audio-0.1.1-py3-none-any.whl
   name: cels-audio
-  version: 0.1.0
-  sha256: 5e31323d3599267e50a34f8a7131872da7e2514653a75dfb2cd52911eeb083ed
+  version: 0.1.1
+  sha256: bbaadc5b9889f861b46521ab811eab966069c0d5e663810de67d63ed6570e25e
   requires_dist:
   - torch>=2.1
   - pytest>=8 ; extra == 'test'
@@ -658,8 +658,8 @@ packages:
   timestamp: 1788405531557
 - pypi: ./
   name: icassp27-phrase
-  version: 0.2.1
-  sha256: 9096a56d9c0b52a12dd4e46fa53169efa796675e707d48c1ac6a649a64bf2b23
+  version: 0.2.2
+  sha256: 894e80cab66e863064b673be76c2deef4da2e72a30c3f1fba3eb10a541ad64ec
   requires_dist:
   - flamo==0.2.18
   - numba>=0.61,<0.67
@@ -668,7 +668,7 @@ packages:
   - torch==2.7.1
   - matplotlib>=3.11,<3.12
   - python-dotenv>=1,<2
-  - cels-audio==0.1.0
+  - cels-audio==0.1.1
   - marimo==0.23.11 ; extra == 'notebook'
   - plotly>=6.3,<7 ; extra == 'notebook'
   - ruff>=0.12,<1 ; extra == 'dev'

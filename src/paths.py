@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from importlib.metadata import distribution
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -30,12 +31,24 @@ def scientific_signature() -> tuple[str, dict[str, str]]:
     paths = [
         *sorted((REPO / "src").rglob("*.py")),
         *sorted((REPO / "scripts").glob("*.py")),
-        *sorted((REPO / "external/cels/src").rglob("*.py")),
         REPO / "src/data/targets.json",
         REPO / "pyproject.toml",
         REPO / "pixi.lock",
     ]
     hashes = {str(p.relative_to(REPO)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+    # Keep resume signatures sensitive to the installed loss implementation,
+    # independently of its site-packages location or installation method.
+    cels = distribution("cels-audio")
+    hashes["dependencies/cels-audio/version"] = hashlib.sha256(cels.version.encode()).hexdigest()
+    sources = [f for f in cels.files or () if str(f).startswith("cels/") and str(f).endswith(".py")]
+    if not sources:
+        raise RuntimeError(
+            "Install the published cels-audio package to record its source signature"
+        )
+    for source in sorted(sources):
+        hashes[f"dependencies/cels-audio/{source}"] = hashlib.sha256(
+            Path(cels.locate_file(source)).read_bytes()
+        ).hexdigest()
     return hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest(), hashes
 
 

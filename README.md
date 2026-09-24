@@ -7,10 +7,10 @@ submitted to ICASSP 2027).
 
 This repository reproduces the paper's 16-kHz experiments. The independent
 [CeLs library](https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cel-library)
-is pinned as the `external/cels` submodule. Spectral and transport baselines,
+is installed from PyPI, pinned to `cels-audio==0.1.1`. Spectral and transport baselines,
 synthesis, evaluation and experiment runners belong to this paper repository.
 The original submission checkout is tagged `paper-submitted-2026-09-24`;
-the cleaned reproduction release is `paper-reproduction-v0.2.1`.
+the cleaned reproduction release is `paper-reproduction-v0.2.2`.
 
 ## Installation
 
@@ -18,15 +18,14 @@ The locked environment targets Linux, Python 3.12, PyTorch 2.7.1/CUDA 12.6,
 FLAMO 0.2.18 and the recorded PhilTorch/TorchLPC commits.
 
 ```bash
-git clone --recurse-submodules https://github.com/ptablasdpaula/ICASSP27-Phrase.git
+git clone https://github.com/ptablasdpaula/ICASSP27-Phrase.git
 cd ICASSP27-Phrase
 pixi install --locked
 pixi run install-cpu-backends
 pixi run check
 ```
 
-For an existing checkout, initialise the library with
-`git submodule update --init --recursive`. Plotting saved results needs no GPU
+Plotting saved results needs no GPU
 or compiled synthesis backend. To compute on CUDA, run
 `pixi run install-backends` on a GPU node with a CUDA 12.6 toolkit and `nvcc`.
 The default build supports V100/A100 architectures; use `TORCH_CUDA_ARCH_LIST`
@@ -36,7 +35,7 @@ Without Pixi, create a Python 3.12 environment, install the appropriate
 PyTorch 2.7.1 CPU or CUDA 12.6 wheel, then:
 
 ```bash
-pip install -e external/cels -e '.[notebook]'
+pip install -e '.[notebook]'
 ICASSP27_BACKEND_DEVICE=cpu bash scripts/install_backends.sh
 python scripts/check.py
 ```
@@ -167,14 +166,13 @@ published A100 40-GB model explicitly.
 
 The check command covers data integrity, sampling, matching, synthesis and loss
 gradients, persistent state, seven controls and a short recovery. It replaces
-the former exploratory test suite. The independent CeLs submodule retains its
-own checks. Historical experiments remain accessible through Git history;
+the former exploratory test suite. The independent CeLs library maintains its own checks. Historical experiments remain accessible through Git history;
 removing them from the current checkout does not rewrite that history.
 
 ## Licence
 
 Original software is [MIT licensed](LICENSE);
-third-party code and the CeLs submodule retain their own notices. The manuscript,
+third-party code and the CeLs library retain their own notices. The manuscript,
 figures and IEEE template files are not relicensed by the software licence.
 
 ## TODO

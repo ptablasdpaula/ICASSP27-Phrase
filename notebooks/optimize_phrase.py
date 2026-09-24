@@ -39,11 +39,11 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
         torch_version = _installed_version("torch")
         return all(
             (
-                _installed_version("icassp27-phrase") == "0.2.1",
+                _installed_version("icassp27-phrase") == "0.2.2",
                 _installed_version("flamo") == "0.2.18",
                 _installed_version("torchlpc") is not None,
                 _installed_version("philtorch") is not None,
-                _installed_version("cels-audio") is not None,
+                _installed_version("cels-audio") == "0.1.1",
                 torch_version is not None,
                 torch_version.partition("+")[0] == "2.7.1",
                 util.find_spec("icassp27_phrase") is not None,
@@ -84,7 +84,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                     "scipy>=1.11,<1.17",
                     "matplotlib>=3.11,<3.12",
                     "python-dotenv>=1,<2",
-                    "cels-audio @ git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@454c299257c2efe3aa1d71a47d852e92520bc08d",
+                    "cels-audio==0.1.1",
                     "ninja>=1.11,<2",
                     "setuptools>=77",
                     "setuptools-git-versioning==2.1.0",
@@ -116,7 +116,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                 [
                     *_common,
                     "--no-deps",
-                    "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@paper-reproduction-v0.2.1",
+                    "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@paper-reproduction-v0.2.2",
                 ],
             ),
         )
@@ -142,7 +142,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
         importlib.invalidate_caches()
         # A reused cloud kernel may still hold the previous package in memory.
         for _module_name in list(sys.modules):
-            if _module_name == "icassp27_phrase" or _module_name.startswith("icassp27_phrase."):
+            if _module_name.split(".")[0] in {"icassp27_phrase", "cels"}:
                 del sys.modules[_module_name]
 
     if not _environment_is_ready():

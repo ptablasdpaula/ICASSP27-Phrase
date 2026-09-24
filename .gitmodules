@@ -1,4 +1,0 @@
-[submodule "external/cels"]
-	path = external/cels
-	url = https://github.com/ptablasdpaula/ICASSP27-Phrase.git
-	branch = cel-library

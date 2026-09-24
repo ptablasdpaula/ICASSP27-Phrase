@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "icassp27-phrase"
-version = "0.2.1"
+version = "0.2.2"
 description = "Differentiable plucked-string phrase recovery for ICASSP 2027"
 readme = "README.md"
 license = "MIT"
@@ -17,7 +17,7 @@ dependencies = [
   "torch==2.7.1",
   "matplotlib>=3.11,<3.12",
   "python-dotenv>=1,<2",
-  "cels-audio==0.1.0",
+  "cels-audio==0.1.1",
 ]
 
 [project.optional-dependencies]
