@@ -266,22 +266,23 @@ Seed 2029 generates 150 scrambled-LHS targets for each $M$. Every
 candidate begins with all pitches at 160~Hz and onsets isochronously spaced
 within 0.2--1.8~s. We retain the seven objectives whose one-note Joint mean
 cosine rounds to at least $.10$ and retain \gls{sot} and linear
-\gls{tfw} as low-alignment controls. Each of the resulting 6,750 fits uses Adam with a batch size of 10, a learning rate of $.05$, ReduceLROnPlateau with factor $.5$ and patience 200, early stopping at 1000 iterations without 1\% relative improvement and a 20,000-update cap. We report each fit's lowest-loss iterate in Table~\ref{tab:pilot-compact}. Additionally, Table~\ref{tab:efficiency} benchmarks render--loss--backward runtime and peak GPU memory for SS, SmoMSS, \gls{tfw} and \gls{cel} using the one-note targets.
+\gls{tfw} as low-alignment controls. Each of the resulting 6,750 fits uses Adam with a batch size of 10, a learning rate of $.05$, ReduceLROnPlateau with factor $.5$ and patience 200, early stopping at 1000 iterations without 1\% relative improvement and a 20,000-update cap. We report each fit's lowest-loss iterate in Table~\ref{tab:pilot-compact}. Additionally, Table~\ref{tab:efficiency} benchmarks render--loss--backward runtime and peak GPU memory for SS, MSS, \gls{sot}, \gls{tfw} and \gls{cel} using the one-note targets, with candidates fixed at 160~Hz and 1~s and no parameter updates.
 
 \begingroup
 \begin{table}[t]
 \centering
-\caption{Median batch-mean runtime and peak allocated GPU memory over 15 batches of 10 one-note targets on an NVIDIA A100 (40 GB). Each batch uses 20 measured updates after five warm-up updates. Parentheses give ratios to SS.}
+\caption{Median batch-mean render--loss--backward time and peak allocated GPU memory over 15 batches of 10 one-note targets on an NVIDIA A100 (40 GB). Each batch uses 20 measured passes after five warm-up passes, with fixed candidates and target precomputation excluded. Parentheses give percentage increases over SS.}
 \label{tab:efficiency}
 \scriptsize
 \begin{tabular}{@{}lcc@{}}
 \toprule
-Loss & $\downarrow{}$ Full update (ms) & $\downarrow{}$ Peak GPU memory (GiB) \\
+Loss & $\downarrow{}$ Time (ms) & $\downarrow{}$ Peak GPU memory (GiB) \\
 \midrule
-SS & 370.57 ($\times$1.000) & 1.808 ($\times$1.000) \\
-SmoMSS & 371.67 ($\times$1.003) & 1.818 ($\times$1.006) \\
-$\mathrm{TF}\mathcal W_2$ & 399.05 ($\times$1.077) & 2.666 ($\times$1.475) \\
-Ce$\mathcal L$ & 371.15 ($\times$1.002) & 1.826 ($\times$1.010) \\
+SS & 374.13 (---) & 1.805 (---) \\
+MSS & 379.77 ($+1.51\%$) & 1.830 ($+1.35\%$) \\
+SOT & 379.91 ($+1.54\%$) & 1.839 ($+1.88\%$) \\
+$\mathrm{TF}\mathcal W_2$ & 374.36 ($+0.06\%$) & 1.808 ($+0.14\%$) \\
+Ce$\mathcal L$ & 374.31 ($+0.05\%$) & 1.824 ($+1.03\%$) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -298,7 +299,7 @@ same number of notes.}
 \end{figure}
 
 \section{Conclusion}
-We introduced \acrlongpl{cel} (Ce$\mathcal L$s), which compare accumulated short-time Fourier transform (STFT) power in time and frequency, and applied them to joint onset and $f_0$ optimisation in monophonic plucked string phrases with $M\in\{1,2,4,6,8\}$ notes. Across 106,496 phrase comparisons, Ce$\mathcal L$s achieve higher mean phrase-wide gradient cosine than waveform, spectral, and optimal transport objectives, although alignment falls as the number of notes $M$ grows (Fig.~\ref{fig:gradient-alignment}). The base \gls{cel} has runtime and memory usage comparable to SS and SmoMSS, and lower than \gls{tfw} (Table~\ref{tab:efficiency}). Note estimation is nearly exact at $M\in\{1,2\}$, while an energy decay variant gives the lowest median pitch and onset errors (Table~\ref{tab:pilot-compact}) and mean LSD (Fig.~\ref{fig:lsd}) at every $M$. The gain from decaying accumulation suggests that localising displacement helps as phrases grow, motivating comparison with objectives that relax global mass transport, such as unbalanced optimal transport~\cite{sejourne2023unbalanced}.
+We introduced \acrlongpl{cel} (Ce$\mathcal L$s), which compare accumulated short-time Fourier transform (STFT) power in time and frequency, and applied them to joint onset and $f_0$ optimisation in monophonic plucked string phrases with $M\in\{1,2,4,6,8\}$ notes. Across 106,496 phrase comparisons, Ce$\mathcal L$s achieve higher mean phrase-wide gradient cosine than waveform, spectral, and optimal transport objectives, although alignment falls as the number of notes $M$ grows (Fig.~\ref{fig:gradient-alignment}). The base \gls{cel} has render--loss--backward runtime and memory usage comparable to the tested spectral and transport baselines at fixed candidate parameters (Table~\ref{tab:efficiency}). Note estimation is nearly exact at $M\in\{1,2\}$, while an energy decay variant gives the lowest median pitch and onset errors (Table~\ref{tab:pilot-compact}) and mean LSD (Fig.~\ref{fig:lsd}) at every $M$. The gain from decaying accumulation suggests that localising displacement helps as phrases grow, motivating comparison with objectives that relax global mass transport, such as unbalanced optimal transport~\cite{sejourne2023unbalanced}.
 
 Phrase parameter estimation remains limited to synthetic monophonic phrases with known $M$, fixed timbre, and waveguide state reset at each pluck. Real-world estimation would require jointly matching timbre alongside pitch and timing, while estimating the number of notes. Regarding the former, \glspl{cel} also retain the strongest alignment for persistent-state targets and when all seven synthesis controls vary, motivating tests on real recordings. Estimating the number of notes would require a treatment of variable cardinality, which we do not address. We note that while this work has focused on STFTs, alternative representations such as joint time--frequency scattering~\cite{anden2019joint} merit study given their use for related arpeggio-rate and pitch-range estimation~\cite{vahidi2023mesostructures}. Finally, we believe this work enhances DDSP by providing a method that should facilitate neural network training of pitch, timing and timbre parameters. We provide code, reproducible experiments, and an installable PyTorch package for future work.
 

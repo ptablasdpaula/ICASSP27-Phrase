@@ -12,4 +12,4 @@ Medians across batches; percentages are increases over SS.
 | TFW2 | 374.36 | +0.06% | 1.808 | +0.14% |
 | CeL | 374.31 | +0.05% | 1.824 | +1.03% |
 
-Raw data: `results/loss-efficiency/fixed-28148618_{0,1,2,3,4}.json`. The paper efficiency table has not yet been replaced.
+Raw data: `results/loss-efficiency/fixed-28148618_{0,1,2,3,4}.json`. The paper efficiency table now reports these fixed-candidate measurements and percentage increases over SS.
