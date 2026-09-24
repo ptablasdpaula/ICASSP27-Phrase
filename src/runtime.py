@@ -8,7 +8,7 @@ import random
 import numpy as np
 import torch
 
-from .config import MASTER_SEED
+from .synth.config import MASTER_SEED
 
 CUDA_WORKSPACE_CONFIG = ":4096:8"
 TORCH_VERSION = "2.7.1+cu126"
@@ -40,9 +40,7 @@ def require_df2_backend(device: torch.device | str) -> None:
     if target.type not in {"cpu", "cuda"}:
         raise RuntimeError("the DF2 realization supports only CPU or CUDA")
     if torch.__version__.partition("+")[0] != TORCH_BASE_VERSION:
-        raise RuntimeError(
-            f"expected PyTorch {TORCH_BASE_VERSION}, found {torch.__version__}"
-        )
+        raise RuntimeError(f"expected PyTorch {TORCH_BASE_VERSION}, found {torch.__version__}")
     if target.type == "cuda" and (
         not torch.cuda.is_available()
         or torch.__version__ != TORCH_VERSION

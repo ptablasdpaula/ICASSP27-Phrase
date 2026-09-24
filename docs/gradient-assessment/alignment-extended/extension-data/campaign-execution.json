@@ -1,8 +1,0 @@
-{
-  "seconds": 866.3446665024385,
-  "gpu": "Tesla V100-PCIE-16GB",
-  "peak_gpu_bytes": 4257607680,
-  "batch": 64,
-  "extension_sha256": "4704cffa5913aabd13606a69c413d4148a309561def7cc912e18fe6fe81cca44",
-  "determinism": "CUDA reflection-padding backward is not guaranteed bitwise deterministic"
-}

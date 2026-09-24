@@ -18,10 +18,12 @@ from icassp27_phrase.synth import PhraseSynth
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from icassp27_phrase.paths import OUTPUT as OUTPUT_ROOT
+from icassp27_phrase.paths import REPO as ROOT
+from icassp27_phrase.paths import resolve_path, scientific_signature
 
-ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "docs/loss-sweeps/16k"
-PAPER_FIGURE = ROOT / "paper/figures/loss_sweeps.pdf"
+OUTPUT = OUTPUT_ROOT / "loss-slices"
+PAPER_FIGURE = OUTPUT_ROOT / "figures/loss_sweeps.pdf"
 NAMES = (
     "single_stft",
     "mss",
@@ -45,14 +47,6 @@ SHARED_LABEL_GAP_PT = 15.0
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def scientific_signature() -> tuple[str, dict[str, str]]:
-    paths = [Path(__file__), *sorted((ROOT / "src").glob("*.py"))]
-    paths.extend(sorted((ROOT / "external/cels/src/cels").glob("*.py")))
-    hashes = {str(path.relative_to(ROOT)): sha256(path) for path in paths}
-    digest = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
-    return digest, hashes
 
 
 def compute(device: str, batch_size: int) -> tuple[np.ndarray, np.ndarray, dict[str, object]]:
@@ -232,10 +226,16 @@ def render(axes: np.ndarray, normalised: np.ndarray, destination: Path) -> None:
 
 
 def main() -> None:
+    global OUTPUT, PAPER_FIGURE
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
     parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--output", type=resolve_path, default=OUTPUT_ROOT)
     args = parser.parse_args()
+    if args.batch_size < 1:
+        parser.error("batch-size must be positive")
+    OUTPUT = args.output / "loss-slices"
+    PAPER_FIGURE = args.output / "figures/loss_sweeps.pdf"
     torch.set_num_threads(1)
     configure_reproducibility()
     require_df2_backend(args.device)
@@ -258,7 +258,7 @@ def main() -> None:
         "signature": signature,
         "source_hashes": hashes,
         "source_commit": subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], text=True
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
         ).strip(),
         "device": args.device,
         "gpu": torch.cuda.get_device_name() if args.device == "cuda" else None,
@@ -269,9 +269,9 @@ def main() -> None:
         "normalisation": "independent min-max per objective and slice; no smoothing",
         "validation": result["validation"],
         "artifacts": {
-            str(cache.relative_to(ROOT)): sha256(cache),
-            str(PAPER_FIGURE.relative_to(ROOT)): sha256(PAPER_FIGURE),
-            str(PAPER_FIGURE.with_suffix('.png').relative_to(ROOT)): sha256(
+            str(cache.relative_to(args.output)): sha256(cache),
+            str(PAPER_FIGURE.relative_to(args.output)): sha256(PAPER_FIGURE),
+            str(PAPER_FIGURE.with_suffix(".png").relative_to(args.output)): sha256(
                 PAPER_FIGURE.with_suffix(".png")
             ),
         },

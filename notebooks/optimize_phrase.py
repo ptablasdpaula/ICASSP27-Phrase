@@ -39,10 +39,11 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
         torch_version = _installed_version("torch")
         return all(
             (
-                _installed_version("icassp27-phrase") == "0.1.3",
+                _installed_version("icassp27-phrase") == "0.2.0",
                 _installed_version("flamo") == "0.2.18",
                 _installed_version("torchlpc") is not None,
                 _installed_version("philtorch") is not None,
+                _installed_version("cels-audio") is not None,
                 torch_version is not None,
                 torch_version.partition("+")[0] == "2.7.1",
                 util.find_spec("icassp27_phrase") is not None,
@@ -81,6 +82,9 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                     "numpy>=2,<3",
                     "plotly>=6.3,<7",
                     "scipy>=1.11,<1.17",
+                    "matplotlib>=3.11,<3.12",
+                    "python-dotenv>=1,<2",
+                    "cels-audio @ git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@454c299257c2efe3aa1d71a47d852e92520bc08d",
                     "ninja>=1.11,<2",
                     "setuptools>=77",
                     "setuptools-git-versioning==2.1.0",
@@ -112,7 +116,7 @@ def _(importlib, metadata, mo, os, shutil, subprocess, sys, util):
                 [
                     *_common,
                     "--no-deps",
-                    "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@main",
+                    "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@paper-reproduction-v0.2.0",
                 ],
             ),
         )
@@ -201,12 +205,8 @@ def _(LOSS_LABELS, mo):
         value="1",
         label="Number of events",
     )
-    loss_type = mo.ui.dropdown(
-        options=list(LOSS_LABELS), value="BiCuL", label="Loss"
-    )
-    target_number = mo.ui.number(
-        start=1, stop=150, step=1, value=1, label="Target"
-    )
+    loss_type = mo.ui.dropdown(options=list(LOSS_LABELS), value="CeL", label="Loss")
+    target_number = mo.ui.number(start=1, stop=150, step=1, value=1, label="Target")
     mo.hstack(
         [number_of_events, loss_type, target_number],
         widths="equal",
@@ -245,9 +245,7 @@ def _(
     selected_events = int(number_of_events.value)
     selected_target = int(target_number.value)
     synth = PhraseSynth().to(device)
-    target_metadata, _target_phrase = load_target(
-        selected_events, selected_target, device=device
-    )
+    target_metadata, _target_phrase = load_target(selected_events, selected_target, device=device)
     with torch.no_grad():
         target_audio = synth.render(_target_phrase).detach()
     event_rows = [
@@ -288,11 +286,10 @@ def _(mo):
     mo.vstack(
         [
             mo.md(
-                "The live panel shows the exact candidate audio already evaluated by the "
-                "optimizer, so the spectrogram update requires no extra synthesis. It "
-                "refreshes every 10 evaluations. After 100 evaluations without a 0.01% "
-                "improvement, the same fit restores its strict-best point, clears Adam's "
-                "moments, and reduces the learning rate by 0.3; it stops at patience 250."
+                "The live panel refreshes every 10 updates. Each fit uses Adam at 0.05, "
+                "halves the learning rate after 200 plateau evaluations, and stops after "
+                "1000 evaluations without 0.01% relative improvement or 20,000 updates. "
+                "Adam state is retained; the lowest-loss candidate is reported."
             ),
             run_fit,
         ]
@@ -328,9 +325,9 @@ def _(
 
                 - current loss: **{snapshot.raw_loss:.6g}**
                 - strict-best loss: **{snapshot.best_loss:.6g}**
-                - patience: **{snapshot.patience} / 250**
+                - patience: **{snapshot.patience} / 1000**
                 - learning rate: **{snapshot.learning_rate:.4g}**
-                - completed plateau rollbacks in the current search:
+                - learning-rate reductions:
                   **{snapshot.plateau_events}**
 
                 The image below is the current candidate, updated every 10 evaluations.
@@ -392,7 +389,7 @@ def _(
         - evaluations: **{fit_result.evaluations}**
         - updates: **{fit_result.updates}**
         - stop: **{fit_result.stopped_by}**
-        - plateau rollbacks: **{fit_result.plateau_events}**
+        - learning-rate reductions: **{fit_result.plateau_events}**
         - initial loss: **{fit_result.initial_loss:.6g}**
         - best loss: **{fit_result.best_loss:.6g}**
         - wall time: **{fit_result.wall_seconds:.1f} s**

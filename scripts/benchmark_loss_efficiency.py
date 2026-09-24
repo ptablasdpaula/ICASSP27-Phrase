@@ -11,12 +11,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import torch
-from icassp27_phrase.config import CARDINALITIES, initial_candidate
+from icassp27_phrase.data import load_target
 from icassp27_phrase.losses import PaperObjectives
+from icassp27_phrase.optimization import decode, encode
+from icassp27_phrase.paths import resolve_path
 from icassp27_phrase.runtime import require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
-from icassp27_phrase.targets import load_target
-from run_nine_loss_recovery import encode, decode
+from icassp27_phrase.synth.config import CARDINALITIES, initial_candidate
 
 LOSSES = {
     "single_stft": "SS",
@@ -75,7 +76,7 @@ def benchmark(
 
                 raw = initial_raw.clone().requires_grad_(True)
 
-                def evaluate():
+                def evaluate(raw=raw, objective=objective, loss=loss):
                     f0, onset = decode(raw)
                     values = objective.values(synth(f0, onset))[loss]
                     (gradient,) = torch.autograd.grad(values.sum(), raw)
@@ -125,9 +126,7 @@ def benchmark(
                     "batch": batch,
                     "mean_ms_per_pass": 1000.0 * statistics.mean(durations),
                     "mean_peak_total_mib": statistics.mean(peaks) / 2**20,
-                    "mean_peak_incremental_mib": (
-                        statistics.mean(peaks) - persistent
-                    ) / 2**20,
+                    "mean_peak_incremental_mib": (statistics.mean(peaks) - persistent) / 2**20,
                 }
                 rows.append(row)
                 loss_rows.append(row)
@@ -170,7 +169,9 @@ def benchmark(
         "target_count": target_count,
         "cardinalities": cardinalities,
         "losses": losses,
-        "timed_path": "render + bound objective + backward to pitch/onset logits (fixed candidates)",
+        "timed_path": (
+            "render + bound objective + backward to pitch/onset logits (fixed candidates)"
+        ),
         "target_precomputation_timed": False,
         "optimizer": None,
         "candidate_parameters_fixed": True,
@@ -186,16 +187,19 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=resolve_path, required=True)
     parser.add_argument("--batch", type=int, default=10)
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--measured", type=int, default=20)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--target-count", type=int, default=150)
+    parser.add_argument("--cardinalities", type=int, nargs="+", choices=CARDINALITIES, default=[1])
     parser.add_argument(
-        "--cardinalities", type=int, nargs="+", choices=CARDINALITIES, default=[1]
+        "--losses",
+        nargs="+",
+        choices=LOSSES,
+        default=["single_stft", "mss", "sot_published_composite", "linear_jtfot", "cel"],
     )
-    parser.add_argument("--losses", nargs="+", choices=LOSSES, default=["single_stft", "mss", "sot_published_composite", "linear_jtfot", "cel"])
     args = parser.parse_args()
     benchmark(
         args.output,

@@ -1,22 +1,29 @@
 \begingroup
 \scriptsize
-\setlength{\tabcolsep}{2.0pt}
-\renewcommand{\arraystretch}{1.05}
-\begin{tabularx}{\linewidth}{@{}l*{5}{>{\centering\arraybackslash}X}|*{5}{>{\centering\arraybackslash}X}@{}}
-\toprule
-Loss & \multicolumn{5}{c|}{$\Delta f_0$ (Cents)} & \multicolumn{5}{c}{$\Delta t$ (ms)} \\
-& 1 Event & 2 Events & 4 Events & 6 Events & 8 Events & 1 Event & 2 Events & 4 Events & 6 Events & 8 Events \\
+\newcommand{\fourdiagonals}{\mathord{\ooalign{%
+  \hfil$\nearrow$\hfil\cr
+  \hfil$\nwarrow$\hfil\cr
+  \hfil$\searrow$\hfil\cr
+  \hfil$\swarrow$\hfil\cr}}}
+\newcommand{\forwarddiagonals}{\mathord{\ooalign{%
+  \hfil$\nearrow$\hfil\cr
+  \hfil$\searrow$\hfil\cr}}}
+\begin{tabularx}{\linewidth}{@{}lccc*{5}{>{\centering\arraybackslash}X}|*{5}{>{\centering\arraybackslash}X}@{}}
+& & &
+& \multicolumn{5}{c|}{$\Delta f_0$ (cents)} & \multicolumn{5}{c}{$\Delta t$ (ms)} \\
+Loss & Directions & Weighting & Decay
+& 1 note & 2 notes & 4 notes & 6 notes & 8 notes & 1 note & 2 notes & 4 notes & 6 notes & 8 notes \\
 \midrule
-$L_1$ & \mbox{1030} & \mbox{863} & \mbox{732} & \mbox{642} & \mbox{564} & \mbox{71.6} & \mbox{220} & \mbox{235} & \mbox{188} & \mbox{186} \\
-$L_2$ & \mbox{1100} & \mbox{902} & \mbox{816} & \mbox{711} & \mbox{616} & \mbox{443} & \mbox{360} & \mbox{242} & \mbox{215} & \mbox{198} \\
-\acrshort{mss} & \mbox{58.6} & \mbox{244} & \mbox{329} & \mbox{277} & \mbox{302} & \mbox{186} & \mbox{220} & \mbox{203} & \mbox{155} & \mbox{158} \\
-\acrshort{sot} & \mbox{871} & \mbox{878} & \mbox{874} & \mbox{826} & \mbox{767} & \mbox{104} & \mbox{241} & \mbox{216} & \mbox{194} & \mbox{173} \\
-\acrshort{tfw} & \mbox{1.58} & \mbox{11.1} & \mbox{121} & \mbox{234} & \mbox{253} & \mbox{0.346} & \ensuremath{\mathit{2.23}} & \mbox{\underline{16}} & \ensuremath{\mathbf{60.9}} & \ensuremath{\mathbf{81.7}} \\
-$\hookrightarrow$ $1\,\mathrm{s}=1\,\mathrm{oct}$ & \ensuremath{\mathit{0.156}} & \ensuremath{\mathit{4.48}} & \ensuremath{\mathit{101}} & \ensuremath{\mathit{186}} & \ensuremath{\mathit{197}} & \ensuremath{\mathit{0.251}} & \mbox{6.59} & \mbox{93.2} & \mbox{110} & \mbox{137} \\
-\addlinespace[1pt]
-\acrshort{bicul} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \mbox{\underline{34.2}} & \mbox{\underline{142}} & \mbox{\underline{158}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\mathit{26.6}} & \ensuremath{\mathit{90.3}} & \ensuremath{\mathit{104}} \\
-$\hookrightarrow$ \acrshort{logq} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\mathbf{19.1}} & \ensuremath{\mathbf{124}} & \ensuremath{\mathbf{153}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\boldsymbol{<0.01}} & \ensuremath{\mathbf{6.75}} & \mbox{\underline{83.7}} & \mbox{\underline{92.8}} \\
-$\hookrightarrow$ Fade & \ensuremath{<0.01} & \ensuremath{<0.01} & \mbox{0.780} & \mbox{89.5} & \mbox{133} & \ensuremath{<0.01} & \ensuremath{<0.01} & \mbox{0.163} & \mbox{61.9} & \mbox{83.2} \\
+SS & -- & -- & -- & 22.6 & 546 & 498 & 453 & 435 & \textbf{$<$.01} & \underline{1.89} & 167 & 184 & 165 \\
+SmoMSS & -- & -- & -- & \underline{1.64} & \textit{312} & 349 & 367 & 360 & \underline{0.595} & 23.1 & 194 & 195 & 175 \\
+SOT & -- & -- & -- & 910 & 1e3 & 966 & 840 & 821 & 157 & 200 & 231 & 207 & 199 \\
+$\mathrm{TF}\mathcal{W}_2$ & -- & -- & -- & 78.6 & 383 & 413 & 422 & 390 & 9.99 & 96.5 & 186 & 185 & 192 \\
+log$\mathrm{TF}\mathcal{W}_2$ & -- & -- & -- & \textit{2.45} & \underline{24} & 185 & 239 & 228 & \textit{2.14} & \textit{19.1} & 169 & 171 & 189 \\
+\midrule
+Ce$\mathcal L$ & $\fourdiagonals$ & Lin. & $\times$ & \textbf{$<$.01} & \textbf{$<$.01} & \textit{82.2} & 221 & 225 & \textbf{$<$.01} & \textbf{$<$.01} & \textit{55.6} & 179 & 147 \\
+logCe$\mathcal L$ & $\fourdiagonals$ & Log & $\times$ & \textbf{$<$.01} & \textbf{$<$.01} & 83 & \textit{164} & \underline{175} & \textbf{$<$.01} & \textbf{$<$.01} & \underline{52.1} & \textit{142} & \textit{144} \\
+decCe$\mathcal L$ & $\fourdiagonals$ & Lin. & $\checkmark$ & \textbf{$<$.01} & \textbf{$<$.01} & \textbf{6.61} & \textbf{147} & \textbf{149} & \textbf{$<$.01} & \textbf{$<$.01} & \textbf{3.26} & \textbf{96.5} & \textbf{111} \\
+tlogCe$\mathcal L$ & $\forwarddiagonals$ & Log & $\times$ & \textbf{$<$.01} & \textbf{$<$.01} & \underline{63.1} & \underline{156} & \textit{184} & \textbf{$<$.01} & \textbf{$<$.01} & 78.8 & \underline{120} & \underline{143} \\
 \bottomrule
 \end{tabularx}
 \endgroup

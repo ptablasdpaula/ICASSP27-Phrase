@@ -1,50 +1,26 @@
-"""Public API for the ICASSP 2027 phrase-recovery renderer."""
+"""Reproduction tools for cumulative energy losses and musical phrase recovery."""
 
-from .config import (
-    CARDINALITIES,
-    EventPhrase,
-    ExciterConfig,
-    OptimizerConfig,
-    WaveguideConfig,
-    initial_candidate,
-)
-from .exciter import Exciter
-from .losses import (
-    CEL_DIRECTIONS,
-    CEL_NAMES,
-    LOSS_LABELS,
-    PAPER_LOSSES,
-    CumulativeEnergyDistance,
-    build_loss,
-)
-from .optimization import FitResult, FitSnapshot, fit
+from .data import Target, load_target
+from .losses import LOSS_LABELS, PaperObjectives
+from .optimization import FitResult, FitSnapshot, Schedule, fit
 from .runtime import configure_reproducibility, require_df2_backend
-from .synth import PhraseSynth
-from .targets import Target, load_target
-from .waveguide import Waveguide, WaveguideTransfer
+from .synth import EventPhrase, Exciter, ExciterConfig, PhraseSynth, Waveguide, WaveguideConfig
 
 __all__ = [
-    "CARDINALITIES",
-    "CEL_DIRECTIONS",
-    "CEL_NAMES",
-    "CumulativeEnergyDistance",
     "EventPhrase",
     "Exciter",
     "ExciterConfig",
-    "FitResult",
-    "FitSnapshot",
-    "LOSS_LABELS",
-    "OptimizerConfig",
-    "PAPER_LOSSES",
     "PhraseSynth",
-    "Target",
     "Waveguide",
     "WaveguideConfig",
-    "WaveguideTransfer",
-    "build_loss",
-    "configure_reproducibility",
-    "fit",
-    "initial_candidate",
+    "Target",
     "load_target",
+    "LOSS_LABELS",
+    "PaperObjectives",
+    "Schedule",
+    "FitResult",
+    "FitSnapshot",
+    "fit",
+    "configure_reproducibility",
     "require_df2_backend",
 ]

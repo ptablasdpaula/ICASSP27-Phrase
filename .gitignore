@@ -15,10 +15,14 @@ paper/*.log
 paper/*.out
 paper/*.synctex.gz
 checkpoints/
-results/
+/results/
 wandb/
 logs/
 *.ckpt
 *.pt
 *.pth
 *.wav
+
+.env
+.env.*
+!.env.example

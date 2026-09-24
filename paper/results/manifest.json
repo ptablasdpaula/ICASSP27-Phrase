@@ -1,0 +1,32 @@
+{
+  "schema": "submitted-results-v1",
+  "source_commit": "0a728fe7e2929dec443a00fa81b5157556216eaf",
+  "files": {
+    "cumulative-surfaces.json": "5f3ba85eba1b756eedc11420ba24bfe82e80e48e284341f404b12d436c4d4d3c",
+    "efficiency/fixed-28148618_0.json": "816ab947c573c7bb9a57ab9d3a5dc32d32bb416f43bf21da930e06959a87e426",
+    "efficiency/fixed-28148618_1.json": "656de644f1b23758981651fac8db5abf63c5246e22735cd1287097ae95298e08",
+    "efficiency/fixed-28148618_2.json": "d2b8f948871304d70047238acb7882d5eaa52571c95c14d396c3a821b8ef06d9",
+    "efficiency/fixed-28148618_3.json": "39471a5cfd69d57903dc6fb35420f9279669026ff82035df1db97e0a276ee04c",
+    "efficiency/fixed-28148618_4.json": "4780259645353acd9a21c3085fdf0509eee84ccecbabe143b05d04f967ddf8d6",
+    "gradient-analysis/design.json": "050ae3eeb11a3714bf8377d6f1603cb10718c060435a26c66ede31418e2b9402",
+    "gradient-analysis/phrase-cosine.csv": "ce984a0e28dccd976c1fc34c4fb13476a7df140901be94fbf1b1b13c278c6181",
+    "gradient-analysis/provenance.json": "6f01eda00360b6f9e529b2737442a38bfa5621c5b48379a27301e46517053b87",
+    "gradient-analysis/quality.csv": "029cc29c512164aedec5e7e2314374c5c9647a8a0cb0927fb5fbe71240d12b10",
+    "gradient-limitations/provenance.json": "f6e4b156681afba16181ca64e2546b1e76254c0feef036c1085416a308acdb9b",
+    "gradient-limitations/summary.csv": "845126c124085ec0049e3df252f6ba0200ad647f548e40f49befd493cc52af8f",
+    "loss-slices/loss_sweeps.npz": "5a7b7d12bac3c62045f7e20194993826cdae4403957f91605bc2bcb56afe31a7",
+    "loss-slices/provenance.json": "6da49926c3abe094a962bb2ce9acb8362c01b04ec1f7aba8fce065d37a5c18e4",
+    "recovery/per_phrase.csv": "08c748d0d9923eeec26027c496821ad2c51698265fb1bc6b48a555729bd70706",
+    "recovery/provenance.json": "acaa5cd416219a58c42aa6e74e7b35060f9ef1f353df8d8f9ffb8cb7496da551",
+    "recovery/summary.csv": "61fb18e60c10acbb29b04e8cd03214d4fc38717e3801952cbe92c279fbe8cfb5",
+    "recovery-targets.json": "f06d7b5dd10cdce44fca043491d8aec08e72106f53ae31ce2da6db791bce2ce4",
+    "recovery/random_lsd.csv": "f1b800c071f09d682993778e137431ee59e6ccd762e010437bb3a6a3007b2373"
+  },
+  "figures": {
+    "lsd_violin.pdf": "c8e9bce0030ddd4fc995e4538bcb84fc9c45cdfd906f1eb5e835b8b4961203c0",
+    "gradient_alignment.pdf": "4bbfc8bd36743f8e45343ed8af5eb101ca5c053f8f1309f0a7d0d8f9ba08cd71",
+    "Waveguide.pdf": "ea346e77827ae65ee41fb35e8829a7eb79852fe440e14e5b03702e2a4f5225c0",
+    "loss_sweeps.pdf": "448424c88ff71444da606ca1e5cafbb125432f9b1d5445cae966352dec6b320f",
+    "cumulative_surfaces.pdf": "66124452d4328d965832c4db1485466a7f6c8e4c35b4f98537c5095e218e92f6"
+  }
+}

@@ -14,7 +14,7 @@ from cels import CumulativeEnergyLoss, Direction, STFTPower
 from cels.loss import BoundCumulativeEnergyLoss
 from torch import Tensor
 
-from .config import SAMPLE_RATE
+from .synth.config import SAMPLE_RATE
 
 NAMES: Final = (
     "waveform_l1",
@@ -129,9 +129,7 @@ def _quantile_wasserstein(
     last = positions.numel() - 1
     index_x = torch.searchsorted(cumulative_x.contiguous(), quantiles.contiguous()).clamp(max=last)
     index_y = torch.searchsorted(cumulative_y.contiguous(), quantiles.contiguous()).clamp(max=last)
-    widths = torch.diff(
-        quantiles, dim=-1, prepend=torch.zeros_like(quantiles[..., :1])
-    )
+    widths = torch.diff(quantiles, dim=-1, prepend=torch.zeros_like(quantiles[..., :1]))
     if limit_quantile_range:
         widths = torch.where(quantiles > 1.0, torch.zeros_like(widths), widths)
     displacement = positions[index_x] - positions[index_y]
@@ -147,9 +145,7 @@ def _tfw_projection_geometry(
     dtype_name: str,
 ) -> tuple[Tensor, Tensor]:
     dtype = getattr(torch, dtype_name)
-    frequency = torch.arange(frequency_bins, dtype=dtype, device=device) * (
-        SAMPLE_RATE / TFW_N_FFT
-    )
+    frequency = torch.arange(frequency_bins, dtype=dtype, device=device) * (SAMPLE_RATE / TFW_N_FFT)
     if logarithmic_frequency:
         frequency = torch.log2(frequency.clamp_min(20.0) / 20.0)
         time = torch.arange(time_bins, dtype=dtype, device=device) * (TFW_HOP / SAMPLE_RATE)
@@ -210,8 +206,7 @@ class PaperObjectives:
             center=False,
         ).to(device=device, dtype=dtype)
         needs_cel = any(
-            name in self.names
-            for name in ("single_stft", "cel", "log_cel", "dec_cel", "tlog_cel")
+            name in self.names for name in ("single_stft", "cel", "log_cel", "dec_cel", "tlog_cel")
         )
         if needs_cel:
             with torch.no_grad():
@@ -275,13 +270,17 @@ class PaperObjectives:
                 scipy.signal.windows.flattop(SOT_N_FFT, sym=False), dtype=dtype, device=device
             )
             with torch.no_grad():
-                self.sot_target_power = _stft(
-                    reference,
-                    n_fft=SOT_N_FFT,
-                    hop=SOT_HOP,
-                    window=self.sot_window,
-                    center=True,
-                ).abs().square()
+                self.sot_target_power = (
+                    _stft(
+                        reference,
+                        n_fft=SOT_N_FFT,
+                        hop=SOT_HOP,
+                        window=self.sot_window,
+                        center=True,
+                    )
+                    .abs()
+                    .square()
+                )
             self.sot_positions = torch.linspace(
                 0.0,
                 1.0,
@@ -368,9 +367,9 @@ class PaperObjectives:
                 reference = self._select(saved, indices)
                 ddsp_linear = ddsp_linear + (magnitude - reference).abs().mean((-2, -1))
                 if "mss" in self.names:
-                    ddsp_log = ddsp_log + (
-                        _safe_log(magnitude) - _safe_log(reference)
-                    ).abs().mean((-2, -1))
+                    ddsp_log = ddsp_log + (_safe_log(magnitude) - _safe_log(reference)).abs().mean(
+                        (-2, -1)
+                    )
             if "mss" in self.names:
                 values["mss"] = ddsp_linear + ddsp_log
 
@@ -383,21 +382,23 @@ class PaperObjectives:
                 self.smooth_targets,
                 strict=True,
             ):
-                magnitude = _stft(
-                    rows, n_fft=size, hop=hop, window=window, center=True
-                ).abs()
+                magnitude = _stft(rows, n_fft=size, hop=hop, window=window, center=True).abs()
                 reference = self._select(saved, indices)
                 smooth = smooth + (torch.log1p(magnitude) - reference).square().mean((-2, -1))
             values["smooth_mss"] = smooth / len(SMOOTH_WINDOWS)
 
         if any(name.startswith("sot_") for name in self.names):
-            candidate_power = _stft(
-                rows,
-                n_fft=SOT_N_FFT,
-                hop=SOT_HOP,
-                window=self.sot_window,
-                center=True,
-            ).abs().square()
+            candidate_power = (
+                _stft(
+                    rows,
+                    n_fft=SOT_N_FFT,
+                    hop=SOT_HOP,
+                    window=self.sot_window,
+                    center=True,
+                )
+                .abs()
+                .square()
+            )
             target_power = self._select(self.sot_target_power, indices)
             x = candidate_power.transpose(-2, -1)
             y = target_power.transpose(-2, -1).expand_as(x)
@@ -410,12 +411,16 @@ class PaperObjectives:
                     continue
                 x_weights = x / x_mass
                 y_weights = y / x_mass if cutoff else y / (y.sum(-1, keepdim=True) + 1e-8)
-                transport = _quantile_wasserstein(
-                    x_weights.reshape(-1, x.shape[-1]),
-                    y_weights.reshape(-1, y.shape[-1]),
-                    self.sot_positions,
-                    limit_quantile_range=cutoff,
-                ).reshape(x.shape[:2]).mean(-1)
+                transport = (
+                    _quantile_wasserstein(
+                        x_weights.reshape(-1, x.shape[-1]),
+                        y_weights.reshape(-1, y.shape[-1]),
+                        self.sot_positions,
+                        limit_quantile_range=cutoff,
+                    )
+                    .reshape(x.shape[:2])
+                    .mean(-1)
+                )
                 values[name] = transport + 0.05 * ddsp_linear
 
         if "linear_jtfot" in self.names or "log_jtfot" in self.names:
@@ -434,9 +439,7 @@ class PaperObjectives:
                     continue
                 order = getattr(self, f"{name}_order")
                 positions = getattr(self, f"{name}_positions")
-                values[name] = _projected_wasserstein(
-                    x[:, order], y[:, order], positions
-                ).mean(-1)
+                values[name] = _projected_wasserstein(x[:, order], y[:, order], positions).mean(-1)
         return values
 
     def __call__(self, candidate: Tensor, indices: Tensor | None = None) -> Tensor:
@@ -445,67 +448,5 @@ class PaperObjectives:
         return self.values(candidate, indices)[self.names[0]]
 
 
-# Compatibility exports for the archived exploratory scripts. The frozen paper
-# experiments above do not depend on these implementations.
-from .legacy_losses import (  # noqa: E402, F401
-    CEL_DIRECTIONS,
-    CEL_NAMES,
-    LOSS_LABELS,
-    LOSS_NAMES,
-    PAPER_LOSSES,
-    BidirectionalCumulativeEnergyDistance,
-    CumulativeEnergyDistance,
-    LinearJTFOTDistance,
-    LogJTFOTDistance,
-    LogQuadratureBiCumulativeEnergyDistance,
-    PublishedSOTCompositeDistance,
-    SmoothMSSDistance,
-    WaveformDistance,
-    _linear_projection_geometry,
-    _projection_geometry,
-    _wasserstein_frequency_rows,
-    _wasserstein_projected,
-    build_loss,
-    canonical_loss_name,
-    periodic_flattop,
-    reverse_cumsum,
-)
-
-SOT_MSS_WINDOWS: Final = DDSP_FFT_SIZES
-SOT_MSS_HOPS: Final = DDSP_HOPS
-FABIANI_TIME_SCALE_HZ_PER_SECOND: Final = TFW_HZ_PER_SECOND
-
-__all__ = [
-    "CEL_HOP",
-    "CEL_N_FFT",
-    "DDSP_FFT_SIZES",
-    "DDSP_HOPS",
-    "LABELS",
-    "NAMES",
-    "PaperObjectives",
-    "SMOOTH_HOPS",
-    "SMOOTH_WINDOWS",
-    "SOT_HOP",
-    "SOT_N_FFT",
-    "TFW_HOP",
-    "TFW_N_FFT",
-    "CEL_DIRECTIONS",
-    "CEL_NAMES",
-    "LOSS_LABELS",
-    "LOSS_NAMES",
-    "PAPER_LOSSES",
-    "SOT_MSS_HOPS",
-    "SOT_MSS_WINDOWS",
-    "BidirectionalCumulativeEnergyDistance",
-    "CumulativeEnergyDistance",
-    "LinearJTFOTDistance",
-    "LogJTFOTDistance",
-    "LogQuadratureBiCumulativeEnergyDistance",
-    "PublishedSOTCompositeDistance",
-    "SmoothMSSDistance",
-    "WaveformDistance",
-    "build_loss",
-    "canonical_loss_name",
-    "periodic_flattop",
-    "reverse_cumsum",
-]
+CEL_DIRECTIONS = ("right_up", "right_down", "left_up", "left_down")
+LOSS_LABELS = dict(zip(LABELS, NAMES, strict=True))

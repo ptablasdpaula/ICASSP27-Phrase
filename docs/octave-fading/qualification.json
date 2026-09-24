@@ -1,9 +1,0 @@
-{
-  "passed": true,
-  "signature": "83ce5a729e6a4f5832d3d99fb13ff77d291f554fbe0144098491389052c09247",
-  "explicit_all_four_directions": true,
-  "nonuniform_reverse_kernel": true,
-  "octave_cutoff": true,
-  "self_loss_gradient": true,
-  "autograd_and_audio_finite_difference": true
-}

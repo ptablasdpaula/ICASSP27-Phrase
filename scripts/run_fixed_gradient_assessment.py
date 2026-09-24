@@ -15,7 +15,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from fixed_gradient_assessment import (
+from _alignment_plot import compact_cosine, render
+from icassp27_phrase.data.design import (
     CANDIDATES_PER_TARGET,
     CARDINALITIES,
     COLUMNS,
@@ -30,13 +31,14 @@ from fixed_gradient_assessment import (
 )
 from icassp27_phrase.losses import CEL_DIRECTIONS
 from icassp27_phrase.metrics import hungarian_assignment, phrase_gradient_cosine
+from icassp27_phrase.paths import OUTPUT as OUTPUT_ROOT
+from icassp27_phrase.paths import resolve_path
 from icassp27_phrase.runtime import configure_reproducibility, require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
-from report_gradient_alignment import compact_cosine, render
 
-ROOT = Path("results/gradient-assessment-16k")
-OUTPUT = Path("docs/gradient-assessment/16k")
-PAPER_FIGURE = Path("paper/figures/gradient_alignment.pdf")
+ROOT = OUTPUT_ROOT / "gradient-analysis"
+OUTPUT = OUTPUT_ROOT / "gradient-analysis"
+PAPER_FIGURE = OUTPUT_ROOT / "figures/gradient_alignment.pdf"
 LABELS = (
     r"$L_1$",
     r"$L_2$",
@@ -340,21 +342,16 @@ def report(root: Path, output: Path, paper_figure: Path | None) -> None:
     ]
     for loss, label in enumerate(TEXT_LABELS):
         cells = [
-            f"{compact_cosine(means[loss, column])} ± "
-            f"{compact_cosine(deviations[loss, column])}"
+            f"{compact_cosine(means[loss, column])} ± {compact_cosine(deviations[loss, column])}"
             for column in range(len(COLUMNS))
         ]
         markdown.append("| " + " | ".join((label, *cells)) + " |")
     (output / "phrase-cosine.md").write_text("\n".join(markdown) + "\n")
     render(
         output,
-        "phrase-cosine",
         means,
         deviations,
         COLUMNS,
-        cmap_name="RdBu",
-        cropped_colorbar=True,
-        compact_layout=True,
         labels=LABELS,
     )
     save_json(
@@ -386,9 +383,9 @@ def report(root: Path, output: Path, paper_figure: Path | None) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("qualify", "compute", "report", "all"))
-    parser.add_argument("--root", type=Path, default=ROOT)
-    parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--paper-figure", type=Path, default=PAPER_FIGURE)
+    parser.add_argument("--root", type=resolve_path, default=ROOT)
+    parser.add_argument("--output", type=resolve_path, default=OUTPUT)
+    parser.add_argument("--paper-figure", type=resolve_path, default=PAPER_FIGURE)
     parser.add_argument("--cardinality", type=int, choices=CARDINALITIES)
     parser.add_argument("--target-index", type=int)
     parser.add_argument("--batch", type=int, default=64)
@@ -401,9 +398,7 @@ def main() -> None:
     if args.command in ("compute", "all"):
         selected = CARDINALITIES if args.cardinality is None else (args.cardinality,)
         for events in selected:
-            compute_cardinality(
-                args.root, events, args.batch, args.device, args.target_index
-            )
+            compute_cardinality(args.root, events, args.batch, args.device, args.target_index)
     if args.command in ("report", "all"):
         report(args.root, args.output, args.paper_figure)
 

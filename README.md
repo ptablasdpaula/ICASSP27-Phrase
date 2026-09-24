@@ -1,157 +1,176 @@
 # ICASSP27-Phrase
 
-Code and manuscript for **Gradient Descent Optimization of Plucked-String
-Musical Phrases via Cumulative Energy Loss**.
+Code and numerical results for **Unsupervised Estimation of Plucked String
+Musical Phrase Parameters via Differentiable DSP and Cumulative Energy Losses**
+(Pablo Tablas de Paula, Sebastian J. Schlecht, Emmanouil Benetos and Joshua D. Reiss;
+submitted to ICASSP 2027).
 
-The repository contains one compact synthesis path, the eight losses reported in
-the paper, all 150 frozen LHS target coordinate sets per event cardinality, and
-an interactive Marimo app that reruns any individual fit on demand. It does not
-store rendered target audio, optimisation trajectories, spectrogram caches,
-checkpoints, W&B caches, or cluster-specific campaign output.
-
-## Run in your browser
-
-[Open the optimisation notebook in Molab](https://molab.marimo.io/github/ptablasdpaula/ICASSP27-Phrase/blob/main/notebooks/optimize_phrase.py).
-Like an "Open in Colab" link, this opens the notebook from GitHub in Marimo's
-hosted workspace. Fork it, start the free CPU runtime, and press **Run
-optimisation**; no clone, local Python installation, GPU, or Slurm account is
-required. On its first run, the notebook installs this GitHub repository and
-builds the pinned TorchLPC/PhilTorch CPU backend; the Molab workspace then
-caches that environment.
-
-## Renderer architecture
-
-`PhraseSynth` is the composition of three differentiated modules:
-
-1. `Exciter` constructs the half-raised-cosine source. Its defaults are the
-   paper's amplitude 0.8 and duration 10 ms. Onsets can be placed by direct
-   sampling (`naive`), fifth-order Lagrange FIR, FLAMO frequency sampling
-   (`fourier`), or first-order Thiran all-pass.
-2. `Waveguide` implements the pickup-free two-rail string. Linear,
-   Lagrange-5/1, and Thiran-3/1 propagation are available through the
-   PhilTorch/TorchLPC DF2 recurrence; the same time-domain sections can instead
-   retain literal right/left-going rail histories. Frequency-sampled
-   propagation uses FLAMO's `frequency` realization and hard resets.
-3. `PhraseSynth` sorts the active regimes by detached onset, sums the event
-   excitations, and routes the source through the selected waveguide.
-
-The default onset FFT is now 16,384 samples (2.048× the signal length).
-The archived phrase-recovery results used 262,144 samples; reproduce those
-with `ExciterConfig(fourier_fft_length=262_144)`. New gradient screening uses
-the reduced padding; full recovery reruns are pending variant selection. PhilTorch
-dispatches the DF2 recurrence through TorchLPC on CPU and CUDA:
-
-```python
-import torch
-from icassp27_phrase import PhraseSynth, load_target
-
-synth = PhraseSynth().to("cuda")  # Fourier exciter + Thiran DF2 waveguide
-_, phrase = load_target(4, 1, device="cuda")
-audio = synth.render(phrase)
-```
-
-Controls and audio are float64 at 4 kHz for two seconds. Candidate pitches and
-onsets use independent bounded logits; there is no ordering/spacing transform
-or post-update clamp.
+This repository reproduces the paper's 16-kHz experiments. The independent
+[CeLs library](https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0)
+is pinned as the `external/cels` submodule. Spectral and transport baselines,
+synthesis, evaluation and experiment runners belong to this paper repository.
+The original submission checkout is tagged `paper-submitted-2026-09-24`;
+the cleaned reproduction release is `paper-reproduction-v0.2.0`.
 
 ## Installation
 
-The base reproducibility environment targets Python 3.12, PyTorch 2.7.1,
-FLAMO 0.2.18, and the registered PhilTorch/TorchLPC commits. To run the CPU
-notebook outside Molab:
+The locked environment targets Linux, Python 3.12, PyTorch 2.7.1/CUDA 12.6,
+FLAMO 0.2.18 and the recorded PhilTorch/TorchLPC commits.
 
 ```bash
-pixi install
+git clone --recurse-submodules https://github.com/ptablasdpaula/ICASSP27-Phrase.git
+cd ICASSP27-Phrase
+pixi install --locked
 pixi run install-cpu-backends
-pixi run notebook
+pixi run check
 ```
 
-The paper campaigns additionally use CUDA 12.6 and the exact
-PhilTorch/TorchLPC commits registered in the study. A CUDA toolkit compatible
-with the PyTorch wheel is needed to build and qualify that accelerated
-recurrence:
+For an existing checkout, initialise the library with
+`git submodule update --init --recursive`. Plotting saved results needs no GPU
+or compiled synthesis backend. To compute on CUDA, run
+`pixi run install-backends` on a GPU node with a CUDA 12.6 toolkit and `nvcc`.
+The default build supports V100/A100 architectures; use `TORCH_CUDA_ARCH_LIST`
+for other compatible GPUs. The installer preserves the pinned backend commits.
+
+Without Pixi, create a Python 3.12 environment, install the appropriate
+PyTorch 2.7.1 CPU or CUDA 12.6 wheel, then:
 
 ```bash
-pixi install
-pixi run install-backends
-pixi run test
-pixi run gpu-check
+pip install -e external/cels -e '.[notebook]'
+ICASSP27_BACKEND_DEVICE=cpu bash scripts/install_backends.sh
+python scripts/check.py
 ```
 
-The backend installer is deliberately separate: it builds the two native
-projects against the PyTorch/CUDA installation on the machine where the paper
-campaign will run. Run it on a GPU compute node after making a CUDA 12.6
-toolkit (`nvcc`) available; it builds the paper-qualified `sm_70` and `sm_80`
-TorchLPC kernels by default. Set `TORCH_CUDA_ARCH_LIST` explicitly to add a
-different local architecture.
+The Pixi lockfile is the reference environment; other platforms are not qualified.
 
-## Rerun one optimisation
+## Quick examples
 
-Launch the editable notebook or its read-only app:
+```python
+import torch
+from icassp27_phrase import PhraseSynth, load_target, fit
 
-```bash
-pixi run notebook
-# or
-pixi run app
+synth = PhraseSynth().to("cpu")
+metadata, phrase = load_target(2, 1)
+with torch.no_grad():
+    target = synth.render(phrase)
+result = fit(target, cardinality=2, loss_name="CeL", synth=synth)
+print(result.best_phrase)
 ```
 
-Choose `number_of_events` from 1, 2, 4, 6, or 8; choose `loss_type` from
-`L_1`, `L_2`, `MSS`, `SOT`, `TFW_2`, `TFW_2 (1s=1oct)`, `BiCuL`, or
-`LogQ_BiCuL`; and choose `target` from 1 to 150. `TFW_2` is the
-[published linear-frequency construction](https://acris.aalto.fi/ws/portalfiles/portal/178964399/Time-Frequency_Audio_Similarity_Using_Optimal_Transport.pdf)
-with 1 s equal to 1000 Hz; the explicitly named
-variant uses logarithmic frequency with 1 s equal to 1 octave. The app renders
-and plays the target before fitting. During the synchronous
-fit it reports the evaluation, patience, best loss, and learning rate while
-refreshing the current candidate's spectrogram every ten evaluations. The
-target and strict-best candidate also have spectrograms and audio players. No
-large post-fit animation is constructed, so the result appears immediately
-after the final best-candidate render. All artefacts stay in memory. The
-notebook deliberately runs on CPU so it can be hosted without a GPU, while
-retaining the PhilTorch/TorchLPC DF2 path used by the paper. Larger fits will
-naturally be slower than the qualified CUDA campaign.
+`pixi run notebook` opens the interactive single-phrase demo. It uses the same
+loss implementations and optimiser as the batch recovery experiment. Each fit
+starts at 160 Hz with evenly spaced onsets; larger CPU fits can take considerable
+time. The notebook reports the lowest-loss candidate, without rollback or
+resetting Adam state. `pixi run notebook-check` validates the notebook structure.
 
-## Cumulative Energy Loss variants
+## Rebuild the figures and tables
 
-`CumulativeEnergyDistance(target, directions=("right_up",), log_weighing=False)`
-selects any nonempty subset of `right_up`, `right_down`, `left_up`, `left_down`.
-The feature remains square-root normalised cumulative power. `build_loss`
-also accepts `cel_01` through `cel_15`, with optional `_lw`; masks use bits
-1, 2, 4, 8 in that direction order. Existing BiCuL identifiers remain supported
-for archived code. New figures and reports call these CeL variants.
-
-The [gradient-screen protocol](docs/cel-gradient-screen/protocol.md) defines
-an independent, optimisation-free comparison before selecting variants for
-new phrase-recovery experiments. Current historical recovery tables do not
-represent results at the new padding setting.
-
-## Paper and confirmatory study
-
-The self-contained [`paper/`](paper/) directory can be linked directly to
-Overleaf. Build it locally with:
+The compact reference data are tracked under `paper/results/`, including the
+6,750 recovered phrases and their metrics. No audio, checkpoints or full GPU
+trajectories are needed to regenerate the paper's presentation.
 
 ```bash
+pixi run check --data-only
+pixi run figures
+pixi run tables
 pixi run paper
 ```
 
-The completed preregistered confirmatory study has 150 targets at each
-cardinality and 15 paired BiCuL-versus-1-s-equals-1-octave TFW2 primary tests.
-The exploratory LogQ-BiCuL and published linear-frequency TFW2 extensions each
-reuse those same targets but are not part of that test family. Together, the
-4500 preregistered fits and two 750-fit extensions give 6000 descriptive fits
-across 40 loss-by-cardinality conditions. The original ten-target prefix and
-140 appended targets are frozen in `src/data/targets.json`; the paper contains
-the signed final aggregate without checkpoints or machine-specific campaign
-output.
-The signed combined report and the signed 15-test result are retained as
-`paper/figures/descriptive_results.provenance.json` and
-`paper/figures/primary_tests.json`, respectively.
-The post hoc paired comparison of the two TFW2 variants with the two BiCuL
-variants is reproducible with `scripts/analyze_loss_families.py`; its signed
-result is `paper/figures/exploratory_family_tests.json`.
+Generated figures and tables go to `results/figures/` and `results/tables/`.
+The paper build uses its checked-in submission assets. To explicitly replace
+those assets, supply `--output paper/figures` to the figure/table command.
+The waveguide diagram is a retained static PDF; the other figures have generators.
+The efficiency table is also emitted as `efficiency_table.tex`, while its
+submitted values remain inline in the manuscript.
 
-## Repository scope
+## Recompute the experiments
 
-Only methods and assets used by the manuscript are retained. Historical
-campaign code, experimental estimators, private scratch paths, launch logs,
-generated audio, and superseded figures are intentionally absent.
+All commands accept `--help`. Scientific defaults are versioned in code;
+paths and cluster resources are configured separately. Local CPU execution is
+available for gradient analysis and recovery, but full campaigns should use GPUs.
+
+| Command | Output and scope |
+|---|---|
+| `pixi run targets` | Regenerate the frozen 150-target LHS registry for each note count |
+| `pixi run gradients all` | Main gradient conditions plus State and 7-D; 224 target jobs |
+| `pixi run recovery` | Nine objectives × five note counts × 150 independent fits |
+| `pixi run report-recovery` | Recompute matched errors, LSD and the Random baseline from completed fits |
+| `pixi run slices` | Compute the six single-pluck loss slices |
+| `pixi run efficiency --output results/efficiency/all.json` | Five fixed-candidate objectives on one GPU model |
+
+Use `--device cpu` where supported, or `--task INDEX` to run one gradient/recovery
+job. For gradients, run `pixi run gradients qualify` before separate `compute`
+jobs, and `pixi run gradients report` after they complete. Targets use the frozen
+seeds and retain the 50-ms separation; candidates have no spacing constraint.
+Recovery uses independent bounded pitch/onset logits and independent Adam and
+plateau state for each phrase. Completed compatible shards are reused; conflicting
+source signatures are rejected. An interrupted unfinished shard restarts from
+its deterministic initialisation.
+
+The saved recovery campaign consumed approximately 93 GPU-hours for the original
+nine-objective campaign (including MSS, which was later excluded), plus the SOT
+control campaign. This is a historical measurement, not a runtime guarantee.
+The fixed-candidate efficiency benchmark uses 150 one-note targets in batches
+of 10, five warm-up and 20 measured passes, with no optimiser updates. The
+published measurements used an A100 40 GB; do not mix GPU models within a table.
+
+To plot a newly completed campaign instead of the reference results, use
+`pixi run figures --data results` and `pixi run tables --data results` after all
+required computations and reports have completed. The resulting directory
+structure mirrors the reference data. Full reruns can differ numerically across
+hardware/toolchains; timing results are hardware-specific.
+
+## Paths and Slurm
+
+Copy `.env.example` to `.env` if you want different output, cache or log
+locations. Relative paths are interpreted from the checkout. Command-line
+options override environment variables, which override `.env`, then defaults.
+No personal home or scratch paths are required. Keep large generated results
+outside the checkout if desired; `paper/results/` remains the reference archive.
+From another directory, use `pixi run --manifest-path /path/to/pixi.toml …`,
+or invoke an installed environment's Python on an absolute script path.
+
+`jobs/profiles.toml` contains a generic profile and examples for gpushort and
+andrena. Adjust partitions, accounts, memory, walltime and concurrency for your
+cluster. Submission prints a dry run unless `--submit` is specified:
+
+```bash
+pixi run submit recovery --profile gpushort --array 0-3
+pixi run submit recovery --profile gpushort --array 0-3 --submit
+```
+
+Submit gradient `qualify` first and wait for successful completion before the
+`gradients` array. Arrays use the same local commands and output directories.
+Partition/account/concurrency overrides are available on the command line.
+When using several profiles concurrently, choose non-overlapping task subsets
+and respect your allocation's total GPU limit. Efficiency jobs request the
+published A100 40-GB model explicitly.
+
+## Repository layout
+
+- `src/synth/`: excitation, Thiran waveguide, phrase rendering and seven-control synthesis.
+- `src/data/`: frozen targets and reproducible LHS designs.
+- `src/losses.py` and `src/metrics.py`: optimisation losses and separate evaluation metrics.
+- `src/optimization.py`: optimiser shared by the notebook and batch runner.
+- `scripts/`: current experiments, reporting, presentation and the small check command.
+- `jobs/`: one Slurm runner, dispatcher and configurable submission profiles.
+- `paper/`: manuscript, referenced assets and compact numerical results.
+
+The check command covers data integrity, sampling, matching, synthesis and loss
+gradients, persistent state, seven controls and a short recovery. It replaces
+the former exploratory test suite. The independent CeLs submodule retains its
+own checks. Historical experiments remain accessible through Git history;
+removing them from the current checkout does not rewrite that history.
+
+## Citation and licence
+
+Use `CITATION.cff` for the software and manuscript metadata. The paper is a
+submission, not yet an accepted publication. Original software is MIT licensed;
+third-party code and the CeLs submodule retain their own notices. The manuscript,
+figures and IEEE template files are not relicensed by the software licence.
+
+## TODO
+
+- Reconcile the methodology wording with the archived runs: relative-improvement
+  threshold `0.0001` (0.01%, rather than 1%); phrase-recovery batches of 75,
+  or 50 for SOT. The efficiency benchmark uses batches of 10 for every loss.

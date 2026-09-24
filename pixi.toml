@@ -2,14 +2,13 @@
 channels = ["conda-forge"]
 name = "icassp27-phrase"
 platforms = ["linux-64"]
-version = "0.1.3"
+version = "0.2.0"
 
 [dependencies]
 python = ">=3.12,<3.13"
 numpy = ">=2,<3"
 numba = ">=0.61,<0.67"
 scipy = ">=1.11,<1.17"
-pytest = ">=8,<10"
 ruff = ">=0.12,<1"
 tectonic = ">=0.15,<0.16"
 pip = ">=25,<27"
@@ -32,18 +31,18 @@ cels-audio = { path = "external/cels", editable = true }
 [tasks]
 install-backends = "bash scripts/install_backends.sh"
 install-cpu-backends = "ICASSP27_BACKEND_DEVICE=cpu ICASSP27_BACKEND_DEVICE_ACTUAL=cpu bash scripts/install_backends.sh"
-test = "python -m pytest"
-lint = "ruff check src tests notebooks scripts"
+check = "python scripts/check.py"
+lint = "ruff check src scripts jobs notebooks"
 notebook-check = "marimo check notebooks/optimize_phrase.py"
 notebook = "marimo edit notebooks/optimize_phrase.py"
 app = "marimo run notebooks/optimize_phrase.py"
-cpu-check = "python scripts/qualify_cpu_notebook.py"
-gpu-check = "python scripts/qualify_gpu.py"
-paper = "bash -lc 'cd paper && mkdir -p build && tectonic -X compile main.tex --outdir build'"
-
-[feature.sinkhorn.pypi-dependencies]
-geomloss = "==0.2.6"
-pykeops = "==2.3"
-
-[environments]
-sinkhorn = ["sinkhorn"]
+targets = "python scripts/generate_recovery_targets.py"
+gradients = "python scripts/run_gradients.py"
+recovery = "python scripts/run_recovery.py"
+report-recovery = "python scripts/report_recovery.py"
+efficiency = "python scripts/benchmark_loss_efficiency.py"
+slices = "python scripts/render_loss_sweeps.py"
+figures = "python scripts/make_figures.py"
+tables = "python scripts/make_tables.py"
+submit = "python jobs/submit.py"
+paper = "bash -c 'cd paper && mkdir -p build && tectonic -X compile main.tex --outdir build'"

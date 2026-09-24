@@ -1,21 +1,14 @@
-# Overleaf source
+# Manuscript
 
-Upload or link this directory as the Overleaf project and select `main.tex` as
-the Main document. Alternatively, link the full repository and select
-`paper/main.tex`; the source detects both layouts so BibTeX and figure paths
-resolve correctly. The supplied ICASSP `spconf.sty` and `IEEEbib.bst`, the
-bibliography, and every referenced figure/table are self-contained below
-`paper/`; no generated build files are required.
+Select `paper/main.tex` as the main document when linking this repository to
+Overleaf, or `main.tex` when uploading this directory alone. Build locally with
+`pixi run paper`. All referenced assets and template files are retained here.
 
-For a local build from the repository root, run `pixi run paper`.
+`figures/` contains the submitted assets. `results/` contains the compact
+numerical inputs and original provenance needed to regenerate plots and tables
+without rerunning optimisation. Generators live in the repository's `scripts/`;
+see the root README for commands.
 
-The active manuscript uses the supplied ICASSP article template with default
-spacing and 10-point body text. `real_template/` remains the original template
-archive; `IEEEtran.cls` is retained only for the historical reviewed manuscript.
-
-The bibliography uses `IEEEbib-initials.bst`, derived from the supplied
-`IEEEbib.bst` with given names formatted as initials and author lists of seven
-or more shortened to the first author plus et al.; editions use `ed.`.
-Full author metadata remains
-in `references.bib`. The original style is retained unchanged, and bibliography
-spacing follows `spconf`.
+`IEEEbib-initials.bst` derives from the supplied `IEEEbib.bst`, using author
+initials and et al. for seven or more authors. The original style is retained.
+The manuscript and IEEE template material are excluded from the code's MIT licence.

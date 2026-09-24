@@ -9,7 +9,7 @@ from scipy.io import wavfile
 from torch import Tensor
 
 
-def wav_bytes(audio: Tensor, sample_rate: int = 4_000) -> BytesIO:
+def wav_bytes(audio: Tensor, sample_rate: int = 16_000) -> BytesIO:
     """Encode a finite mono tensor as browser-compatible 16-bit WAV bytes."""
     value = audio.detach().cpu().numpy().astype(np.float64, copy=False)
     if value.ndim != 1 or not np.isfinite(value).all():
@@ -25,7 +25,7 @@ def wav_bytes(audio: Tensor, sample_rate: int = 4_000) -> BytesIO:
 
 def spectrogram_figure(
     audio: Tensor,
-    sample_rate: int = 4_000,
+    sample_rate: int = 16_000,
     *,
     title: str = "Magnitude spectrogram",
 ):

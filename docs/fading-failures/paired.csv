@@ -1,9 +1,0 @@
-scope,mode,variant,n,better,worse,tied,median_difference
-all_seven,plateau,2oct,7,5,2,0,-0.007261391343944046
-all_seven,plateau,4oct,7,4,3,0,-0.007825219655866689
-all_seven,fresh,2oct,7,2,5,0,0.05905170367644311
-all_seven,fresh,4oct,7,1,6,0,0.05005097235633099
-other_five,plateau,2oct,5,3,2,0,-0.007261391343944046
-other_five,plateau,4oct,5,3,2,0,-0.007825219655866689
-other_five,fresh,2oct,5,1,4,0,0.05932850339124676
-other_five,fresh,4oct,5,1,4,0,0.05005097235633099

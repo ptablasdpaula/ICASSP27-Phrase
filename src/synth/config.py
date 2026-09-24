@@ -1,0 +1,149 @@
+"""Typed configuration for the renderer and the registered optimiser."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Literal
+
+import torch
+from torch import Tensor
+
+F0_BOUNDS_HZ = (80.0, 320.0)
+ONSET_BOUNDS_SECONDS = (0.2, 1.8)
+CARDINALITIES = (1, 2, 4, 6, 8)
+SAMPLE_RATE = 16_000
+SAMPLE_COUNT = 32_000
+MASTER_SEED = 2029
+
+OnsetMethod = Literal["fourier"]
+InterpolationMethod = Literal["thiran"]
+Realization = Literal["df2"]
+StatePolicy = Literal["hard_reset", "persistent"]
+
+
+@dataclass(frozen=True)
+class EventPhrase:
+    """A known-cardinality phrase represented by paired float64 vectors."""
+
+    f0_hz: Tensor
+    onset_seconds: Tensor
+
+    def __post_init__(self) -> None:
+        if self.f0_hz.ndim != 1 or self.onset_seconds.shape != self.f0_hz.shape:
+            raise ValueError("f0_hz and onset_seconds must be matching vectors")
+        if self.f0_hz.numel() < 1:
+            raise ValueError("a phrase must contain at least one event")
+        if self.f0_hz.dtype != torch.float64 or self.onset_seconds.dtype != torch.float64:
+            raise TypeError("phrase controls must use torch.float64")
+        if self.f0_hz.device != self.onset_seconds.device:
+            raise ValueError("phrase controls must share a device")
+        if not bool(torch.isfinite(self.f0_hz.detach()).all()) or not bool(
+            torch.isfinite(self.onset_seconds.detach()).all()
+        ):
+            raise ValueError("phrase controls must be finite")
+        if not bool(
+            (
+                (self.f0_hz.detach() >= F0_BOUNDS_HZ[0]) & (self.f0_hz.detach() <= F0_BOUNDS_HZ[1])
+            ).all()
+        ):
+            raise ValueError("f0_hz lies outside 80--320 Hz")
+        if not bool(
+            (
+                (self.onset_seconds.detach() >= ONSET_BOUNDS_SECONDS[0])
+                & (self.onset_seconds.detach() <= ONSET_BOUNDS_SECONDS[1])
+            ).all()
+        ):
+            raise ValueError("onset_seconds lies outside 0.2--1.8 s")
+
+    @property
+    def cardinality(self) -> int:
+        return int(self.f0_hz.numel())
+
+
+@dataclass(frozen=True)
+class ExciterConfig:
+    """Half-raised-cosine source used in the paper."""
+
+    method: OnsetMethod = "fourier"
+    sample_rate: int = SAMPLE_RATE
+    sample_count: int = SAMPLE_COUNT
+    amplitude: float = 0.8
+    duration_seconds: float = 0.010
+    fourier_fft_length: int = 65_536
+
+    def __post_init__(self) -> None:
+        if self.method != "fourier":
+            raise ValueError(f"unknown onset method {self.method!r}")
+        if self.sample_rate != SAMPLE_RATE or self.sample_count < 1:
+            raise ValueError("the registered renderer is fixed at 16 kHz")
+        if not (self.amplitude > 0.0 and self.duration_seconds > 0.0):
+            raise ValueError("exciter amplitude and duration must be positive")
+        if self.method == "fourier" and (
+            self.fourier_fft_length % 2 or self.fourier_fft_length < 2 * self.sample_count
+        ):
+            raise ValueError(
+                "Fourier onset placement requires an even FFT at least twice "
+                "the rendered impulse-response horizon"
+            )
+
+
+@dataclass(frozen=True)
+class WaveguideConfig:
+    """Pickup-free two-rail digital waveguide configuration."""
+
+    interpolation: InterpolationMethod = "thiran"
+    realization: Realization = "df2"
+    state_policy: StatePolicy = "hard_reset"
+    sample_rate: int = SAMPLE_RATE
+    sample_count: int = SAMPLE_COUNT
+    loop_gain: float = 0.99
+    loop_pole: float = 0.2
+    pluck_position: float = 0.23
+    phase_correction_iterations: int = 12
+
+    def __post_init__(self) -> None:
+        if self.interpolation != "thiran":
+            raise ValueError(f"unknown interpolation {self.interpolation!r}")
+        if self.realization != "df2":
+            raise ValueError(f"unknown realization {self.realization!r}")
+        if self.state_policy not in ("hard_reset", "persistent"):
+            raise ValueError(f"unknown state policy {self.state_policy!r}")
+        if self.sample_rate != SAMPLE_RATE or self.sample_count < 1:
+            raise ValueError("the registered renderer is fixed at 16 kHz")
+        if (self.loop_gain, self.loop_pole, self.pluck_position) != (0.99, 0.2, 0.23):
+            raise ValueError("the paper fixes g=0.99, a1=0.2, and beta=0.23")
+        if self.phase_correction_iterations != 12:
+            raise ValueError("the registered phase solver uses 12 iterations")
+
+    @property
+    def segment_orders(self) -> tuple[int, int]:
+        """Thiran orders used by both physical rail sections."""
+        return (3, 3)
+
+
+def initial_candidate(cardinality: int, *, device: torch.device | str) -> EventPhrase:
+    """Return the one registered equal-cell initialisation."""
+    if cardinality not in CARDINALITIES:
+        raise ValueError("cardinality must be one of 1, 2, 4, 6, or 8")
+    f0 = torch.full((cardinality,), 160.0, dtype=torch.float64, device=device)
+    index = torch.arange(cardinality, dtype=torch.float64, device=device)
+    onset = 0.2 + (index + 0.5) * (1.6 / cardinality)
+    return EventPhrase(f0, onset)
+
+
+__all__ = [
+    "CARDINALITIES",
+    "EventPhrase",
+    "ExciterConfig",
+    "F0_BOUNDS_HZ",
+    "InterpolationMethod",
+    "MASTER_SEED",
+    "ONSET_BOUNDS_SECONDS",
+    "OnsetMethod",
+    "Realization",
+    "SAMPLE_COUNT",
+    "SAMPLE_RATE",
+    "StatePolicy",
+    "WaveguideConfig",
+    "initial_candidate",
+]

@@ -1,0 +1,28 @@
+# Cluster-specific resources only; scientific settings live in the Python code.
+[generic]
+partition = ""
+account = ""
+gres = "gpu:1"
+cpus = 2
+memory = "24G"
+time = "01:00:00"
+concurrency = 2
+
+[gpushort]
+partition = "gpushort"
+account = "pilot"
+gres = "gpu:1"
+constraint = "ampere"
+cpus = 2
+memory = "24G"
+time = "00:59:00"
+concurrency = 2
+
+[andrena]
+partition = "andrena"
+account = "pilot_andrena"
+gres = "gpu:1"
+cpus = 2
+memory = "24G"
+time = "12:00:00"
+concurrency = 8

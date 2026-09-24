@@ -3,27 +3,38 @@
 
 from __future__ import annotations
 
+import argparse
 import json
-from pathlib import Path
+from importlib.resources import files
 
 import numpy as np
+from icassp27_phrase.paths import OUTPUT as OUTPUT_ROOT
+from icassp27_phrase.paths import resolve_path
 from scipy.stats import qmc
 
 CARDINALITIES = (1, 2, 4, 6, 8)
 COUNT = 150
 SEED = 2029
-OUTPUT = Path("src/data/targets.json")
+
+OUTPUT = OUTPUT_ROOT / "targets.json"
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=resolve_path, default=OUTPUT)
+    args = parser.parse_args()
     records = []
     for cardinality in CARDINALITIES:
-        unit = qmc.LatinHypercube(
-            d=2 * cardinality,
-            scramble=True,
-            optimization=None,
-            seed=SEED + cardinality,
-        ).random(COUNT).reshape(COUNT, cardinality, 2)
+        unit = (
+            qmc.LatinHypercube(
+                d=2 * cardinality,
+                scramble=True,
+                optimization=None,
+                seed=SEED + cardinality,
+            )
+            .random(COUNT)
+            .reshape(COUNT, cardinality, 2)
+        )
         pitch = 80.0 * 4.0 ** unit[..., 0]
         latent_onset = np.sort(unit[..., 1], axis=1)
         available = 1.6 - 0.05 * (cardinality - 1)
@@ -49,7 +60,13 @@ def main() -> None:
         "targets_per_cardinality": COUNT,
         "targets": records,
     }
-    OUTPUT.write_text(json.dumps(payload, indent=2) + "\n")
+    content = json.dumps(payload, indent=2) + "\n"
+    reference = files("icassp27_phrase").joinpath("data/targets.json").read_text()
+    if content != reference:
+        raise ValueError("Generated target registry differs from the frozen paper input")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(content)
+    print(f"Verified frozen targets: {args.output}")
 
 
 if __name__ == "__main__":

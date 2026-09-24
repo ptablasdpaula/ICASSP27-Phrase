@@ -45,9 +45,7 @@ def phrase_gradient_cosine(
     displacement = (target[assignments] - candidates)[:, None]
     descent = -gradients
     dot = (descent * displacement).sum(axis=(-2, -1))
-    norms = np.linalg.norm(descent, axis=(-2, -1)) * np.linalg.norm(
-        displacement, axis=(-2, -1)
-    )
+    norms = np.linalg.norm(descent, axis=(-2, -1)) * np.linalg.norm(displacement, axis=(-2, -1))
     cosine = np.divide(dot, norms, out=np.zeros_like(dot), where=norms > 0)
     cosine = np.clip(cosine, -1.0, 1.0)
     active = (np.abs(displacement[:, 0]) > 1e-12).any(axis=(-2, -1))
@@ -101,9 +99,7 @@ def log_spectral_distance(
     squeeze = candidate.ndim == 1
     candidate_rows = candidate[None] if squeeze else candidate
     target_rows = target[None] if squeeze else target
-    window = torch.hann_window(
-        n_fft, periodic=True, dtype=candidate.dtype, device=candidate.device
-    )
+    window = torch.hann_window(n_fft, periodic=True, dtype=candidate.dtype, device=candidate.device)
 
     def magnitude(audio: Tensor) -> Tensor:
         return torch.stft(

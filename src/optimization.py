@@ -1,35 +1,16 @@
-"""One-fit analysis-by-synthesis optimisation used by the Marimo app."""
+"""Independent Adam fits with plateau scheduling and lowest-loss retention."""
 
 from __future__ import annotations
 
-import math
 import time
-from collections.abc import Callable
 from dataclasses import dataclass
 
 import torch
 from torch import Tensor
 
-from .config import PAPER_OPTIMIZER, EventPhrase, OptimizerConfig, initial_candidate
-from .losses import build_loss, canonical_loss_name
+from .losses import LOSS_LABELS, PaperObjectives
 from .synth import PhraseSynth
-
-
-def encode_coordinates(f0_hz: Tensor, onset_seconds: Tensor) -> Tensor:
-    """Encode independent bounded pitch/onset controls as unconstrained logits."""
-    f_unit = (torch.log(f0_hz / 80.0) / math.log(4.0)).clamp(1e-12, 1.0 - 1e-12)
-    t_unit = ((onset_seconds - 0.2) / 1.6).clamp(1e-12, 1.0 - 1e-12)
-    return torch.stack((torch.logit(f_unit), torch.logit(t_unit)), dim=-1)
-
-
-def decode_coordinates(raw: Tensor) -> tuple[Tensor, Tensor]:
-    """Decode logits without ordering, spacing, or canonicalisation."""
-    if raw.ndim != 2 or raw.shape[-1] != 2 or raw.dtype != torch.float64:
-        raise ValueError("raw coordinates must be float64 [event,2]")
-    unit = torch.sigmoid(raw)
-    f0_hz = 80.0 * torch.pow(4.0, unit[:, 0])
-    onset_seconds = 0.2 + 1.6 * unit[:, 1]
-    return f0_hz, onset_seconds
+from .synth.config import EventPhrase, initial_candidate
 
 
 @dataclass(frozen=True)
@@ -59,7 +40,198 @@ class FitResult:
     wall_seconds: float
 
 
-ProgressCallback = Callable[[FitSnapshot, Tensor], None]
+@dataclass(frozen=True)
+class Schedule:
+    initial_lr: float = 0.05
+    factor: float = 0.5
+    plateau_patience: int = 200
+    threshold: float = 1e-4
+    stop_patience: int = 1000
+    maximum_updates: int = 20_000
+    betas: tuple[float, float] = (0.9, 0.999)
+    epsilon: float = 1e-8
+
+    def __post_init__(self):
+        if not (self.initial_lr > 0 and 0 < self.factor < 1 and 0 <= self.threshold < 1):
+            raise ValueError("Invalid learning rate, factor or relative threshold")
+        if self.plateau_patience < 0 or self.stop_patience < 1 or self.maximum_updates < 1:
+            raise ValueError("Invalid patience or update count")
+        if not all(0 <= beta < 1 for beta in self.betas) or self.epsilon <= 0:
+            raise ValueError("Invalid Adam parameters")
+
+
+SCHEDULE = Schedule()
+
+
+PLATEAU_EPSILON = 1e-8
+
+
+def encode(f0: torch.Tensor, onset: torch.Tensor) -> torch.Tensor:
+    f = (torch.log2(f0 / 80.0) / 2.0).clamp(1e-12, 1 - 1e-12)
+    t = ((onset - 0.2) / 1.6).clamp(1e-12, 1 - 1e-12)
+    return torch.stack((torch.logit(f), torch.logit(t)), -1)
+
+
+def decode(raw: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    unit = raw.sigmoid()
+    return 80.0 * 4.0 ** unit[..., 0], 0.2 + 1.6 * unit[..., 1]
+
+
+class PairedObjective(PaperObjectives):
+    """One frozen paper objective for paired target/candidate rows."""
+
+    def __init__(self, target: torch.Tensor, name: str):
+        super().__init__(target, (name,))
+        self.name = name
+
+    def __call__(self, audio: torch.Tensor, indices: torch.Tensor | None = None) -> torch.Tensor:
+        return self.values(audio, indices)[self.name]
+
+
+def append_lr_events(events, indices, old_lr, lr, updates, strict_best):
+    """Record compacted scheduler changes against their original batch rows."""
+    for previous, i in zip(old_lr.tolist(), indices.tolist(), strict=True):
+        events[i].append(
+            {
+                "update": int(updates[i]),
+                "old_lr": previous,
+                "new_lr": float(lr[i]),
+                "best_loss": float(strict_best[i]),
+            }
+        )
+
+
+def retain_strict_best(strict_best, best_raw, indices, values, selected_raw):
+    """Retain each active phrase's parameters at its strict lowest loss."""
+    detached = values.detach()
+    strict = detached < strict_best[indices]
+    improved_indices = indices[strict]
+    strict_best[improved_indices] = detached[strict]
+    best_raw[improved_indices] = selected_raw[strict].detach()
+    return strict
+
+
+def fit_batch(target_audio, cardinality, name, synth, *, schedule=SCHEDULE, progress=None):
+    if target_audio.ndim != 2 or not bool(torch.isfinite(target_audio).all()):
+        raise ValueError("target audio must be finite [batch,samples]")
+    batch = len(target_audio)
+    initial = initial_candidate(cardinality, device=target_audio.device)
+    f0 = initial.f0_hz.expand(batch, -1)
+    onset = initial.onset_seconds.expand(batch, -1)
+    raw = encode(f0, onset).clone().requires_grad_(True)
+    best_raw = raw.detach().clone()
+    first, second = torch.zeros_like(raw), torch.zeros_like(raw)
+    updates = torch.zeros(batch, dtype=torch.long, device=raw.device)
+    lr = torch.full((batch,), schedule.initial_lr, dtype=torch.float64, device=raw.device)
+    plateau_bad = torch.zeros(batch, dtype=torch.long, device=raw.device)
+    stop_bad = torch.zeros(batch, dtype=torch.long, device=raw.device)
+    reductions = torch.zeros(batch, dtype=torch.long, device=raw.device)
+    active = torch.ones(batch, dtype=torch.bool, device=raw.device)
+    initial_loss = scheduler_best = strict_best = final_loss = None
+    events = [[] for _ in range(batch)]
+    objective = PairedObjective(target_audio, name)
+    beta1, beta2 = schedule.betas
+    active_count = batch
+    while active_count:
+        indices = active.nonzero().flatten()
+        selected_raw = raw[indices]
+        f0, onset = decode(selected_raw)
+        values = objective(synth(f0, onset), indices)
+        if initial_loss is None:
+            initial_loss = values.detach().clone()
+            scheduler_best = values.detach().clone()
+            strict_best = values.detach().clone()
+            final_loss = values.detach().clone()
+            keep = torch.ones_like(values, dtype=torch.bool)
+        else:
+            detached = values.detach()
+            final_loss[indices] = detached
+            retain_strict_best(strict_best, best_raw, indices, detached, selected_raw)
+            meaningful = detached < scheduler_best[indices] * (1 - schedule.threshold)
+            scheduler_best[indices] = torch.where(meaningful, detached, scheduler_best[indices])
+            plateau_bad[indices] = torch.where(
+                meaningful, torch.zeros_like(plateau_bad[indices]), plateau_bad[indices] + 1
+            )
+            stop_bad[indices] = torch.where(
+                meaningful, torch.zeros_like(stop_bad[indices]), stop_bad[indices] + 1
+            )
+            # Match torch.optim.lr_scheduler.ReduceLROnPlateau: reduction
+            # occurs when num_bad_epochs > patience, not at equality.
+            due = plateau_bad[indices] > schedule.plateau_patience
+            if bool(due.any()):
+                due_indices = indices[due]
+                old = lr[due_indices].clone()
+                proposed = old * schedule.factor
+                changed = old - proposed > PLATEAU_EPSILON
+                reduced_indices = due_indices[changed]
+                if len(reduced_indices):
+                    lr[reduced_indices] = proposed[changed]
+                    reductions[reduced_indices] += 1
+                    append_lr_events(
+                        events, reduced_indices, old[changed], lr, updates, strict_best
+                    )
+                # ReduceLROnPlateau resets only its own bad-epoch count.  The
+                # independent early-stopping count deliberately continues.
+                plateau_bad[due_indices] = 0
+            stop = (stop_bad[indices] >= schedule.stop_patience) | (
+                updates[indices] >= schedule.maximum_updates
+            )
+            keep = ~stop
+            stopped_indices = indices[stop]
+            active[stopped_indices] = False
+            active_count -= len(stopped_indices)
+        if not bool(torch.isfinite(values).all()):
+            raise FloatingPointError("non-finite optimisation loss")
+        if (
+            progress is not None
+            and batch == 1
+            and (int(updates[0]) % 10 == 0 or not bool(keep.any()))
+        ):
+            sf, st = decode(selected_raw.detach())
+            snapshot = FitSnapshot(
+                int(updates[0]) + 1,
+                int(updates[0]),
+                float(values[0].detach()),
+                float(strict_best[0]),
+                float(lr[0]),
+                int(stop_bad[0]),
+                int(reductions[0]),
+                tuple(sf[0].tolist()),
+                tuple(st[0].tolist()),
+            )
+            with torch.no_grad():
+                progress(snapshot, synth(sf, st)[0].detach())
+        if not bool(keep.any()):
+            continue
+        step_indices = indices[keep]
+        scaled = (values[keep] / initial_loss[step_indices]).sum()
+        (all_selected_gradient,) = torch.autograd.grad(scaled, selected_raw)
+        gradient = all_selected_gradient[keep]
+        if not bool(torch.isfinite(gradient).all()):
+            raise FloatingPointError("non-finite optimisation gradient")
+        first[step_indices] = beta1 * first[step_indices] + (1 - beta1) * gradient
+        second[step_indices] = beta2 * second[step_indices] + (1 - beta2) * gradient.square()
+        updates[step_indices] += 1
+        step = updates[step_indices].to(torch.float64)[:, None, None]
+        delta = (
+            lr[step_indices, None, None]
+            * (first[step_indices] / (1 - beta1**step))
+            / (torch.sqrt(second[step_indices] / (1 - beta2**step)) + schedule.epsilon)
+        )
+        next_raw = raw.detach().clone()
+        next_raw[step_indices] -= delta
+        raw = next_raw.requires_grad_(True)
+    f0, onset = decode(best_raw)
+    return (
+        f0.detach(),
+        onset.detach(),
+        final_loss,
+        strict_best,
+        initial_loss,
+        updates,
+        reductions,
+        events,
+    )
 
 
 def fit(
@@ -67,135 +239,28 @@ def fit(
     cardinality: int,
     loss_name: str,
     *,
-    synth: PhraseSynth | None = None,
-    config: OptimizerConfig = PAPER_OPTIMIZER,
-    progress: ProgressCallback | None = None,
+    synth=None,
+    config: Schedule = SCHEDULE,
+    progress=None,
 ) -> FitResult:
-    """Reproduce one registered gradient-descent fit entirely in memory."""
-    renderer = synth or PhraseSynth()
+    """Notebook/API wrapper around the same batched optimiser as the campaign."""
+    renderer = synth or PhraseSynth().to(target_audio.device)
+    name = LOSS_LABELS.get(loss_name, loss_name)
     if target_audio.ndim != 1 or target_audio.dtype != torch.float64:
         raise ValueError("target_audio must be a float64 sample vector")
-    if target_audio.shape[0] != renderer.sample_count:
-        raise ValueError("target_audio length differs from the renderer")
-    if not bool(torch.isfinite(target_audio.detach()).all()):
-        raise FloatingPointError("target audio contains a non-finite value")
-    canonical_name = canonical_loss_name(loss_name)
-    initial = initial_candidate(cardinality, device=target_audio.device)
-    raw = encode_coordinates(initial.f0_hz, initial.onset_seconds).requires_grad_(True)
-    first = torch.zeros_like(raw)
-    second = torch.zeros_like(raw)
-    update_count = 0
-    learning_rate = config.learning_rate
-    initial_loss: float | None = None
-    best_loss: float | None = None
-    best_raw: Tensor | None = None
-    meaningful_reference: float | None = None
-    patience = 0
-    plateau_events = 0
-    trajectory: list[FitSnapshot] = []
-    objective = build_loss(canonical_name, target_audio)
-    beta1, beta2 = config.betas
     started = time.perf_counter()
-    stopped_by = "maximum updates"
-
-    while True:
-        f0_hz, onset_seconds = decode_coordinates(raw)
-        audio = renderer.render_batch(f0_hz[None], onset_seconds[None])[0]
-        value_tensor = objective(audio)
-        if value_tensor.ndim != 0:
-            raise RuntimeError("a single fit must produce a scalar loss")
-        if not all(
-            bool(torch.isfinite(value.detach()).all())
-            for value in (raw, f0_hz, onset_seconds, audio, value_tensor)
-        ):
-            raise FloatingPointError("non-finite value at an optimisation boundary")
-        value = float(value_tensor.detach())
-
-        if initial_loss is None:
-            if value <= 0.0:
-                raise FloatingPointError("initial loss must be positive")
-            initial_loss = value
-            best_loss = value
-            best_raw = raw.detach().clone()
-            meaningful_reference = value
-        else:
-            patience += 1
-            if value < float(best_loss):
-                best_loss = value
-                best_raw = raw.detach().clone()
-            if value <= float(meaningful_reference) * (
-                1.0 - config.meaningful_relative_improvement
-            ):
-                meaningful_reference = value
-                patience = 0
-                plateau_events = 0
-
-        snapshot = FitSnapshot(
-            evaluation=len(trajectory) + 1,
-            update=update_count,
-            raw_loss=value,
-            best_loss=float(best_loss),
-            learning_rate=learning_rate,
-            patience=patience,
-            plateau_events=plateau_events,
-            f0_hz=tuple(float(item) for item in f0_hz.detach().cpu()),
-            onset_seconds=tuple(float(item) for item in onset_seconds.detach().cpu()),
-        )
-        trajectory.append(snapshot)
-        if progress is not None:
-            progress(snapshot, audio.detach())
-
-        if patience >= config.stop_patience:
-            stopped_by = "patience"
-            break
-        if update_count >= config.maximum_updates:
-            stopped_by = "maximum updates"
-            break
-        if patience >= (plateau_events + 1) * config.plateau_patience:
-            plateau_events += 1
-            raw = best_raw.detach().clone().requires_grad_(True)
-            first = torch.zeros_like(first)
-            second = torch.zeros_like(second)
-            learning_rate = max(
-                learning_rate * config.lr_factor, config.minimum_learning_rate
-            )
-            continue
-
-        conditioned = value_tensor / initial_loss
-        gradient, = torch.autograd.grad(conditioned, raw)
-        if not bool(torch.isfinite(gradient.detach()).all()):
-            raise FloatingPointError("the optimiser produced a non-finite gradient")
-        update_count += 1
-        first = beta1 * first + (1.0 - beta1) * gradient
-        second = beta2 * second + (1.0 - beta2) * gradient.square()
-        first_hat = first / (1.0 - beta1**update_count)
-        second_hat = second / (1.0 - beta2**update_count)
-        raw = (
-            raw - learning_rate * first_hat / (torch.sqrt(second_hat) + config.epsilon)
-        ).detach().requires_grad_(True)
-
-    if best_raw is None or initial_loss is None or best_loss is None:
-        raise RuntimeError("the optimiser did not evaluate its initial state")
-    best_f0, best_onset = decode_coordinates(best_raw)
-    best_phrase = EventPhrase(best_f0.detach(), best_onset.detach())
-    return FitResult(
-        loss_name=canonical_name,
-        initial_loss=initial_loss,
-        best_loss=best_loss,
-        best_phrase=best_phrase,
-        trajectory=tuple(trajectory),
-        updates=update_count,
-        evaluations=len(trajectory),
-        plateau_events=plateau_events,
-        stopped_by=stopped_by,
-        wall_seconds=time.perf_counter() - started,
+    f, t, terminal, best, initial, updates, reductions, events = fit_batch(
+        target_audio[None], cardinality, name, renderer, schedule=config, progress=progress
     )
-
-
-__all__ = [
-    "FitResult",
-    "FitSnapshot",
-    "decode_coordinates",
-    "encode_coordinates",
-    "fit",
-]
+    return FitResult(
+        name,
+        float(initial[0]),
+        float(best[0]),
+        EventPhrase(f[0], t[0]),
+        (),
+        int(updates[0]),
+        int(updates[0]) + 1,
+        int(reductions[0]),
+        "maximum_updates" if int(updates[0]) >= config.maximum_updates else "patience",
+        time.perf_counter() - started,
+    )
