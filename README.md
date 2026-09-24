@@ -6,7 +6,7 @@ Musical Phrase Parameters via Differentiable DSP and Cumulative Energy Losses**
 submitted to ICASSP 2027).
 
 This repository reproduces the paper's 16-kHz experiments. The independent
-[CeLs library](https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0)
+[CeLs library](https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cel-library)
 is pinned as the `external/cels` submodule. Spectral and transport baselines,
 synthesis, evaluation and experiment runners belong to this paper repository.
 The original submission checkout is tagged `paper-submitted-2026-09-24`;
@@ -44,6 +44,13 @@ python scripts/check.py
 The Pixi lockfile is the reference environment; other platforms are not qualified.
 
 ## Quick examples
+
+[![Open in Molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/ptablasdpaula/ICASSP27-Phrase/blob/main/notebooks/optimize_phrase.py)
+
+Open the notebook preview above, then use Molab to run it in a cloud Python
+session. Running requires a Molab account; the first launch installs the pinned
+CPU dependencies and can take several minutes. For a local session, use
+`pixi run notebook`.
 
 ```python
 import torch
@@ -162,10 +169,9 @@ the former exploratory test suite. The independent CeLs submodule retains its
 own checks. Historical experiments remain accessible through Git history;
 removing them from the current checkout does not rewrite that history.
 
-## Citation and licence
+## Licence
 
-Use `CITATION.cff` for the software and manuscript metadata. The paper is a
-submission, not yet an accepted publication. Original software is MIT licensed;
+Original software is [MIT licensed](LICENSE);
 third-party code and the CeLs submodule retain their own notices. The manuscript,
 figures and IEEE template files are not relicensed by the software licence.
 
@@ -174,3 +180,16 @@ figures and IEEE template files are not relicensed by the software licence.
 - Reconcile the methodology wording with the archived runs: relative-improvement
   threshold `0.0001` (0.01%, rather than 1%); phrase-recovery batches of 75,
   or 50 for SOT. The efficiency benchmark uses batches of 10 for every loss.
+
+If you find this work useful, please cite our paper:
+
+```bibtex
+@InProceedings{TablasDePaula:2026:Unsupervised,
+  title     = {Unsupervised Estimation of Plucked String Musical Phrase Parameters via Differentiable DSP and Cumulative Energy Losses},
+  author    = {Tablas de Paula, Pablo and Schlecht, Sebastian J. and Benetos, Emmanouil and Reiss, Joshua D.},
+  booktitle = {In Press.},
+  address   = {Online},
+  month     = sep,
+  year      = {2026}
+}
+```

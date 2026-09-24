@@ -659,7 +659,7 @@ packages:
 - pypi: ./
   name: icassp27-phrase
   version: 0.2.0
-  sha256: 34a08106313b4e17ad2179a39c26056dbc10bb46c8c1a60377b235ed1ed51622
+  sha256: bda378d7c5e79d13e390b1327947759efd736453d160cec3ee0cd49b757a51db
   requires_dist:
   - flamo==0.2.18
   - numba>=0.61,<0.67
