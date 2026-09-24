@@ -157,7 +157,7 @@ where $\|\cdot\|_\mathrm{F}$ denotes the Frobenius norm, normalising across $K$ 
 
 \section{Differentiable plucked string Musical Phrases}
 \label{sec:renderer}
-We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings~\cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position is $D_2/(D_1+D_2)=0.23$ from the bridge. Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, with loss filter $H_L(z)=g(1-a_1)/(1-a_1z^{-1})$, $g=0.99$, and $a_1=0.2$. Here $g$ controls the DC gain and increasing $a_1$ increases high-frequency attenuation, providing decay and damping controls. Output is the bridge-incident travelling velocity. Each new note excites a \gls{hrc} $e_0(t)=A_e[1-\cos(\pi t/T_e)]/2$ for $0\leq t<T_e$ and zero otherwise, with $A_e=0.8$ and $T_e=10$~ms. This results in a rich signal of evenly spaced harmonics with an $f_0$-dependant decay time (see~\cite[Fig.~3]{tablasdepaula2026karplus}). In turn it poses rugged loss landscapes w.r.t $f_0$ and time for SOT and other traditional losses as shown in Fig.~\ref{fig:loss-sweeps}, motivating the use of \glspl{cel}. 
+We use \Glspl{dwg} as a common and efficient choice for modelling plucked strings~\cite{smith2010physical,depaula2026waveguides}. Our model has two oppositely travelling rails, each split at the excitation point into nut-side and bridge-side delays of $D_1$ and $D_2$ samples, respectively, as depicted in Fig.~\ref{fig:waveguide}. For ideal delays and phase-inverting terminations, $f_0=f_s/[2(D_1+D_2)]$; the implemented model also compensates for interpolation and loss-filter phase. The relative pluck position is $D_2/(D_1+D_2)=0.23$ from the bridge. Nut and bridge reflection gains are $-1$ and $-H_L(z)$, respectively, with loss filter $H_L(z)=g(1-a_1)/(1-a_1z^{-1})$, $g=0.99$, and $a_1=0.2$. Here $g$ controls the DC gain and increasing $a_1$ increases high-frequency attenuation, providing decay and damping controls. Output is the bridge-incident travelling velocity. Each new note excites a \gls{hrc} $e_0(t)=A_e[1-\cos(\pi t/T_e)]/2$ for $0\leq t<T_e$ and zero otherwise, with $A_e=0.8$ and $T_e=10$~ms. This results in a rich signal of evenly spaced harmonics with an $f_0$-dependant decay time (see~\cite[Fig.~3]{tablasdepaula2026karplus}), showing rugged landscapes w.r.t pitch and timing for SOT and other traditional losses, as shown in Fig.~\ref{fig:loss-sweeps}.
 
 \begin{figure}[tbp]
 \centering
@@ -297,8 +297,6 @@ We introduced \acrlongpl{cel} (Ce$\mathcal L$s), which compare accumulated short
 
 Phrase parameter estimation remains limited to synthetic monophonic phrases with known $M$, fixed timbre, and waveguide state reset at each pluck. Real-world estimation would require jointly matching timbre alongside pitch and timing, while estimating the number of notes. Regarding the former, \glspl{cel} also retain the strongest alignment for persistent-state targets and when all seven synthesis controls vary, suggesting generalizability for sound matching in real-world data. The latter would require discrete optimisation, which we do not address. We note that while this work has focused on STFTs, alternative representations such as joint time--frequency scattering~\cite{anden2019joint} merit study given their use for related arpeggio-rate and pitch-range estimation~\cite{vahidi2023mesostructures}. Finally, we believe this work enhances DDSP by providing a method that should facilitate neural network training of pitch, timing and timbre parameters and provide code, reproducible experiments, and an installable PyTorch package for ease of use in future work.
 
-
-
 \section{Acknowledgment}
 Pablo Tablas de Paula is supported by the UKRI Centre for Doctoral Training in
 Artificial Intelligence and Music (grant EP/S022694/1). This research utilised
@@ -306,7 +304,7 @@ Queen Mary's Apocrita \gls{hpc} facility, supported by QMUL Research-IT
 (\url{https://doi.org/10.5281/zenodo.438045}), using NVIDIA V100 and A100 \glspl{gpu}.
 
 \section{Compliance with Ethical Standards}
-Since this is a numerical study not involving human subjects, no ethical approval was required.
+This study uses exclusively synthetic data and involves no human or animal subjects; therefore no ethical approval was required. The authors declare no conflicts of interest.
 
 \bibliographystyle{\PaperRoot/IEEEbib-initials}
 \typeout{ICASSP bibliography database: \PaperRoot/references.bib}
