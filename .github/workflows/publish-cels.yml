@@ -1,6 +1,12 @@
 name: Publish cels-audio
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Library release tag (for example cels-v0.1.1)"
+        required: true
+        type: string
   push:
     tags:
       - "cels-v*"
@@ -18,12 +24,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Check release identity
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           python - <<'PYTHON'
           import os
@@ -31,7 +41,7 @@ jobs:
           from pathlib import Path
           project = tomllib.loads(Path("pyproject.toml").read_text())["project"]
           assert project["name"] == "cels-audio"
-          assert os.environ["GITHUB_REF_NAME"] == "cels-v" + project["version"]
+          assert os.environ["RELEASE_TAG"] == "cels-v" + project["version"]
           PYTHON
 
       - name: Build package
