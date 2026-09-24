@@ -207,6 +207,28 @@ the undecayed diagonal surfaces describe quadrant CDFs or cumulative tails
 when the corresponding input has unit mass. Axis-only Cramér interpretations
 require unit mass within each slice, not just across the entire spectrogram.
 
+## Computational cost
+
+Base CeL has render–loss–backward runtime and peak memory comparable to the
+single-scale STFT loss (SS) in the paper's fixed-candidate benchmark. Ratios
+below are relative to SS (= 1); lower is better.
+
+| Loss | Time / SS | Peak memory / SS |
+|---|---:|---:|
+| SS | 1.0000× | 1.0000× |
+| MSS | 1.0151× | 1.0135× |
+| SOT | 1.0154× | 1.0188× |
+| $\mathrm{TF}\mathcal W_2$ | 1.0006× | 1.0014× |
+| CeL | 1.0005× | 1.0103× |
+
+These are ratios of the reported medians over 150 one-note targets in batches
+of 10, with candidates fixed at 160 Hz and 1 s. Each batch uses 20 measured
+passes after five warm-up passes. The measurement includes synthesis, loss and
+backpropagation, excludes target precomputation, and performs no optimiser
+updates.
+
+## Cite this paper
+
 If you find this work useful, please cite our paper:
 
 ```bibtex
