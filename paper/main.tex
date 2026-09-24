@@ -174,7 +174,9 @@ nut-side delay $D_1$ and bridge-side delay $D_2$ on each rail.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/loss_sweeps.pdf}
-\caption{Single-pluck loss slices around a 160-Hz, 1.0-s target, using the baselines and base \gls{cel} defined in Sec.~\ref{sec:experiments}. Top: time shift with pitch fixed; bottom: frequency shift with onset fixed.}
+\caption{Single-pluck loss slices around a 160-Hz, 1-s target.
+Top: time shift with pitch fixed; bottom: frequency shift with onset fixed.
+Each curve is independently normalised to $[0,1]$.}
 \label{fig:loss-sweeps}
 \end{figure}
 
@@ -193,12 +195,11 @@ backend for fast GPU backpropagation~\cite{yu2025philtorch,yu2024torchlpc}. For 
 
 \begin{table*}[t]
 \centering
-\caption{Median Hungarian-assigned pitch and onset errors over 150
-target phrases for each number of notes; lower is better. Bold, underlined, and italic
-values denote the best, second-best, and third-best results in each column,
-respectively; all values below $.01$ share the best rank. Ce$\mathcal L$
-configuration columns show the accumulation directions, linear-bin or
-log-frequency weighting, and whether accumulation decays with distance.}
+\caption{Phrase recovery: median assigned pitch and onset errors (lower is better).
+Bold, underlined and italic values mark the best, second-best and third-best
+results per column; values below $.01$ share first place. Arrows show
+accumulation directions, Lin./Log denotes frequency weighting, and
+$\checkmark$/$\times$ indicates decay enabled/disabled.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table_pending.tex}
 \end{table*}
@@ -210,7 +211,7 @@ log-frequency weighting, and whether accumulation decays with distance.}
 All experiments use the \Gls{dwg} from Sec.~\ref{sec:renderer} to synthesise two-second signals at 16~kHz. An $M$-note phrase contains fundamental frequencies $f_0\in[80,320]$~Hz and onsets $t\in[0.2,1.8]$~s, with $M\in\{1,2,4,6,8\}$. We use reproducibly scrambled Latin hypercube sampling (LHS) to stratify all target coordinates~\cite{mckay1979comparison}. Target onsets are separated by at least 50~ms, while candidates span the complete registered domain.
 
 \textbf{Metrics.}
-For an unordered prediction, the Hungarian method~\cite{kuhn1955hungarian} selects the note permutation $\pi$ minimising $\sum_i\{[\log_2(\hat f_{0,i}/f_{0,\pi(i)})]^2+ (\hat t_i-t_{\pi(i)})^2\}$, so one octave and one second have equal assignment cost. This assignment supplies the within-phrase pitch and onset mean absolute errors, reported in cents and milliseconds, respectively. It also reorders the target for our phrase-wide gradient cosine. We express each note as $(\log_2(f_{0,i}/80),t_i)$, concatenate these octave--second pairs into $\boldsymbol\theta$, and measure the cosine between the descent $\boldsymbol v=-\nabla_{\boldsymbol\theta}\mathcal L$ and $\boldsymbol\theta^\star_\pi-\boldsymbol\theta$. The latter is the negative gradient of $\tfrac12\lVert\boldsymbol\theta- \boldsymbol\theta^\star_\pi\rVert_2^2$, so this scale-independent cosine measures agreement between the loss descent and the steepest descent of assigned parameter error; $1$, $0$, and $-1$ indicate descent directly towards, orthogonal to, and away from the assigned target. We report its mean and sample standard deviation across candidate phrases. As an objective-independent audio metric, \gls{lsd} is the \gls{rms} difference between periodic-Hann \acrshort{fft}-1024/hop-256 log-magnitude spectra, using a common target-relative $-100$-dB magnitude floor.
+For an unordered prediction, the Hungarian method~\cite{kuhn1955hungarian} selects the note permutation $\pi$ minimising $\sum_i\{[\log_2(\hat f_{0,i}/f_{0,\pi(i)})]^2+ (\hat t_i-t_{\pi(i)})^2\}$, so one octave and one second have equal assignment cost. This assignment supplies the within-phrase pitch and onset mean absolute errors, reported in cents and milliseconds, respectively. It also reorders the target for our phrase-wide gradient cosine. We express each note as $(\log_2(f_{0,i}/80),t_i)$, concatenate these octave--second pairs into $\boldsymbol\theta$, and measure the cosine between the descent $\boldsymbol v=-\nabla_{\boldsymbol\theta}\mathcal L$ and $\boldsymbol\theta^\star_\pi-\boldsymbol\theta$. The latter is the negative gradient of $\tfrac12\lVert\boldsymbol\theta- \boldsymbol\theta^\star_\pi\rVert_2^2$, so this scale-independent cosine measures agreement between the loss descent and the steepest descent of assigned parameter error; $1$, $0$, and $-1$ indicate descent directly towards, orthogonal to, and away from the assigned target. As an objective-independent audio metric, \gls{lsd} is the \gls{rms} difference between periodic-Hann \acrshort{fft}-1024/hop-256 log-magnitude spectra, using a common target-relative $-100$-dB magnitude floor.
 
 \textbf{Baselines.}
 Alongside waveform $L_1$ and $L_2$, single-scale STFT (SS) uses periodic-Hann
@@ -247,16 +248,17 @@ independently scrambled joint LHS designs. The \emph{Joint} condition retains
 both perturbations; \emph{Known time} restores target onsets and varies only
 pitch; \emph{Known $f_0$} restores target pitches and varies only onset. Joint
 is tested at $M\in\{1,2,4,6,8\}$ and both conditional cases at
-$M\in\{1,2,4\}$. Two further columns test reset candidates against persistent-state
-$M=2$ targets, and vary all seven $M=1$ controls ($f_0$, onset, \acrshort{hrc}
-amplitude and duration, pluck position, $g$, and $a_1$) scaled to $[0,1]$.
-Thus, every condition contains 8192 candidate--target pairs, giving 106,496
-pairs per loss overall, whose cosine alignment we report in Fig.~\ref{fig:gradient-alignment}.
+$M\in\{1,2,4\}$. Together with State and 7-D (Fig.~\ref{fig:gradient-alignment}), these give
+13 conditions of 8192 candidate--target pairs each, or 106,496 pairs per loss.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{\PaperRoot/figures/gradient_alignment.pdf}
-\caption{Phrase-wide gradient cosine mean $\pm$ sample standard deviation; higher is better. State uses persistent-state targets; 7-D varies timbre controls too. Numbers give the number of notes; values closer to $1$ indicate descent directly towards the targets, closer to $0$ orthogonal to them.}
+\caption{Phrase-wide gradient cosine (mean $\pm$ sample standard deviation;
+higher is better). Column numbers give note counts. State: persistent-state
+targets with reset candidates. 7-D: joint variation of $f_0$, onset,
+\acrshort{hrc} amplitude and duration, pluck position, $g$, and $a_1$,
+with all seven controls scaled to $[0,1]$.}
 \label{fig:gradient-alignment}
 \end{figure}
 
@@ -265,12 +267,12 @@ Seed 2029 generates 150 scrambled-LHS targets for each $M$. Every
 candidate begins with all pitches at 160~Hz and onsets isochronously spaced
 within 0.2--1.8~s. We retain the seven objectives whose one-note Joint mean
 cosine rounds to at least $.10$ and retain \gls{sot} and linear
-\gls{tfw} as low-alignment controls. Each of the resulting 6,750 fits uses Adam with a batch size of 10, a learning rate of $.05$, ReduceLROnPlateau with factor $.5$ and patience 200, early stopping at 1000 iterations without 1\% relative improvement and a 20,000-update cap. We report each fit's lowest-loss iterate in Table~\ref{tab:pilot-compact}. Additionally, Table~\ref{tab:efficiency} benchmarks median render--loss--backward runtime and peak GPU memory for SS, MSS, \gls{sot}, \gls{tfw} and \gls{cel} using the one-note targets, with candidates fixed at 160~Hz and 1~s and no parameter updates.
+\gls{tfw} as low-alignment controls. Each of the resulting 6,750 fits uses Adam with a batch size of 10, a learning rate of $.05$, ReduceLROnPlateau with factor $.5$ and patience 200, early stopping at 1000 iterations without 1\% relative improvement and a 20,000-update cap. We report each fit's lowest-loss iterate in Table~\ref{tab:pilot-compact}. Table~\ref{tab:efficiency} benchmarks render--loss--backward time and peak allocated GPU memory on an NVIDIA A100 (40~GB), using the same 150 one-note targets in 15 batches of 10. Candidates stay fixed at 160~Hz and 1~s. Each batch uses 20 measured passes after five warm-up passes; target precomputation is excluded.
 
 \begingroup
 \begin{table}[t]
 \centering
-\caption{Benchmarks over 15 batches of 10 one-note targets on an NVIDIA A100 (40 GB). Each batch uses 20 measured passes after five warm-up passes. Parentheses give percentage increases over SS.}
+\caption{Fixed-candidate computational cost: median batch-mean time and peak memory. Parentheses give percentage increases over SS.}
 \label{tab:efficiency}
 \scriptsize
 \begin{tabular}{@{}lcc@{}}
@@ -290,10 +292,7 @@ Ce$\mathcal L$ & 374.31 ($+0.05\%$) & 1.824 ($+1.03\%$) \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.9\columnwidth]{\PaperRoot/figures/lsd_violin.pdf}
-\caption{Per-phrase \acrshort{lsd} distributions for the best-performing
-representative of each loss family over the same targets; lower is better.
-Random pairs each target with a different randomly permuted target having the
-same number of notes.}
+\caption{Phrase recovery: \acrshort{lsd} for the best-performing loss in each family (lower is better). White dots and bars mark medians and interquartile ranges. Random pairs targets by a random permutation without self-matches, within each note count.}
 \label{fig:lsd}
 \end{figure}
 
