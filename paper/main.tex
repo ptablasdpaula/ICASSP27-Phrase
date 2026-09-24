@@ -62,7 +62,7 @@ Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg, Erlangen, Germany\\
 \newacronym{gpu}{GPU}{graphics processing unit}
 \newacronym{mae}{MAE}{mean absolute error}
 \newacronym{lsd}{LSD}{log-spectral distance}
-\newacronym{logq}{Log-Weigh}{log-frequency quadrature}
+\newacronym{logq}{Log-Weight}{log-frequency quadrature}
 \newacronym{hpc}{HPC}{high-performance computing}
 \newacronym{jnd}{JND}{just-noticeable difference}
 \newacronym{dwg}{DWG}{digital waveguide}
@@ -127,9 +127,11 @@ and accumulation direction. For an individual direction $d$, write
 $a\preceq_d b$ for $a\leq b$ when $d\in\{\rightarrow,\uparrow\}$ and
 $a\geq b$ otherwise. The target and candidate surfaces are:
 \begin{equation*}
+S_{\dvec}(P)_{k,n}=\sum_{i\preceq_{\df}k}\sum_{j\preceq_{\dt}n}P_{i,j},
+\qquad
 \begin{gathered}
-S_{\dvec}(P)_{k,n}=\sum_{i\preceq_{\df}k}\sum_{j\preceq_{\dt}n}P_{i,j},\\
-S_{\dvec} = S_{\dvec}(P), \quad \hat S_{\dvec}=S_{\dvec}(\hat P).
+S_{\dvec}=S_{\dvec}(P),\\
+\hat S_{\dvec}=S_{\dvec}(\hat P).
 \end{gathered}
 \end{equation*}
 Each value contains the power in the rectangle from the selected corner to
@@ -141,7 +143,7 @@ tails~\cite{torres2024sot,peyre2019computational}; for example,
 $S_{(\rightarrow,\uparrow)}(P)_{k,n}/m
 =\Pr(\mathsf F\leq \ftype_k,\mathsf T\leq \ttype_n)$. When candidate power equals $m$,
 $\hat S_{\dvec}/m$ is analogous; otherwise, the common scale retains total-power
-error. Their uniform average is invariant to reversal of either axis.
+error.
 
 For a pointwise feature map $\phi:\mathbb R_+\rightarrow\mathbb R$, let
 $E_{\dvec}$ be the candidate-minus-target surface error matrix. For any nonempty set
@@ -152,7 +154,10 @@ E_{\dvec} = \phi(\hat S_{\dvec}/m)-\phi(S_{\dvec}/m),\\
 \mathcal L_{\mathcal D}(x,\hat x) = \frac1{|\mathcal D|}\sum_{\dvec\in\mathcal D}\ell_{\dvec},
 \end{gather*}
 
-where $\|\cdot\|_\mathrm{F}$ denotes the Frobenius norm, normalising across $K$ frequency bins and $N$ time frames. We note that when $\phi(u)=u$ and accumulation is restricted to a single axis, our metric $\ell_{\uparrow}$ is exactly proportional to the discrete Cram\'er distance, defined as the $L_2$ norm of the CDF residual~\cite{szekely2013energy}. Extending this, frequency-only and time-only accumulations yield the scaled \gls{rms} of per-slice Cram\'er distances, while our diagonal accumulations extend this logic to evaluate two-dimensional quadrant-CDF discrepancies. Furthermore, the reader might note that applying an $L_1$ norm rather than $L_2$ to these same residuals would yield the one-dimensional $1$-Wasserstein distance~\cite[Remark~2.30]{peyre2019computational}.
+where $\|\cdot\|_\mathrm{F}$ denotes the Frobenius norm, normalising across $K$ frequency bins and $N$ time frames. With all four direction pairs, the scalar loss is invariant to simultaneously reversing either axis of both target and candidate, since reversal permutes the directional terms.
+
+\textbf{Relation to the Cram\'er distance.}
+For one-dimensional unit-mass distributions on a uniform grid and $\phi(u)=u$, a single-direction loss is proportional to the Cram\'er distance, the $L_2$ distance between their CDFs, up to fixed grid-spacing and RMS factors~\cite{szekely2013energy}. For unit-mass inputs in each slice, axis-only accumulation similarly yields the RMS of per-slice Cram\'er distances up to these factors; global STFT normalisation alone does not ensure this condition. Diagonal accumulation instead compares two-dimensional quadrant-CDFs when both inputs have unit mass. For the same one-dimensional unit-mass distributions, the grid-spacing-weighted $L_1$ sum of CDF residuals gives the $1$-Wasserstein distance~\cite[Remark~2.30]{peyre2019computational}.
 
 
 \section{Differentiable Plucked-String Musical Phrases}
@@ -194,7 +199,7 @@ target phrases for each number of notes; lower is better. Bold, underlined, and 
 values denote the best, second-best, and third-best results in each column,
 respectively; all values below $.01$ share the best rank. Ce$\mathcal L$
 configuration columns show the accumulation directions, linear-bin or
-log-frequency weighing, and whether accumulation decays with distance.}
+log-frequency weighting, and whether accumulation decays with distance.}
 \label{tab:pilot-compact}
 \input{\PaperRoot/figures/median_recovery_table_pending.tex}
 \end{table*}
@@ -223,7 +228,7 @@ globally normalised periodic-Hann \acrshort{fft}-1024/hop-512 magnitudes and com
 \textbf{CeL variants.}
 The base Ce$\mathcal L$ averages all four diagonal direction pairs, uses
 $\phi(u)=\sqrt{u}$, and applies a uniform \gls{rms}. logCe$\mathcal L$ instead
-uses Log-Weighing: octave and time-bin widths weight the final \gls{rms}, so
+uses Log-Weighting: octave and time-bin widths weight the final \gls{rms}, so
 equal octave spans receive equal total frequency weight while the cumulative
 surfaces remain unchanged. In dec\acrshort{cel}, accumulated energy decays as the scan advances, reaching zero after $1$~s or $1000$~Hz. Each source bin $P_{i,j}$ contributes to
 $S_{\dvec}(P)_{k,n}$ with weight
@@ -231,7 +236,7 @@ $w(\Delta \ttype; 1\,\mathrm{s}) w(\Delta \ftype; 1000\,\mathrm{Hz})$, where
 $\Delta \ttype$ and $\Delta \ftype$ measure its separation from the current accumulation
 bin $(k,n)$. The decay kernel is $w(r; H) = 1-\log_{10}(1+9r/H)$ for
 $0\le r\le H$, and zero otherwise. Finally, tlogCe$\mathcal L$ applies
-Log-Weighing to only the two forward-time pairs
+Log-Weighting to only the two forward-time pairs
 $(\rightarrow,\uparrow)$ and $(\rightarrow,\downarrow)$.
 
 \subsection{Gradient Analysis}
@@ -295,7 +300,7 @@ same number of notes.}
 \section{Conclusion}
 We introduced \acrlongpl{cel} (Ce$\mathcal L$s), which compare accumulated short-time Fourier transform (STFT) power in time and frequency, and applied them to joint onset and $f_0$ optimisation in monophonic plucked string phrases with $M\in\{1,2,4,6,8\}$ notes. Across 106,496 phrase comparisons, Ce$\mathcal L$s achieve higher mean phrase-wide gradient cosine than waveform, spectral, and optimal transport objectives, although alignment falls as the number of notes $M$ grows (Fig.~\ref{fig:gradient-alignment}). The base \gls{cel} has runtime and memory usage comparable to SS and SmoMSS, and lower than \gls{tfw} (Table~\ref{tab:efficiency}). Note estimation is nearly exact at $M\in\{1,2\}$, while an energy decay variant gives the lowest median pitch and onset errors (Table~\ref{tab:pilot-compact}) and mean LSD (Fig.~\ref{fig:lsd}) at every $M$. The gain from decaying accumulation suggests that localising displacement helps as phrases grow, motivating comparison with objectives that relax global mass transport, such as unbalanced optimal transport~\cite{sejourne2023unbalanced}.
 
-Phrase parameter estimation remains limited to synthetic monophonic phrases with known $M$, fixed timbre, and waveguide state reset at each pluck. Real-world estimation would require jointly matching timbre alongside pitch and timing, while estimating the number of notes. Regarding the former, \glspl{cel} also retain the strongest alignment for persistent-state targets and when all seven synthesis controls vary, suggesting generalisability for sound matching in real-world data. The latter would require discrete optimisation, which we do not address. We note that while this work has focused on STFTs, alternative representations such as joint time--frequency scattering~\cite{anden2019joint} merit study given their use for related arpeggio-rate and pitch-range estimation~\cite{vahidi2023mesostructures}. Finally, we believe this work enhances DDSP by providing a method that should facilitate neural network training of pitch, timing and timbre parameters. We provide code, reproducible experiments, and an installable PyTorch package for future work.
+Phrase parameter estimation remains limited to synthetic monophonic phrases with known $M$, fixed timbre, and waveguide state reset at each pluck. Real-world estimation would require jointly matching timbre alongside pitch and timing, while estimating the number of notes. Regarding the former, \glspl{cel} also retain the strongest alignment for persistent-state targets and when all seven synthesis controls vary, motivating tests on real recordings. Estimating the number of notes would require additional model selection or a treatment of variable cardinality, which we do not address. We note that while this work has focused on STFTs, alternative representations such as joint time--frequency scattering~\cite{anden2019joint} merit study given their use for related arpeggio-rate and pitch-range estimation~\cite{vahidi2023mesostructures}. Finally, we believe this work enhances DDSP by providing a method that should facilitate neural network training of pitch, timing and timbre parameters. We provide code, reproducible experiments, and an installable PyTorch package for future work.
 
 \section{Acknowledgment}
 Pablo Tablas de Paula is supported by the UKRI Centre for Doctoral Training in

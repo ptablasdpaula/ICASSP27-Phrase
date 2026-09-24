@@ -30,3 +30,16 @@ Reviewed `paper/main.tex` after pulling user commit `9c74d01`, its included reco
 - The kit specifies **at least 9-point text throughout**. The existing `scriptsize` tables and several embedded figure labels are smaller (ordinary table body around 7 pt; some embedded figure labels smaller still). These were not resized here.
 - The abstract is about 180 words; the kit asks for approximately 100–150 words. Flagged, not shortened automatically.
 - Existing small overfull boxes remain in the metrics and acknowledgment paragraphs; the PDF inclusion also emits a version/tag warning. No unresolved citation or cross-reference keys were found. All 36 cited bibliography keys exist.
+
+## Follow-up implementation
+
+Applied numbered items 1–4 and 6 after pulling `62d3698`:
+
+- Qualified the 1D Cramér/Wasserstein connection with unit mass and uniform-grid/normalisation factors; distinguished per-slice normalisation from global STFT normalisation.
+- Moved axis-reversal invariance after the loss definition and specified simultaneous reversal of both inputs with all four directions.
+- Renamed the paper's Log-Weighing/Weighing terminology to Log-Weighting/Weighting.
+- Replaced the real-recording generalisability claim with motivation for testing on real recordings, and removed the assertion that unknown cardinality necessarily requires discrete optimisation.
+- Standardised displayed recovery counts to notes and logTFW2 without a hyphen, including Table I, Fig. 5 and their generator. Retained the requested upright Fig. 1 component labels.
+- Placed the cumulative-sum definition beside the stacked target/candidate shorthand definitions, as requested during this pass.
+
+**Item 5 is intentionally deferred.** No benchmark text, benchmark values or optimisation results were changed in this follow-up. The separate page-count/font-size/abstract-length observations remain outside these numbered edits, pending clarification of that broader formatting scope.

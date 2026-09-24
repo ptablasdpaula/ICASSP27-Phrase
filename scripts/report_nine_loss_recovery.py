@@ -56,7 +56,7 @@ REPORT_LABELS = (
 LSD_FIGURE_LOSSES = ("single_stft", "log_jtfot", "dec_cel", "random")
 LSD_FIGURE_LABELS = (
     "SS",
-    r"log-$\mathrm{TF}\mathcal{W}_2$",
+    r"log$\mathrm{TF}\mathcal{W}_2$",
     r"decCe$\mathcal{L}$",
     "Random",
 )
@@ -536,7 +536,7 @@ def render_table(medians: dict, path: Path) -> None:
         "SmoMSS",
         "SOT",
         r"$\mathrm{TF}\mathcal{W}_2$",
-        r"log-$\mathrm{TF}\mathcal{W}_2$",
+        r"log$\mathrm{TF}\mathcal{W}_2$",
         r"Ce$\mathcal L$",
         r"logCe$\mathcal L$",
         r"decCe$\mathcal L$",
@@ -571,9 +571,9 @@ def render_table(medians: dict, path: Path) -> None:
         r"& & &",
         (r"& \multicolumn{5}{c|}{$\Delta f_0$ (cents)} & "
          r"\multicolumn{5}{c}{$\Delta t$ (ms)} \\"),
-        r"Loss & Directions & Weighing & Decay",
-        (r"& 1 event & 2 events & 4 events & 6 events & 8 events "
-         r"& 1 event & 2 events & 4 events & 6 events & 8 events \\"),
+        r"Loss & Directions & Weighting & Decay",
+        (r"& 1 note & 2 notes & 4 notes & 6 notes & 8 notes "
+         r"& 1 note & 2 notes & 4 notes & 6 notes & 8 notes \\"),
         r"\midrule",
     ]
     for index, (loss, label, configuration) in enumerate(
@@ -672,7 +672,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
                 zorder=4,
             )
     axis.set_xticks(range(len(recovery.CARDINALITIES)), recovery.CARDINALITIES)
-    axis.set_xlabel("Number of events", fontsize=8, labelpad=5)
+    axis.set_xlabel("Number of notes", fontsize=8, labelpad=5)
     axis.set_ylabel("LSD (dB)", fontsize=8)
     axis.tick_params(labelsize=7, length=2.0, pad=1.2)
     axis.grid(axis="y", color="0.88", linewidth=0.45)
