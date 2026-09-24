@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark the end-to-end cost of the four representative paper losses."""
+"""Benchmark 100 actual Adam recovery updates for representative paper losses."""
 
 from __future__ import annotations
 
@@ -16,24 +16,16 @@ from icassp27_phrase.losses import PaperObjectives
 from icassp27_phrase.runtime import require_df2_backend
 from icassp27_phrase.synth import PhraseSynth
 from icassp27_phrase.targets import load_target
+from run_nine_loss_recovery import SCHEDULE, encode, decode
 
 LOSSES = {
     "single_stft": "SS",
+    "mss": "MSS",
     "smooth_mss": "SmoMSS",
+    "sot_published_composite": "SOT",
     "linear_jtfot": "TFW2",
     "cel": "CeL",
 }
-
-
-def encode(f0: torch.Tensor, onset: torch.Tensor) -> torch.Tensor:
-    f = (torch.log2(f0 / 80.0) / 2.0).clamp(1e-12, 1.0 - 1e-12)
-    t = ((onset - 0.2) / 1.6).clamp(1e-12, 1.0 - 1e-12)
-    return torch.stack((torch.logit(f), torch.logit(t)), dim=-1)
-
-
-def decode(raw: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    unit = raw.sigmoid()
-    return 80.0 * 4.0 ** unit[..., 0], 0.2 + 1.6 * unit[..., 1]
 
 
 def benchmark(
@@ -47,7 +39,11 @@ def benchmark(
     cardinalities: tuple[int, ...],
     losses: tuple[str, ...],
 ) -> None:
+    if not 0 < measured <= 100:
+        raise ValueError("This fixed-horizon benchmark supports 1–100 updates")
     device = torch.device("cuda")
+    if torch.cuda.get_device_name() != "NVIDIA A100-PCIE-40GB":
+        raise RuntimeError("Benchmark requires the same A100 40 GB model for all rows")
     require_df2_backend(device)
     torch.set_num_threads(1)
     synth = PhraseSynth().to(device)
@@ -72,40 +68,77 @@ def benchmark(
                         torch.stack([phrase.onset_seconds for phrase in phrases]),
                     )
                 objective = PaperObjectives(targets, (loss,))
-                raw = encode(
+                initial_raw = encode(
                     initial.f0_hz.expand(batch, -1),
                     initial.onset_seconds.expand(batch, -1),
-                ).clone().requires_grad_(True)
+                ).clone()
+
+                def start_run():
+                    value = initial_raw.clone().requires_grad_(True)
+                    optimizer = torch.optim.Adam(
+                        [value], lr=SCHEDULE.initial_lr, betas=SCHEDULE.betas,
+                        eps=SCHEDULE.epsilon, weight_decay=0, foreach=False,
+                    )
+                    return value, optimizer
+
+                def update(value, optimizer, state):
+                    optimizer.zero_grad(set_to_none=True)
+                    f0, onset = decode(value)
+                    values = objective.values(synth(f0, onset))[loss]
+                    detached = values.detach()
+                    if not state:
+                        state["initial"] = detached.clone()
+                        state["best"] = detached.clone()
+                        state["best_raw"] = value.detach().clone()
+                    else:
+                        better = detached < state["best"]
+                        state["best"] = torch.minimum(state["best"], detached)
+                        state["best_raw"] = torch.where(
+                            better[:, None, None], value.detach(), state["best_raw"]
+                        )
+                    (values / state["initial"]).sum().backward()
+                    optimizer.step()
+
+                # Warm the kernels on disposable optimiser/parameter state.
+                # Every measured run starts again at the registered initialisation.
+                raw, optimizer = start_run()
+                state = {}
+                for _ in range(warmup):
+                    update(raw, optimizer, state)
+                del raw, optimizer, state
                 torch.cuda.synchronize()
                 persistent = torch.cuda.memory_allocated()
-
-                def update(
-                    value: torch.Tensor,
-                    bound: PaperObjectives = objective,
-                    name: str = loss,
-                ) -> torch.Tensor:
-                    f0, onset = decode(value)
-                    audio = synth(f0, onset)
-                    scalar = bound.values(audio)[name].sum()
-                    gradient, = torch.autograd.grad(scalar, value)
-                    return (value - 1e-4 * gradient).detach().requires_grad_(True)
-
-                for _ in range(warmup):
-                    raw = update(raw)
-                durations = []
-                peaks = []
+                durations, peaks, diagnostics = [], [], []
                 for _ in range(repeats):
+                    raw, optimizer = start_run()
+                    state = {}
                     torch.cuda.synchronize()
                     torch.cuda.reset_peak_memory_stats()
                     started = time.perf_counter()
                     for _ in range(measured):
-                        raw = update(raw)
+                        update(raw, optimizer, state)
                     torch.cuda.synchronize()
                     durations.append((time.perf_counter() - started) / measured)
                     peaks.append(torch.cuda.max_memory_allocated())
+                    # Final evaluation is outside the measured update loop.
+                    with torch.no_grad():
+                        f0, onset = decode(raw)
+                        final = objective.values(synth(f0, onset))[loss]
+                    diagnostics.append({
+                        "initial_loss": state["initial"].tolist(),
+                        "final_loss": final.tolist(),
+                        "best_loss": torch.minimum(state["best"], final).tolist(),
+                        "final_f0_hz": f0.tolist(),
+                        "final_onset_seconds": onset.tolist(),
+                        "adam_steps": int(optimizer.state[raw]["step"].item()),
+                    })
+                    if not torch.isfinite(final).all():
+                        raise RuntimeError("Non-finite loss after Adam updates")
+                    del raw, optimizer, state
 
                 row = {
                     "loss": loss,
+                    "diagnostics": diagnostics,
                     "label": label,
                     "cardinality": cardinality,
                     "cell": begin // batch,
@@ -121,7 +154,7 @@ def benchmark(
                 rows.append(row)
                 loss_rows.append(row)
                 print(json.dumps({"cell": row}), flush=True)
-                del objective, raw, targets, phrases, update
+                del objective, initial_raw, targets, phrases, update, start_run
                 gc.collect()
                 torch.cuda.empty_cache()
 
@@ -145,7 +178,7 @@ def benchmark(
             print(json.dumps({"summary": summary}), flush=True)
 
     payload = {
-        "schema": "loss-efficiency-benchmark-v1",
+        "schema": "loss-efficiency-adam-v2",
         "created_utc": datetime.now(UTC).isoformat(),
         "gpu": torch.cuda.get_device_name(),
         "torch": torch.__version__,
@@ -159,8 +192,11 @@ def benchmark(
         "target_count": target_count,
         "cardinalities": cardinalities,
         "losses": losses,
-        "timed_path": "render + bound objective + backward to pitch/onset logits",
+        "timed_path": "render + bound objective + initial-loss-normalised backward + Adam + best-iterate tracking",
         "target_precomputation_timed": False,
+        "optimizer": {"name": "Adam", "lr": SCHEDULE.initial_lr, "betas": SCHEDULE.betas, "eps": SCHEDULE.epsilon, "weight_decay": 0},
+        "warmup_state_discarded": True,
+        "scheduler": "No reduction or early stop can occur within 100 updates (patience 200/1000)",
         "rows": rows,
         "summaries": summaries,
     }
@@ -174,14 +210,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--batch", type=int, default=10)
-    parser.add_argument("--warmup", type=int, default=10)
-    parser.add_argument("--measured", type=int, default=20)
-    parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--warmup", type=int, default=5)
+    parser.add_argument("--measured", type=int, default=100)
+    parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--target-count", type=int, default=150)
     parser.add_argument(
         "--cardinalities", type=int, nargs="+", choices=CARDINALITIES, default=[1]
     )
-    parser.add_argument("--losses", nargs="+", choices=LOSSES, default=list(LOSSES))
+    parser.add_argument("--losses", nargs="+", choices=LOSSES, default=["single_stft", "mss", "sot_published_composite", "linear_jtfot", "cel"])
     args = parser.parse_args()
     benchmark(
         args.output,
