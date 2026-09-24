@@ -221,24 +221,8 @@ def _(LOSS_LABELS, mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, torch):
-    device = torch.device("cpu")
-    device_notice = mo.callout(
-        "This notebook runs on **CPU**. It uses the same Fourier onset, "
-        "Thiran waveguide coefficients, hard-reset event regimes, losses, and "
-        "optimizer as the paper. PhilTorch's DF2 filter is dispatched through "
-        "TorchLPC's compiled CPU recurrence; higher-cardinality fits may take "
-        "a while without a GPU.",
-        kind="info",
-    )
-    device_notice  # noqa: B018 - final expression is the rendered cell output
-    return (device,)
-
-
-@app.cell(hide_code=True)
 def _(
     PhraseSynth,
-    device,
     load_target,
     mo,
     number_of_events,
@@ -249,8 +233,8 @@ def _(
 ):
     selected_events = int(number_of_events.value)
     selected_target = int(target_number.value)
-    synth = PhraseSynth().to(device)
-    target_metadata, _target_phrase = load_target(selected_events, selected_target, device=device)
+    synth = PhraseSynth().to("cpu")
+    target_metadata, _target_phrase = load_target(selected_events, selected_target, device="cpu")
     with torch.no_grad():
         target_audio = synth.render(_target_phrase).detach()
     event_rows = [
@@ -302,7 +286,7 @@ def _(
             f"{_loss_name}"
         )
         # UI callbacks receive a fresh output context, so initialise all slots.
-        mo.output.replace(_controls)
+        mo.output.replace(optimisation_controls)
         mo.output.append(mo.md(f"## Starting optimisation\n{_identity}"))
         mo.output.append(mo.md("Preparing initial candidate…"))
         mo.output.append(mo.md(""))
@@ -409,7 +393,8 @@ def _(
         kind="success",
         on_change=_run_optimisation,
     )
-    _controls = mo.vstack(
+    # Keep this binding public so delayed callbacks can resolve it in Marimo.
+    optimisation_controls = mo.vstack(
         [
             mo.md(
                 "The counter updates every iteration; the spectrogram refreshes every 10 "
@@ -421,11 +406,11 @@ def _(
             run_fit,
         ]
     )
-    mo.output.replace(_controls)
+    mo.output.replace(optimisation_controls)
     mo.output.append(mo.md("Press **Run optimisation** to start."))
     mo.output.append(mo.md(""))
     mo.output.append(mo.md(""))
-    return (run_fit,)
+    return optimisation_controls, run_fit
 
 
 if __name__ == "__main__":
