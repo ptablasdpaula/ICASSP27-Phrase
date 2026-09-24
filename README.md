@@ -15,11 +15,14 @@ accumulation uses linear power on the original STFT grid.
 
 ## Installation
 
-This pre-release is installed from its tagged release:
+Install from PyPI:
 
 ```bash
-pip install "git+https://github.com/ptablasdpaula/ICASSP27-Phrase.git@cels-v0.1.0"
+pip install cels-audio
 ```
+
+The paper's original implementation remains available at the frozen
+[`cels-v0.1.0` tag](https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cels-v0.1.0).
 
 ## Waveform Use
 

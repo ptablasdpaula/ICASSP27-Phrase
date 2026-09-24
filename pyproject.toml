@@ -4,9 +4,33 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cels-audio"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cumulative Energy Losses for differentiable audio optimisation"
-readme = "README.md"
+readme = { content-type = "text/markdown", text = """
+# cels-audio
+
+Differentiable Cumulative Energy Losses (CeLs) for PyTorch. Compare energy
+accumulated along any selection of four diagonal and four orthogonal directions,
+with optional logarithmic frequency weighting and finite-horizon decay.
+
+```bash
+pip install cels-audio
+```
+
+```python
+from cels import STFTCumulativeEnergyLoss
+
+loss = STFTCumulativeEnergyLoss(sample_rate=16000)
+# candidate and target are waveform tensors; gradients flow through candidate.
+value = loss(candidate, target)
+value.backward()
+```
+
+For examples, the cumulative-energy figure, mathematical definitions and the
+paper citation, see the [library documentation](https://github.com/ptablasdpaula/ICASSP27-Phrase/tree/cel-library).
+
+Requires Python 3.10 or later and PyTorch 2.1 or later. MIT licensed.
+""" }
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{name = "Pablo Tablas de Paula"}]
