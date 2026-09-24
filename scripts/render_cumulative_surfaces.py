@@ -200,7 +200,7 @@ def main() -> None:
         axis.pcolormesh(time_edges, frequency_edges, display(surface), **common)
         time_arrow = r"\leftarrow" if time_reverse else r"\rightarrow"
         frequency_arrow = r"\downarrow" if frequency_reverse else r"\uparrow"
-        axis.set_title(r"$(d_t,d_f)= (" + time_arrow + "," + frequency_arrow + ")$", fontsize=7.5)
+        axis.set_title(r"$(\mathrm{d}_{\mathrm{t}},\mathrm{d}_{\mathrm{f}})= (" + time_arrow + "," + frequency_arrow + ")$", fontsize=7.5)
         # Four times the landscape arrow length and head size, keeping its fine shaft.
         direction = np.array([-1 if time_reverse else 1, -1 if frequency_reverse else 1])
         end = np.asarray(start) + direction * (4 * 2 * style.arrow_half_length / np.sqrt(2))

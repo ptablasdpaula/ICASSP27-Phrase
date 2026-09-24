@@ -1,25 +1,26 @@
 {
   "artifacts": {
-    "pdf": "4000e3ecb94a0168271671f2070a375f2ea0feb789fdbcb7b21c1728e47cb966",
-    "png": "e9d47664cc766cfa02bd2bd4096deb351e2c4d72e45083642f264bdc148cbc04"
+    "pdf": "66124452d4328d965832c4db1485466a7f6c8e4c35b4f98537c5095e218e92f6",
+    "png": "07658d0d9d06d0273fee5990eddc67d4eba41f5a19379276595d564d9618d20d"
   },
   "device": "cpu",
   "display": {
     "arrows": "landscape style, 4x length/head size, original shaft width",
-    "colorbar": "one vertical shared linear scale; distinct reference powers",
+    "colorbar": "one vertical shared scale; distinct reference powers",
+    "colour_scale": "linear [0,1]",
     "direction_order": [
       "right_up",
       "right_down",
       "left_up",
       "left_down"
     ],
-    "frequency_axis": "logarithmic, 20-1000 Hz; decade ticks; sums use all bins",
-    "spectrogram": "linear power / peak STFT power, [0,1]",
-    "surfaces": "linear S_q/m, shared [0,1] display scale"
+    "frequency_axis": "logarithmic, 20-1000 Hz; sums use all bins",
+    "spectrogram": "power / peak STFT power",
+    "surfaces": "S_q/m; accumulation uses linear power"
   },
   "power_sha256": "a8ecafaf757d58d2e0652051db1775b6204cbab96c7fbffe908f7c787e3c0cf0",
   "schema": "cumulative-surfaces-figure-v2",
-  "script_sha256": "d7ba9da9fd91e9a715cbdc8bccca3b2f228c6a308d69b5d2896957d4d7ac972c",
+  "script_sha256": "1027bf61c75d69c8bb45a8a0c1adad7f1d86f933af1b13bf16504efd98236fc5",
   "stft": {
     "center": false,
     "hop": 256,
