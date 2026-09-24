@@ -113,7 +113,7 @@ $P=\Phi(x),\hat P=\Phi(\hat x)\in\mathbb R_+^{K\times N}$, where
 $\Phi(x)_{k,n}=|\operatorname{STFT}(x)_{k,n}|^2$. We use a periodic Hann
 window, a 1024-point \gls{fft}, and a 256-sample hop.
 
-\newcommand{\dvec}{\textbf{\textit{d}}}
+\newcommand{\dvec}{\boldsymbol{d}}
 \newcommand{\dt}{d_\mathrm{t}}
 \newcommand{\df}{d_\mathrm{f}}
 \newcommand{\ttype}{\mathrm{t}}
@@ -123,12 +123,13 @@ A direction pair $\dvec=(\dt, \df)$ indexes one of four cumulative views. In tim
 $\rightarrow$ includes frames $0,\ldots,n$ and $\leftarrow$ includes
 $n,\ldots,N-1$; in frequency, $\uparrow$ includes bins $0,\ldots,k$ and
 $\downarrow$ includes $k,\ldots,K-1$. Thus, the arrows give the starting corner
-and accumulation direction. Writing $a\preceq_\dvec b$ for
-$a\leq b$ when $\dvec\in\{\rightarrow,\uparrow\}$ and $a\geq b$ otherwise, the target and candidate surfaces are:
+and accumulation direction. For an individual direction $d$, write
+$a\preceq_d b$ for $a\leq b$ when $d\in\{\rightarrow,\uparrow\}$ and
+$a\geq b$ otherwise. The target and candidate surfaces are:
 \begin{equation*}
 \begin{gathered}
-S_\dvec(P)_{k,n}=\sum_{i\preceq_{\df}k}\sum_{j\preceq_{\dt}n}P_{i,j},\\
-S_\dvec = S_\dvec(P), \quad \hat S_{\dvec}=S_{\dvec}(\hat P).
+S_{\dvec}(P)_{k,n}=\sum_{i\preceq_{\df}k}\sum_{j\preceq_{\dt}n}P_{i,j},\\
+S_{\dvec} = S_{\dvec}(P), \quad \hat S_{\dvec}=S_{\dvec}(\hat P).
 \end{gathered}
 \end{equation*}
 Each value contains the power in the rectangle from the selected corner to
@@ -143,11 +144,11 @@ $\hat S_{\dvec}/m$ is analogous; otherwise, the common scale retains total-power
 error. Their uniform average is invariant to reversal of either axis.
 
 For a pointwise feature map $\phi:\mathbb R_+\rightarrow\mathbb R$, let
-$E_\dvec$ be the candidate-minus-target surface error matrix. For any nonempty set
+$E_{\dvec}$ be the candidate-minus-target surface error matrix. For any nonempty set
 $\mathcal D$ of direction pairs, define
 \begin{gather*}
-E_\dvec = \phi(\hat S_{\dvec}/m)-\phi(S_{\dvec}/m),\\
-\ell_\dvec = \frac{1}{\sqrt{KN}} \|E_\dvec\|_\mathrm{F}, \qquad
+E_{\dvec} = \phi(\hat S_{\dvec}/m)-\phi(S_{\dvec}/m),\\
+\ell_{\dvec} = \frac{1}{\sqrt{KN}} \|E_{\dvec}\|_\mathrm{F}, \qquad
 \mathcal L_{\mathcal D}(x,\hat x) = \frac1{|\mathcal D|}\sum_{\dvec\in\mathcal D}\ell_{\dvec}.
 \end{gather*}
 
@@ -225,7 +226,7 @@ $\phi(u)=\sqrt{u}$, and applies a uniform \gls{rms}. logCe$\mathcal L$ instead
 uses Log-Weighing: octave and time-bin widths weight the final \gls{rms}, so
 equal octave spans receive equal total frequency weight while the cumulative
 surfaces remain unchanged. In dec\acrshort{cel} accumulated energy decays as the scan advances, reaching zero after $1$~s or $1000$~Hz; Each source bin $P_{i,j}$ contributes to
-$S_\dvec(P)_{k,n}$ with weight
+$S_{\dvec}(P)_{k,n}$ with weight
 $w(\Delta \ttype; 1\,\mathrm{s}) w(\Delta \ftype; 1000\,\mathrm{Hz})$, where
 $\Delta \ttype$ and $\Delta \ftype$ measure its separation from the current accumulation
 bin $(k,n)$. The decay kernel is $w(r; H) = 1-\log_{10}(1+9r/H)$ for
