@@ -636,7 +636,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
         "dec_cel": cmap(0.74),
         "random": (0.52, 0.52, 0.52, 1.0),
     }
-    figure, axis = plt.subplots(figsize=(3.5, 1.4))
+    figure, axis = plt.subplots(figsize=(3.5, 1.9))
     offsets = np.linspace(-0.27, 0.27, len(LSD_FIGURE_LOSSES))
     for loss_index, loss in enumerate(LSD_FIGURE_LOSSES):
         for cardinality_index, cardinality in enumerate(recovery.CARDINALITIES):
@@ -672,9 +672,9 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
                 zorder=4,
             )
     axis.set_xticks(range(len(recovery.CARDINALITIES)), recovery.CARDINALITIES)
-    axis.set_xlabel("Number of notes", fontsize=8.5, labelpad=5)
-    axis.set_ylabel("LSD (dB)", fontsize=8.5)
-    axis.tick_params(labelsize=8.5, length=2.0, pad=1.2)
+    axis.set_xlabel("Number of notes", fontsize=8, labelpad=5)
+    axis.set_ylabel("LSD (dB)", fontsize=8)
+    axis.tick_params(labelsize=7, length=2.0, pad=1.2)
     axis.grid(axis="y", color="0.88", linewidth=0.45)
     handles = [
         Patch(facecolor=colors[loss], edgecolor="none", label=label)
@@ -686,7 +686,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
         loc="center left",
         bbox_to_anchor=(1.02, 0.5),
         frameon=False,
-        fontsize=8.5,
+        fontsize=5.7,
         handlelength=1.05,
         handleheight=1.05,
         handletextpad=0.35,
@@ -695,7 +695,7 @@ def render_lsd(lsd: dict, output_stem: Path) -> dict[str, str]:
     )
     for spine in axis.spines.values():
         spine.set_linewidth(0.6)
-    figure.subplots_adjust(left=0.16, right=0.69, bottom=0.29, top=0.98)
+    figure.subplots_adjust(left=0.16, right=0.74, bottom=0.26, top=0.98)
     paths = {suffix: output_stem.with_suffix(f".{suffix}") for suffix in ("pdf", "png")}
     for path in paths.values():
         save_figure(figure, path, pad_inches=0.08)
